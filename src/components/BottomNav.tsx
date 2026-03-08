@@ -10,7 +10,7 @@ interface NavItem {
 
 const userNav: NavItem[] = [
   { to: "/dashboard", icon: LayoutDashboard, label: "Home" },
-  { to: "/packages", icon: Package, label: "Invest" },
+  { to: "/packages", icon: Package, label: "Packages" },
   { to: "/wallet", icon: Wallet, label: "Wallet" },
   { to: "/payouts", icon: CreditCard, label: "Payouts" },
   { to: "/profile", icon: User, label: "Profile" },
