@@ -3,12 +3,13 @@ import { ArrowUpRight, ArrowDownLeft, Wallet as WalletIcon, Eye, EyeOff } from "
 import { useState } from "react";
 
 const transactions = [
-  { id: 1, type: "ROI Credit", amount: "+$45.00", date: "Mar 7", description: "Growth Plan ROI" },
-  { id: 2, type: "Payout Sent", amount: "-$200.00", date: "Mar 5", description: "Bank withdrawal" },
-  { id: 3, type: "ROI Credit", amount: "+$45.00", date: "Mar 4", description: "Growth Plan ROI" },
-  { id: 4, type: "Investment", amount: "-$2,000.00", date: "Mar 1", description: "Growth Plan" },
-  { id: 5, type: "ROI Credit", amount: "+$60.00", date: "Feb 28", description: "Premium Plan ROI" },
-  { id: 6, type: "Deposit", amount: "+$5,000.00", date: "Feb 25", description: "Wallet top-up" },
+  { id: 1, type: "ROI Credit", desc: "Growth Package – Cycle 4", amount: "+₹5,000", date: "Mar 7, 2026" },
+  { id: 2, type: "Payout Debit", desc: "Bank withdrawal – Approved", amount: "-₹15,000", date: "Mar 5, 2026" },
+  { id: 3, type: "ROI Credit", desc: "Starter Package – Cycle 2", amount: "+₹3,750", date: "Mar 4, 2026" },
+  { id: 4, type: "ROI Credit", desc: "Growth Package – Cycle 3", amount: "+₹5,000", date: "Mar 1, 2026" },
+  { id: 5, type: "Payout Debit", desc: "Bank withdrawal – Approved", amount: "-₹10,000", date: "Feb 25, 2026" },
+  { id: 6, type: "ROI Credit", desc: "Starter Package – Cycle 1", amount: "+₹3,750", date: "Feb 20, 2026" },
+  { id: 7, type: "ROI Credit", desc: "Growth Package – Cycle 2", amount: "+₹5,000", date: "Feb 15, 2026" },
 ];
 
 export default function WalletPage() {
@@ -19,7 +20,7 @@ export default function WalletPage() {
       <div className="space-y-5">
         <div>
           <h1 className="text-xl font-bold">Wallet</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Your funds & transactions</p>
+          <p className="text-sm text-muted-foreground mt-0.5">ROI credits & payout debits</p>
         </div>
 
         {/* Balance Card */}
@@ -34,50 +35,53 @@ export default function WalletPage() {
               </button>
             </div>
             <p className="text-[32px] font-bold leading-tight">
-              {showBalance ? "$1,250.00" : "••••••"}
+              {showBalance ? "₹24,500" : "••••••"}
             </p>
           </div>
         </div>
 
-        {/* Action Buttons */}
+        {/* Summary Row */}
         <div className="grid grid-cols-2 gap-3">
-          <button className="accent-gradient text-accent-foreground text-sm font-semibold py-3.5 rounded-xl flex items-center justify-center gap-2 active:scale-[0.98] transition-transform">
-            <ArrowDownLeft className="h-4 w-4" />
-            Deposit
-          </button>
-          <button className="bg-card border border-border text-foreground text-sm font-semibold py-3.5 rounded-xl flex items-center justify-center gap-2 hover:bg-muted active:scale-[0.98] transition-all">
-            <ArrowUpRight className="h-4 w-4" />
-            Withdraw
-          </button>
+          <div className="bg-card rounded-xl border border-border p-3">
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Total Credited</p>
+            <p className="text-base font-bold text-success mt-0.5">+₹48,500</p>
+          </div>
+          <div className="bg-card rounded-xl border border-border p-3">
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Total Debited</p>
+            <p className="text-base font-bold text-foreground mt-0.5">-₹25,000</p>
+          </div>
         </div>
 
-        {/* Transactions */}
+        {/* Ledger */}
         <div>
-          <h2 className="text-sm font-bold mb-3">Transactions</h2>
+          <h2 className="text-sm font-bold mb-3">Ledger</h2>
           <div className="bg-card rounded-2xl border border-border overflow-hidden">
-            {transactions.map((tx, i) => (
-              <div key={tx.id} className={`flex items-center justify-between p-3.5 ${i < transactions.length - 1 ? "border-b border-border/50" : ""}`}>
-                <div className="flex items-center gap-3">
-                  <div className={`h-9 w-9 rounded-xl flex items-center justify-center ${tx.amount.startsWith("+") ? "bg-success/10" : "bg-muted"}`}>
-                    {tx.amount.startsWith("+") ? (
-                      <ArrowDownLeft className="h-4 w-4 text-success" />
-                    ) : (
-                      <ArrowUpRight className="h-4 w-4 text-muted-foreground" />
-                    )}
+            {transactions.map((tx, i) => {
+              const isCredit = tx.type === "ROI Credit";
+              return (
+                <div key={tx.id} className={`flex items-center justify-between p-3.5 ${i < transactions.length - 1 ? "border-b border-border/50" : ""}`}>
+                  <div className="flex items-center gap-3">
+                    <div className={`h-9 w-9 rounded-xl flex items-center justify-center ${isCredit ? "bg-success/10" : "bg-muted"}`}>
+                      {isCredit ? (
+                        <ArrowDownLeft className="h-4 w-4 text-success" />
+                      ) : (
+                        <ArrowUpRight className="h-4 w-4 text-muted-foreground" />
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-[13px] font-semibold">{tx.type}</p>
+                      <p className="text-[11px] text-muted-foreground">{tx.desc}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-[13px] font-semibold">{tx.type}</p>
-                    <p className="text-[11px] text-muted-foreground">{tx.description}</p>
+                  <div className="text-right">
+                    <p className={`text-[13px] font-bold ${isCredit ? "text-success" : "text-foreground"}`}>
+                      {tx.amount}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">{tx.date}</p>
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className={`text-[13px] font-bold ${tx.amount.startsWith("+") ? "text-success" : "text-foreground"}`}>
-                    {tx.amount}
-                  </p>
-                  <p className="text-[11px] text-muted-foreground">{tx.date}</p>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>

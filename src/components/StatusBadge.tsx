@@ -2,7 +2,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const statusBadgeVariants = cva(
-  "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
+  "inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide",
   {
     variants: {
       status: {
@@ -12,6 +12,8 @@ const statusBadgeVariants = cva(
         active: "bg-accent/15 text-accent",
         inactive: "bg-muted text-muted-foreground",
         completed: "bg-success/15 text-success",
+        paused: "bg-muted text-muted-foreground",
+        credited: "bg-accent/15 text-accent",
       },
     },
     defaultVariants: {
