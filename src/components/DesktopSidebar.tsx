@@ -1,10 +1,12 @@
-import { NavLink as RouterNavLink, useLocation } from "react-router-dom";
+import { NavLink as RouterNavLink, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   LayoutDashboard, Package, Wallet, CreditCard, User,
-  Users, Settings, FileText, TrendingUp, Shield
+  Users, Settings, FileText, TrendingUp, Shield, LogOut, ChevronUp
 } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
 
 const userNav = [
   { to: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
@@ -30,8 +32,14 @@ interface DesktopSidebarProps {
 
 export function DesktopSidebar({ role }: DesktopSidebarProps) {
   const location = useLocation();
-  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
   const nav = role === "admin" ? adminNav : userNav;
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login", { replace: true });
+  };
 
   return (
     <aside className="hidden md:flex md:w-60 flex-col fintech-gradient min-h-screen sticky top-0">
@@ -63,8 +71,10 @@ export function DesktopSidebar({ role }: DesktopSidebarProps) {
           );
         })}
       </nav>
-      <div className="p-4">
-        {role === "user" && user?.role === "ADMIN" ? (
+      
+      {/* Profile Menu & Role Switcher */}
+      <div className="p-3 space-y-2">
+        {role === "user" && user?.role === "ADMIN" && (
           <RouterNavLink
             to="/admin"
             className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-sidebar-foreground/50 hover:text-primary-foreground transition-colors"
@@ -72,7 +82,8 @@ export function DesktopSidebar({ role }: DesktopSidebarProps) {
             <Shield className="h-3 w-3" />
             Admin Panel
           </RouterNavLink>
-        ) : role === "admin" ? (
+        )}
+        {role === "admin" && (
           <RouterNavLink
             to="/dashboard"
             className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-sidebar-foreground/50 hover:text-primary-foreground transition-colors"
@@ -80,7 +91,33 @@ export function DesktopSidebar({ role }: DesktopSidebarProps) {
             <User className="h-3 w-3" />
             User Dashboard
           </RouterNavLink>
-        ) : null}
+        )}
+
+        {/* Profile Dropdown */}
+        <Popover>
+          <PopoverTrigger asChild>
+            <button className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-sidebar-foreground hover:bg-sidebar-accent/50 transition-colors">
+              <div className="h-8 w-8 rounded-full bg-accent/20 flex items-center justify-center">
+                <User className="h-4 w-4 text-accent" />
+              </div>
+              <div className="flex-1 text-left min-w-0">
+                <p className="text-xs font-semibold text-primary-foreground truncate">{user?.fullName}</p>
+                <p className="text-[10px] text-sidebar-foreground/60 truncate">{user?.email || user?.phone}</p>
+              </div>
+              <ChevronUp className="h-3 w-3 text-sidebar-foreground/50" />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent side="top" align="start" className="w-56 p-2">
+            <Button
+              variant="ghost"
+              onClick={handleLogout}
+              className="w-full justify-start text-sm font-medium text-destructive hover:text-destructive hover:bg-destructive/10"
+            >
+              <LogOut className="h-4 w-4" />
+              Sign Out
+            </Button>
+          </PopoverContent>
+        </Popover>
       </div>
     </aside>
   );
