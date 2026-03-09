@@ -21,6 +21,7 @@ const adminNav = [
   { to: "/admin/packages", icon: Package, label: "Packages" },
   { to: "/admin/payouts", icon: CreditCard, label: "Payouts" },
   { to: "/admin/roi-logs", icon: TrendingUp, label: "ROI Logs" },
+  { to: "/admin/settings", icon: Settings, label: "Settings" },
 ];
 
 interface DesktopSidebarProps {
