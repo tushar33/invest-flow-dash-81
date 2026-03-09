@@ -1,7 +1,7 @@
 import { NavLink as RouterNavLink, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
-import { LucideIcon, LayoutDashboard, Package, Wallet, CreditCard, User, LogOut } from "lucide-react";
+import { LucideIcon, LayoutDashboard, Package, Wallet, CreditCard, User, LogOut, FileText } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
@@ -16,6 +16,7 @@ const userNav: NavItem[] = [
   { to: "/dashboard", icon: LayoutDashboard, label: "Home" },
   { to: "/packages", icon: Package, label: "Packages" },
   { to: "/wallet", icon: Wallet, label: "Wallet" },
+  { to: "/wallet/ledger", icon: FileText, label: "Ledger" },
   { to: "/payouts", icon: CreditCard, label: "Payouts" },
 ];
 
