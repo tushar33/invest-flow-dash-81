@@ -16,6 +16,7 @@ const userNav: NavItem[] = [
   { to: "/dashboard", icon: LayoutDashboard, label: "Home" },
   { to: "/packages", icon: Package, label: "Packages" },
   { to: "/wallet", icon: Wallet, label: "Wallet" },
+  { to: "/wallet/ledger", icon: FileText, label: "Ledger" },
   { to: "/payouts", icon: CreditCard, label: "Payouts" },
 ];
 
