@@ -12,6 +12,7 @@ const userNav = [
   { to: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
   { to: "/packages", icon: Package, label: "Packages" },
   { to: "/wallet", icon: Wallet, label: "Wallet" },
+  { to: "/wallet/ledger", icon: FileText, label: "Ledger" },
   { to: "/payouts", icon: CreditCard, label: "Payouts" },
   { to: "/bank-details", icon: Settings, label: "Bank Details" },
   { to: "/profile", icon: User, label: "Profile" },
