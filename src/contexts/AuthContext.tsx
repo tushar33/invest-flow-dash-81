@@ -5,9 +5,9 @@ import { useNavigate } from "react-router-dom";
 interface AuthContextType {
   user: AuthUser | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  loginWithPhone: (phone: string, password: string) => Promise<void>;
-  register: (data: { fullName: string; email?: string; phone?: string; password: string }) => Promise<void>;
+  login: (email: string, password: string) => Promise<AuthUser>;
+  loginWithPhone: (phone: string, password: string) => Promise<AuthUser>;
+  register: (data: { fullName: string; email?: string; phone?: string; password: string }) => Promise<AuthUser>;
   logout: () => void;
   refreshUser: () => Promise<void>;
 }
