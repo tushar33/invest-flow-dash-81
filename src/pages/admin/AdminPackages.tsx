@@ -1,57 +1,55 @@
 import { AdminLayout } from "@/components/AdminLayout";
 import { StatusBadge } from "@/components/StatusBadge";
-import { Package, Plus, Pencil } from "lucide-react";
+import { Package } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { admin as adminApi } from "@/lib/api";
 
-const packages = [
-  { id: 1, name: "Starter Plan", amount: "$500", roi: "5%", duration: "30 days", status: "active" as const, investors: 245 },
-  { id: 2, name: "Growth Plan", amount: "$2,000", roi: "8%", duration: "60 days", status: "active" as const, investors: 432 },
-  { id: 3, name: "Premium Plan", amount: "$5,000", roi: "12%", duration: "90 days", status: "active" as const, investors: 189 },
-  { id: 4, name: "Elite Plan", amount: "$10,000", roi: "15%", duration: "120 days", status: "inactive" as const, investors: 26 },
-];
+function formatINR(n: number) { return "₹" + n.toLocaleString("en-IN"); }
 
 export default function AdminPackages() {
+  const { data: pkgs, isLoading } = useQuery({ queryKey: ["admin-packages"], queryFn: adminApi.packages });
+
+  const statusMap: Record<string, "active" | "completed" | "inactive"> = {
+    ACTIVE: "active", MATURED: "completed", CLOSED: "inactive",
+  };
+
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">Packages</h1>
-            <p className="text-sm text-muted-foreground mt-1">Manage investment packages</p>
-          </div>
-          <button className="accent-gradient text-accent-foreground text-sm font-medium px-4 py-2 rounded-lg flex items-center gap-1.5">
-            <Plus className="h-4 w-4" />
-            Add Package
-          </button>
+        <div>
+          <h1 className="text-2xl font-bold">Packages</h1>
+          <p className="text-sm text-muted-foreground mt-1">All assigned packages</p>
         </div>
 
-        <div className="space-y-3">
-          {packages.map((pkg) => (
-            <div key={pkg.id} className="bg-card rounded-xl border border-border p-4 animate-fade-in">
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-lg bg-accent/10 flex items-center justify-center">
-                    <Package className="h-5 w-5 text-accent" />
+        {isLoading ? (
+          <div className="flex justify-center py-12">
+            <div className="h-8 w-8 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {(pkgs ?? []).map((pkg) => (
+              <div key={pkg.packageId} className="bg-card rounded-xl border border-border p-4 animate-fade-in">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-lg bg-accent/10 flex items-center justify-center">
+                      <Package className="h-5 w-5 text-accent" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-sm">{pkg.userName}</p>
+                      <p className="text-lg font-bold">{formatINR(pkg.principalAmount)}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-semibold text-sm">{pkg.name}</p>
-                    <p className="text-lg font-bold">{pkg.amount}</p>
-                  </div>
+                  <StatusBadge status={statusMap[pkg.status] || "inactive"}>{pkg.status}</StatusBadge>
                 </div>
-                <div className="flex items-center gap-2">
-                  <StatusBadge status={pkg.status}>{pkg.status}</StatusBadge>
-                  <button className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center hover:bg-border transition-colors">
-                    <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
-                  </button>
+                <div className="flex items-center gap-4 mt-3 pt-3 border-t border-border text-xs text-muted-foreground flex-wrap">
+                  <span>ROI: {pkg.roiPercentage}%</span>
+                  <span>Cycles: {pkg.cyclesCompleted}/{pkg.totalCycles}</span>
+                  <span>Assigned: {new Date(pkg.assignedDate).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" })}</span>
                 </div>
               </div>
-              <div className="flex items-center gap-4 mt-3 pt-3 border-t border-border text-xs text-muted-foreground">
-                <span>ROI: {pkg.roi}</span>
-                <span>Duration: {pkg.duration}</span>
-                <span>{pkg.investors} investors</span>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </AdminLayout>
   );

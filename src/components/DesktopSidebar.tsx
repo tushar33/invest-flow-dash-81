@@ -1,5 +1,6 @@
 import { NavLink as RouterNavLink, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   LayoutDashboard, Package, Wallet, CreditCard, User,
   Users, Settings, FileText, TrendingUp, Shield
@@ -28,6 +29,7 @@ interface DesktopSidebarProps {
 
 export function DesktopSidebar({ role }: DesktopSidebarProps) {
   const location = useLocation();
+  const { user } = useAuth();
   const nav = role === "admin" ? adminNav : userNav;
 
   return (
@@ -61,7 +63,7 @@ export function DesktopSidebar({ role }: DesktopSidebarProps) {
         })}
       </nav>
       <div className="p-4">
-        {role === "user" ? (
+        {role === "user" && user?.role === "ADMIN" ? (
           <RouterNavLink
             to="/admin"
             className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-sidebar-foreground/50 hover:text-primary-foreground transition-colors"
@@ -69,7 +71,7 @@ export function DesktopSidebar({ role }: DesktopSidebarProps) {
             <Shield className="h-3 w-3" />
             Admin Panel
           </RouterNavLink>
-        ) : (
+        ) : role === "admin" ? (
           <RouterNavLink
             to="/dashboard"
             className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-sidebar-foreground/50 hover:text-primary-foreground transition-colors"
@@ -77,7 +79,7 @@ export function DesktopSidebar({ role }: DesktopSidebarProps) {
             <User className="h-3 w-3" />
             User Dashboard
           </RouterNavLink>
-        )}
+        ) : null}
       </div>
     </aside>
   );

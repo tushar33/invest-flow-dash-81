@@ -1,29 +1,48 @@
 import { UserLayout } from "@/components/UserLayout";
 import { StatCard } from "@/components/StatCard";
-import { StatusBadge } from "@/components/StatusBadge";
 import { Wallet, DollarSign, TrendingUp, Clock, ArrowDownLeft, ArrowUpRight, ChevronRight, CheckCircle2, AlertCircle } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { useQuery } from "@tanstack/react-query";
+import { wallet as walletApi, packages as packagesApi, payouts as payoutsApi, bankDetails as bankApi } from "@/lib/api";
 
-const recentTransactions = [
-  { id: 1, type: "ROI Credit", desc: "Growth Package", amount: "+₹3,750", date: "Mar 7, 2026" },
-  { id: 2, type: "Payout Debit", desc: "Bank withdrawal", amount: "-₹15,000", date: "Mar 5, 2026" },
-  { id: 3, type: "ROI Credit", desc: "Growth Package", amount: "+₹3,750", date: "Mar 4, 2026" },
-  { id: 4, type: "ROI Credit", desc: "Starter Package", amount: "+₹1,250", date: "Mar 3, 2026" },
-];
+function formatINR(n: number): string {
+  return "₹" + n.toLocaleString("en-IN");
+}
 
 export default function Dashboard() {
-  const payoutReady = true; // bank details added
+  const { user } = useAuth();
+  const { data: walletData } = useQuery({ queryKey: ["wallet"], queryFn: walletApi.get });
+  const { data: pkgs } = useQuery({ queryKey: ["packages"], queryFn: packagesApi.list });
+  const { data: payoutsList } = useQuery({ queryKey: ["payouts"], queryFn: () => payoutsApi.list() });
+  const { data: bank } = useQuery({ queryKey: ["bank-details"], queryFn: bankApi.get });
+
+  const walletBalance = walletData?.availableBalance ?? 0;
+  const totalInvestment = pkgs?.reduce((s, p) => s + Number(p.principalAmount), 0) ?? 0;
+  const totalRoi = walletData?.transactions
+    ?.filter(t => t.type === "ROI_CREDIT")
+    .reduce((s, t) => s + Number(t.amount), 0) ?? 0;
+  const pendingPayout = payoutsList?.filter(p => p.status === "PENDING")
+    .reduce((s, p) => s + Number(p.amount), 0) ?? 0;
+  const activePackages = pkgs?.filter(p => p.status === "ACTIVE").length ?? 0;
+  const payoutReady = !!bank;
+  const recentTx = walletData?.transactions?.slice(0, 4) ?? [];
+
+  const greeting = (() => {
+    const h = new Date().getHours();
+    if (h < 12) return "Good morning";
+    if (h < 17) return "Good afternoon";
+    return "Good evening";
+  })();
 
   return (
     <UserLayout>
       <div className="space-y-5">
-        {/* Header */}
         <div>
-          <p className="text-sm text-muted-foreground">Good morning</p>
-          <h1 className="text-xl font-bold mt-0.5">Rahul Sharma 👋</h1>
+          <p className="text-sm text-muted-foreground">{greeting}</p>
+          <h1 className="text-xl font-bold mt-0.5">{user?.fullName ?? "User"} 👋</h1>
         </div>
 
-        {/* Wallet Balance Hero */}
         <div className="fintech-gradient rounded-2xl p-5 text-primary-foreground relative overflow-hidden">
           <div className="absolute top-0 right-0 w-32 h-32 bg-accent/5 rounded-full -translate-y-8 translate-x-8" />
           <div className="absolute bottom-0 left-0 w-24 h-24 bg-accent/5 rounded-full translate-y-6 -translate-x-6" />
@@ -32,22 +51,20 @@ export default function Dashboard() {
               <Wallet className="h-4 w-4 text-accent" />
               <span className="text-[11px] uppercase tracking-widest opacity-70 font-medium">Wallet Balance</span>
             </div>
-            <p className="text-[32px] font-bold leading-tight">₹24,500</p>
+            <p className="text-[32px] font-bold leading-tight">{formatINR(walletBalance)}</p>
             <Link to="/payouts" className="inline-flex items-center gap-1 mt-2 text-[11px] text-accent font-semibold bg-accent/15 rounded-full px-2.5 py-1">
               Request Payout <ChevronRight className="h-3 w-3" />
             </Link>
           </div>
         </div>
 
-        {/* Stat Grid */}
         <div className="grid grid-cols-2 gap-3">
-          <StatCard label="Total Investment" value="₹2,00,000" icon={DollarSign} />
-          <StatCard label="Total ROI Earned" value="₹48,500" icon={TrendingUp} trend="+₹5,000 this week" trendUp />
-          <StatCard label="Pending Payout" value="₹15,000" icon={Clock} />
-          <StatCard label="Active Packages" value="2" icon={DollarSign} />
+          <StatCard label="Total Investment" value={formatINR(totalInvestment)} icon={DollarSign} />
+          <StatCard label="Total ROI Earned" value={formatINR(totalRoi)} icon={TrendingUp} />
+          <StatCard label="Pending Payout" value={formatINR(pendingPayout)} icon={Clock} />
+          <StatCard label="Active Packages" value={String(activePackages)} icon={DollarSign} />
         </div>
 
-        {/* Payout Readiness */}
         <div className={`rounded-2xl p-4 flex items-center gap-3 ${payoutReady ? "bg-success/10 border border-success/20" : "bg-warning/10 border border-warning/20"}`}>
           {payoutReady ? (
             <>
@@ -64,14 +81,11 @@ export default function Dashboard() {
                 <p className="text-[13px] font-semibold text-warning">Setup Required</p>
                 <p className="text-[11px] text-muted-foreground">Add bank details to enable payouts.</p>
               </div>
-              <Link to="/bank-details" className="ml-auto text-[11px] font-semibold text-accent">
-                Add Now
-              </Link>
+              <Link to="/bank-details" className="ml-auto text-[11px] font-semibold text-accent">Add Now</Link>
             </>
           )}
         </div>
 
-        {/* Recent Transactions */}
         <div>
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-sm font-bold">Recent Transactions</h2>
@@ -80,28 +94,26 @@ export default function Dashboard() {
             </Link>
           </div>
           <div className="bg-card rounded-2xl border border-border overflow-hidden">
-            {recentTransactions.map((tx, i) => {
-              const isCredit = tx.type === "ROI Credit";
+            {recentTx.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-8">No transactions yet</p>
+            ) : recentTx.map((tx, i) => {
+              const isCredit = tx.direction === "CREDIT";
               return (
-                <div key={tx.id} className={`flex items-center justify-between p-3.5 ${i < recentTransactions.length - 1 ? "border-b border-border/50" : ""}`}>
+                <div key={tx.id} className={`flex items-center justify-between p-3.5 ${i < recentTx.length - 1 ? "border-b border-border/50" : ""}`}>
                   <div className="flex items-center gap-3">
                     <div className={`h-9 w-9 rounded-xl flex items-center justify-center ${isCredit ? "bg-success/10" : "bg-muted"}`}>
-                      {isCredit ? (
-                        <ArrowDownLeft className="h-4 w-4 text-success" />
-                      ) : (
-                        <ArrowUpRight className="h-4 w-4 text-muted-foreground" />
-                      )}
+                      {isCredit ? <ArrowDownLeft className="h-4 w-4 text-success" /> : <ArrowUpRight className="h-4 w-4 text-muted-foreground" />}
                     </div>
                     <div>
-                      <p className="text-[13px] font-semibold">{tx.type}</p>
-                      <p className="text-[11px] text-muted-foreground">{tx.desc}</p>
+                      <p className="text-[13px] font-semibold">{tx.type.replace(/_/g, " ")}</p>
+                      <p className="text-[11px] text-muted-foreground">{tx.description || ""}</p>
                     </div>
                   </div>
                   <div className="text-right">
                     <p className={`text-[13px] font-bold ${isCredit ? "text-success" : "text-foreground"}`}>
-                      {tx.amount}
+                      {isCredit ? "+" : "-"}₹{Number(tx.amount).toLocaleString("en-IN")}
                     </p>
-                    <p className="text-[10px] text-muted-foreground">{tx.date}</p>
+                    <p className="text-[10px] text-muted-foreground">{new Date(tx.createdAt).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" })}</p>
                   </div>
                 </div>
               );
