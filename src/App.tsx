@@ -10,6 +10,7 @@ import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import Packages from "./pages/Packages";
 import WalletPage from "./pages/WalletPage";
+import WalletLedger from "./pages/WalletLedger";
 import Payouts from "./pages/Payouts";
 import BankDetails from "./pages/BankDetails";
 import Profile from "./pages/Profile";
