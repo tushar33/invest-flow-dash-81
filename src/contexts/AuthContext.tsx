@@ -5,9 +5,9 @@ import { useNavigate } from "react-router-dom";
 interface AuthContextType {
   user: AuthUser | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  loginWithPhone: (phone: string, password: string) => Promise<void>;
-  register: (data: { fullName: string; email?: string; phone?: string; password: string }) => Promise<void>;
+  login: (email: string, password: string) => Promise<AuthUser>;
+  loginWithPhone: (phone: string, password: string) => Promise<AuthUser>;
+  register: (data: { fullName: string; email?: string; phone?: string; password: string }) => Promise<AuthUser>;
   logout: () => void;
   refreshUser: () => Promise<void>;
 }
@@ -30,22 +30,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string): Promise<AuthUser> => {
     const res = await authApi.login({ email, password });
     setToken(res.accessToken);
     setUser(res.user);
+    return res.user;
   };
 
-  const loginWithPhone = async (phone: string, password: string) => {
+  const loginWithPhone = async (phone: string, password: string): Promise<AuthUser> => {
     const res = await authApi.login({ phone, password });
     setToken(res.accessToken);
     setUser(res.user);
+    return res.user;
   };
 
-  const register = async (data: { fullName: string; email?: string; phone?: string; password: string }) => {
+  const register = async (data: { fullName: string; email?: string; phone?: string; password: string }): Promise<AuthUser> => {
     const res = await authApi.register(data);
     setToken(res.accessToken);
     setUser(res.user);
+    return res.user;
   };
 
   const logout = () => {
