@@ -1,16 +1,18 @@
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 import { DesktopSidebar } from "./DesktopSidebar";
-import { NavLink as RouterNavLink } from "react-router-dom";
-import { LayoutDashboard, Users, Package, CreditCard, TrendingUp, Settings } from "lucide-react";
+import { NavLink as RouterNavLink, useNavigate } from "react-router-dom";
+import { LayoutDashboard, Users, Package, CreditCard, TrendingUp, Settings, User, LogOut } from "lucide-react";
 import { useLocation } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
 
 const adminMobileNav = [
   { to: "/admin", icon: LayoutDashboard, label: "Home" },
   { to: "/admin/users", icon: Users, label: "Users" },
   { to: "/admin/packages", icon: Package, label: "Packages" },
   { to: "/admin/payouts", icon: CreditCard, label: "Payouts" },
-  { to: "/admin/roi-logs", icon: TrendingUp, label: "ROI" },
   { to: "/admin/settings", icon: Settings, label: "Settings" },
 ];
 
