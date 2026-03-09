@@ -31,7 +31,6 @@ export function DesktopSidebar({ role }: DesktopSidebarProps) {
   const location = useLocation();
   const { user } = useAuth();
   const nav = role === "admin" ? adminNav : userNav;
-  const nav = role === "admin" ? adminNav : userNav;
 
   return (
     <aside className="hidden md:flex md:w-60 flex-col fintech-gradient min-h-screen sticky top-0">
