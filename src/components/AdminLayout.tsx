@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
 import { DesktopSidebar } from "./DesktopSidebar";
 import { NavLink as RouterNavLink } from "react-router-dom";
-import { LayoutDashboard, Users, Package, CreditCard, TrendingUp } from "lucide-react";
+import { LayoutDashboard, Users, Package, CreditCard, TrendingUp, Settings } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
@@ -11,6 +11,7 @@ const adminMobileNav = [
   { to: "/admin/packages", icon: Package, label: "Packages" },
   { to: "/admin/payouts", icon: CreditCard, label: "Payouts" },
   { to: "/admin/roi-logs", icon: TrendingUp, label: "ROI" },
+  { to: "/admin/settings", icon: Settings, label: "Settings" },
 ];
 
 export function AdminLayout({ children }: { children: ReactNode }) {
