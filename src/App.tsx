@@ -18,6 +18,7 @@ import AdminUsers from "./pages/admin/AdminUsers";
 import AdminPackages from "./pages/admin/AdminPackages";
 import AdminPayouts from "./pages/admin/AdminPayouts";
 import AdminROILogs from "./pages/admin/AdminROILogs";
+import AdminSettings from "./pages/admin/AdminSettings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
