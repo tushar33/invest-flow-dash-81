@@ -1,44 +1,65 @@
 import { AdminLayout } from "@/components/AdminLayout";
-import { TrendingUp } from "lucide-react";
-
-const logs = [
-  { id: 1, user: "Alex Johnson", package: "Growth Plan", amount: "+$45.00", date: "Mar 7, 2026" },
-  { id: 2, user: "Sarah Williams", package: "Starter Plan", amount: "+$25.00", date: "Mar 7, 2026" },
-  { id: 3, user: "Tom Baker", package: "Premium Plan", amount: "+$60.00", date: "Mar 7, 2026" },
-  { id: 4, user: "Mike Chen", package: "Starter Plan", amount: "+$25.00", date: "Mar 6, 2026" },
-  { id: 5, user: "Alex Johnson", package: "Growth Plan", amount: "+$45.00", date: "Mar 6, 2026" },
-  { id: 6, user: "Sarah Williams", package: "Starter Plan", amount: "+$25.00", date: "Mar 5, 2026" },
-  { id: 7, user: "Tom Baker", package: "Premium Plan", amount: "+$60.00", date: "Mar 5, 2026" },
-];
+import { TrendingUp, Zap } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { admin as adminApi } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
 
 export default function AdminROILogs() {
+  const { toast } = useToast();
+  const qc = useQueryClient();
+
+  // We show packages with their ROI cycle info
+  const { data: pkgs, isLoading } = useQuery({ queryKey: ["admin-packages"], queryFn: adminApi.packages });
+
+  const triggerMutation = useMutation({
+    mutationFn: adminApi.triggerRoi,
+    onSuccess: (data) => {
+      toast({ title: "ROI Processed", description: data.message });
+      qc.invalidateQueries({ queryKey: ["admin-packages"] });
+    },
+    onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
+  });
+
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold">ROI Logs</h1>
-          <p className="text-sm text-muted-foreground mt-1">Track all ROI credits</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold">ROI Logs</h1>
+            <p className="text-sm text-muted-foreground mt-1">Track ROI cycles & trigger processing</p>
+          </div>
+          <button onClick={() => triggerMutation.mutate()} disabled={triggerMutation.isPending}
+            className="accent-gradient text-accent-foreground text-sm font-medium px-4 py-2 rounded-lg flex items-center gap-1.5 disabled:opacity-50">
+            <Zap className="h-4 w-4" />
+            {triggerMutation.isPending ? "Processing..." : "Process ROI"}
+          </button>
         </div>
 
-        <div className="bg-card rounded-xl border border-border divide-y divide-border">
-          {logs.map((log) => (
-            <div key={log.id} className="flex items-center justify-between p-4">
-              <div className="flex items-center gap-3">
-                <div className="h-8 w-8 rounded-full bg-success/10 flex items-center justify-center">
-                  <TrendingUp className="h-4 w-4 text-success" />
+        {isLoading ? (
+          <div className="flex justify-center py-12">
+            <div className="h-8 w-8 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : (
+          <div className="bg-card rounded-xl border border-border divide-y divide-border">
+            {(pkgs ?? []).map((pkg) => (
+              <div key={pkg.packageId} className="flex items-center justify-between p-4">
+                <div className="flex items-center gap-3">
+                  <div className="h-8 w-8 rounded-full bg-success/10 flex items-center justify-center">
+                    <TrendingUp className="h-4 w-4 text-success" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">{pkg.userName}</p>
+                    <p className="text-xs text-muted-foreground">₹{pkg.principalAmount.toLocaleString("en-IN")} · {pkg.roiPercentage}%</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm font-medium">{log.user}</p>
-                  <p className="text-xs text-muted-foreground">{log.package}</p>
+                <div className="text-right">
+                  <p className="text-sm font-semibold">{pkg.cyclesCompleted}/{pkg.totalCycles} cycles</p>
+                  <p className="text-xs text-muted-foreground">{pkg.status}</p>
                 </div>
               </div>
-              <div className="text-right">
-                <p className="text-sm font-semibold text-success">{log.amount}</p>
-                <p className="text-xs text-muted-foreground">{log.date}</p>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </AdminLayout>
   );
