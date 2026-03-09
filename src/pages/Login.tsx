@@ -21,9 +21,15 @@ export default function Login() {
     try {
       let loggedInUser;
       if (mode === "email") {
-        await login(email, password);
+        loggedInUser = await login(email, password);
       } else {
-        await loginWithPhone(phone, password);
+        loggedInUser = await loginWithPhone(phone, password);
+      }
+      // Redirect based on role
+      if (loggedInUser.role === "ADMIN") {
+        navigate("/admin", { replace: true });
+      } else {
+        navigate("/dashboard", { replace: true });
       }
     } catch (err: any) {
       toast({ title: "Login failed", description: err.message, variant: "destructive" });
