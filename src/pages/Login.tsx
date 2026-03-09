@@ -11,7 +11,7 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const { login, loginWithPhone } = useAuth();
+  const { login, loginWithPhone, user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
