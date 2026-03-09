@@ -29,6 +29,8 @@ interface DesktopSidebarProps {
 
 export function DesktopSidebar({ role }: DesktopSidebarProps) {
   const location = useLocation();
+  const { user } = useAuth();
+  const nav = role === "admin" ? adminNav : userNav;
   const nav = role === "admin" ? adminNav : userNav;
 
   return (
