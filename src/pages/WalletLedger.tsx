@@ -105,7 +105,7 @@ export default function WalletLedger() {
           </p>
         </div>
 
-        {isAdmin && (
+        {isAdmin && !userIdFromUrl && (
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-base">Select User</CardTitle>
@@ -117,6 +117,10 @@ export default function WalletLedger() {
                   <Input placeholder="Search by user ID..." value={userSearch} onChange={(e) => setUserSearch(e.target.value)} className="pl-9" />
                 </div>
                 <Button onClick={() => setSelectedUserId(userSearch)} disabled={!userSearch.trim()}>Load Wallet</Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
               </div>
             </CardContent>
           </Card>
