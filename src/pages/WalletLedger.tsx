@@ -121,10 +121,6 @@ export default function WalletLedger() {
             </CardContent>
           </Card>
         )}
-              </div>
-            </CardContent>
-          </Card>
-        )}
 
         {walletData && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
