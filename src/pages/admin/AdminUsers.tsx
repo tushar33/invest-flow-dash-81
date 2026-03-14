@@ -1,9 +1,11 @@
 import { AdminLayout } from "@/components/AdminLayout";
+import { AutoPayModeBadge } from "@/components/AutoPayModeBadge";
 import { Search, Package, Eye, Plus, BookOpen } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { admin as adminApi } from "@/lib/api";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,13 +13,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
 
+const AUTO_PAY_MODES = ["NONE", "HALF", "FULL"] as const;
+type AutoPayModeValue = (typeof AUTO_PAY_MODES)[number];
+
 function formatINR(n: number) { return "₹" + n.toLocaleString("en-IN"); }
 
 export default function AdminUsers() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const { user: currentUser } = useAuth();
   const { data: users, isLoading } = useQuery({ queryKey: ["admin-users"], queryFn: adminApi.users });
   const [search, setSearch] = useState("");
+  const [autopayUpdatingUserId, setAutopayUpdatingUserId] = useState<string | null>(null);
 
   // Assign package modal state
   const [assignOpen, setAssignOpen] = useState(false);
@@ -45,6 +52,25 @@ export default function AdminUsers() {
       toast({ title: "Failed to assign package", description: err.message, variant: "destructive" });
     },
   });
+
+  const autopayMutation = useMutation({
+    mutationFn: ({ userId, autoPayMode }: { userId: string; autoPayMode: AutoPayModeValue }) =>
+      adminApi.configureAutopay(userId, { autoPayMode }),
+    onSuccess: (_, { userId }) => {
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+      setAutopayUpdatingUserId(null);
+      toast({ title: "Auto Pay mode updated" });
+    },
+    onError: (err: Error) => {
+      setAutopayUpdatingUserId(null);
+      toast({ title: "Failed to update Auto Pay", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const handleAutopayChange = (userId: string, autoPayMode: AutoPayModeValue) => {
+    setAutopayUpdatingUserId(userId);
+    autopayMutation.mutate({ userId, autoPayMode });
+  };
 
   const openAssignModal = (userId: string, userName: string) => {
     setSelectedUserId(userId);
@@ -98,21 +124,36 @@ export default function AdminUsers() {
                     <span className="text-xs text-muted-foreground">Packages</span>
                     <span className="text-sm font-semibold">{u.totalPackages}</span>
                   </div>
-                  {u.autoPayMode && (
-                    <div className="flex items-center justify-between mt-1">
-                      <span className="text-xs text-muted-foreground">Auto Pay</span>
-                      <span className="text-xs font-medium bg-muted px-2 py-0.5 rounded">{u.autoPayMode}</span>
-                    </div>
-                  )}
-                  <div className="flex gap-2 mt-3 pt-3 border-t border-border flex-wrap">
-                    <Button size="sm" variant="outline" className="flex-1 text-xs" onClick={() => openAssignModal(u.id, u.name)}>
-                      <Plus className="h-3.5 w-3.5 mr-1" /> Assign
+                  <div className="mt-2 pt-2 border-t border-border">
+                    <p className="text-xs text-muted-foreground mb-1.5">Auto Pay Mode</p>
+                    {currentUser?.id === u.id ? (
+                      <AutoPayModeBadge mode={u.autoPayMode ?? "NONE"} />
+                    ) : (
+                      <Select
+                        value={u.autoPayMode ?? "NONE"}
+                        onValueChange={(v) => handleAutopayChange(u.id, v as AutoPayModeValue)}
+                        disabled={autopayUpdatingUserId === u.id}
+                      >
+                        <SelectTrigger className="h-8 text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {AUTO_PAY_MODES.map((m) => (
+                            <SelectItem key={m} value={m}>{m}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </div>
+                  <div className="flex flex-col gap-2 mt-3 pt-3 border-t border-border">
+                    <Button size="sm" variant="outline" className="w-full justify-start text-xs" onClick={() => openAssignModal(u.id, u.name)}>
+                      <Plus className="h-3.5 w-3.5 mr-1" /> Assign Package
                     </Button>
-                    <Button size="sm" variant="outline" className="flex-1 text-xs" onClick={() => navigate(`/admin/packages?userId=${u.id}`)}>
-                      <Eye className="h-3.5 w-3.5 mr-1" /> Packages
+                    <Button size="sm" variant="outline" className="w-full justify-start text-xs" onClick={() => navigate(`/admin/packages?userId=${u.id}`)}>
+                      <Eye className="h-3.5 w-3.5 mr-1" /> View Packages
                     </Button>
-                    <Button size="sm" variant="outline" className="flex-1 text-xs" onClick={() => navigate(`/wallet/ledger?userId=${u.id}`)}>
-                      <BookOpen className="h-3.5 w-3.5 mr-1" /> Ledger
+                    <Button size="sm" variant="outline" className="w-full justify-start text-xs" onClick={() => navigate(`/wallet/ledger?userId=${u.id}`)}>
+                      <BookOpen className="h-3.5 w-3.5 mr-1" /> View Ledger
                     </Button>
                   </div>
                 </div>
@@ -138,19 +179,38 @@ export default function AdminUsers() {
                     <tr key={u.id} className="hover:bg-muted/50 transition-colors">
                       <td className="p-4 text-sm font-medium">{u.name}</td>
                       <td className="p-4 text-sm text-muted-foreground">{u.email || "—"}</td>
-                      <td className="p-4"><span className="text-xs font-medium bg-muted px-2 py-0.5 rounded">{u.autoPayMode || "—"}</span></td>
+                      <td className="p-4">
+                        {currentUser?.id === u.id ? (
+                          <AutoPayModeBadge mode={u.autoPayMode ?? "NONE"} />
+                        ) : (
+                          <Select
+                            value={u.autoPayMode ?? "NONE"}
+                            onValueChange={(v) => handleAutopayChange(u.id, v as AutoPayModeValue)}
+                            disabled={autopayUpdatingUserId === u.id}
+                          >
+                            <SelectTrigger className="h-8 w-[100px] text-xs">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {AUTO_PAY_MODES.map((m) => (
+                                <SelectItem key={m} value={m}>{m}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        )}
+                      </td>
                       <td className="p-4 text-sm font-semibold">{u.totalPackages}</td>
                       <td className="p-4 text-sm font-semibold">{formatINR(u.currentBalance)}</td>
                       <td className="p-4"><span className="text-[10px] font-bold bg-accent/15 text-accent px-2 py-0.5 rounded-full">{u.role}</span></td>
                       <td className="p-4 text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button size="sm" variant="outline" className="text-xs" onClick={() => openAssignModal(u.id, u.name)}>
+                        <div className="flex flex-col gap-2 w-[160px] ml-auto">
+                          <Button size="sm" variant="outline" className="text-xs justify-center w-full" onClick={() => openAssignModal(u.id, u.name)}>
                             <Plus className="h-3.5 w-3.5 mr-1" /> Assign Package
                           </Button>
-                          <Button size="sm" variant="outline" className="text-xs" onClick={() => navigate(`/admin/packages?userId=${u.id}`)}>
+                          <Button size="sm" variant="outline" className="text-xs justify-center w-full" onClick={() => navigate(`/admin/packages?userId=${u.id}`)}>
                             <Eye className="h-3.5 w-3.5 mr-1" /> View Packages
                           </Button>
-                          <Button size="sm" variant="outline" className="text-xs" onClick={() => navigate(`/wallet/ledger?userId=${u.id}`)}>
+                          <Button size="sm" variant="outline" className="text-xs justify-center w-full" onClick={() => navigate(`/wallet/ledger?userId=${u.id}`)}>
                             <BookOpen className="h-3.5 w-3.5 mr-1" /> View Ledger
                           </Button>
                         </div>

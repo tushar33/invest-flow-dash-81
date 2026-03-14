@@ -1,6 +1,7 @@
 import { UserLayout } from "@/components/UserLayout";
 import { StatCard } from "@/components/StatCard";
-import { Wallet, DollarSign, TrendingUp, Clock, ArrowDownLeft, ArrowUpRight, ChevronRight, CheckCircle2, AlertCircle } from "lucide-react";
+import { AutoPayModeBadge } from "@/components/AutoPayModeBadge";
+import { Wallet, DollarSign, TrendingUp, Clock, ArrowDownLeft, ArrowUpRight, ChevronRight, CheckCircle2, AlertCircle, Zap } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
@@ -63,6 +64,19 @@ export default function Dashboard() {
           <StatCard label="Total ROI Earned" value={formatINR(totalRoi)} icon={TrendingUp} />
           <StatCard label="Pending Payout" value={formatINR(pendingPayout)} icon={Clock} />
           <StatCard label="Active Packages" value={String(activePackages)} icon={DollarSign} />
+        </div>
+
+        <div className="rounded-2xl border border-border bg-card p-4">
+          <div className="flex items-center gap-2 mb-1">
+            <Zap className="h-4 w-4 text-accent" />
+            <span className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium">Auto Pay Mode</span>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 mt-1">
+            <AutoPayModeBadge mode={user?.autoPayMode ?? "NONE"} className="text-xs" />
+          </div>
+          <p className="text-[11px] text-muted-foreground mt-2">
+            If enabled, ROI payouts will automatically generate payout requests.
+          </p>
         </div>
 
         <div className={`rounded-2xl p-4 flex items-center gap-3 ${payoutReady ? "bg-success/10 border border-success/20" : "bg-warning/10 border border-warning/20"}`}>

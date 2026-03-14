@@ -1,5 +1,6 @@
 import { UserLayout } from "@/components/UserLayout";
-import { User, Mail, Phone, ChevronRight, Lock, LogOut, Edit3 } from "lucide-react";
+import { AutoPayModeBadge } from "@/components/AutoPayModeBadge";
+import { User, Mail, Phone, ChevronRight, Lock, LogOut, Edit3, Zap } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { profile as profileApi } from "@/lib/api";
@@ -122,6 +123,28 @@ export default function Profile() {
               ))}
             </div>
           )}
+        </div>
+
+        <div className="bg-card rounded-2xl border border-border overflow-hidden animate-fade-in">
+          <div className="flex items-center justify-between px-4 pt-3 pb-2">
+            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Auto Pay</p>
+          </div>
+          <div className="p-4 pt-0 border-t border-border/50">
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 rounded-xl bg-muted flex items-center justify-center">
+                <Zap className="h-4 w-4 text-muted-foreground" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[10px] text-muted-foreground">Auto Pay Mode</p>
+                <div className="mt-1">
+                  <AutoPayModeBadge mode={user?.autoPayMode ?? "NONE"} />
+                </div>
+                <p className="text-[11px] text-muted-foreground mt-2">
+                  Auto Pay mode is configured by the administrator.
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div className="bg-card rounded-2xl border border-border overflow-hidden animate-fade-in">
