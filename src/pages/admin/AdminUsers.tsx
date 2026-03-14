@@ -104,12 +104,15 @@ export default function AdminUsers() {
                       <span className="text-xs font-medium bg-muted px-2 py-0.5 rounded">{u.autoPayMode}</span>
                     </div>
                   )}
-                  <div className="flex gap-2 mt-3 pt-3 border-t border-border">
+                  <div className="flex gap-2 mt-3 pt-3 border-t border-border flex-wrap">
                     <Button size="sm" variant="outline" className="flex-1 text-xs" onClick={() => openAssignModal(u.id, u.name)}>
                       <Plus className="h-3.5 w-3.5 mr-1" /> Assign
                     </Button>
                     <Button size="sm" variant="outline" className="flex-1 text-xs" onClick={() => navigate(`/admin/packages?userId=${u.id}`)}>
                       <Eye className="h-3.5 w-3.5 mr-1" /> Packages
+                    </Button>
+                    <Button size="sm" variant="outline" className="flex-1 text-xs" onClick={() => navigate(`/wallet/ledger?userId=${u.id}`)}>
+                      <BookOpen className="h-3.5 w-3.5 mr-1" /> Ledger
                     </Button>
                   </div>
                 </div>
