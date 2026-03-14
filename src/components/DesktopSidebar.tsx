@@ -3,10 +3,8 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   LayoutDashboard, Package, Wallet, CreditCard, User,
-  Users, Settings, FileText, TrendingUp, Shield, LogOut, ChevronUp
+  Users, Settings, FileText, TrendingUp, Shield, LogOut
 } from "lucide-react";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Button } from "@/components/ui/button";
 
 const userNav = [
   { to: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
