@@ -3,10 +3,8 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   LayoutDashboard, Package, Wallet, CreditCard, User,
-  Users, Settings, FileText, TrendingUp, Shield, LogOut, ChevronUp
+  Users, Settings, FileText, TrendingUp, Shield, LogOut
 } from "lucide-react";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Button } from "@/components/ui/button";
 
 const userNav = [
   { to: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
@@ -94,31 +92,25 @@ export function DesktopSidebar({ role }: DesktopSidebarProps) {
           </RouterNavLink>
         )}
 
-        {/* Profile Dropdown */}
-        <Popover>
-          <PopoverTrigger asChild>
-            <button className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-sidebar-foreground hover:bg-sidebar-accent/50 transition-colors">
-              <div className="h-8 w-8 rounded-full bg-accent/20 flex items-center justify-center">
-                <User className="h-4 w-4 text-accent" />
-              </div>
-              <div className="flex-1 text-left min-w-0">
-                <p className="text-xs font-semibold text-primary-foreground truncate">{user?.fullName}</p>
-                <p className="text-[10px] text-sidebar-foreground/60 truncate">{user?.email || user?.phone}</p>
-              </div>
-              <ChevronUp className="h-3 w-3 text-sidebar-foreground/50" />
-            </button>
-          </PopoverTrigger>
-          <PopoverContent side="top" align="start" className="w-56 p-2">
-            <Button
-              variant="ghost"
-              onClick={handleLogout}
-              className="w-full justify-start text-sm font-medium text-destructive hover:text-destructive hover:bg-destructive/10"
-            >
-              <LogOut className="h-4 w-4" />
-              Sign Out
-            </Button>
-          </PopoverContent>
-        </Popover>
+        {/* Profile Info */}
+        <div className="flex items-center gap-2 px-3 py-2">
+          <div className="h-8 w-8 rounded-full bg-accent/20 flex items-center justify-center">
+            <User className="h-4 w-4 text-accent" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-semibold text-primary-foreground truncate">{user?.fullName}</p>
+            <p className="text-[10px] text-sidebar-foreground/60 truncate">{user?.email || user?.phone}</p>
+          </div>
+        </div>
+
+        {/* Sign Out Button */}
+        <button
+          onClick={handleLogout}
+          className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors w-full"
+        >
+          <LogOut className="h-4 w-4" />
+          Sign Out
+        </button>
       </div>
     </aside>
   );
