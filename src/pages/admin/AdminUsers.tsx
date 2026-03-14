@@ -150,6 +150,9 @@ export default function AdminUsers() {
                           <Button size="sm" variant="outline" className="text-xs" onClick={() => navigate(`/admin/packages?userId=${u.id}`)}>
                             <Eye className="h-3.5 w-3.5 mr-1" /> View Packages
                           </Button>
+                          <Button size="sm" variant="outline" className="text-xs" onClick={() => navigate(`/wallet/ledger?userId=${u.id}`)}>
+                            <BookOpen className="h-3.5 w-3.5 mr-1" /> View Ledger
+                          </Button>
                         </div>
                       </td>
                     </tr>

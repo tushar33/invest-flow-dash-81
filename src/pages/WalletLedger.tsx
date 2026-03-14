@@ -32,19 +32,23 @@ export default function WalletLedger() {
   const isAdmin = user?.role === "ADMIN";
   const [searchParams] = useSearchParams();
   const packageIdFilter = searchParams.get("packageId");
+  const userIdFromUrl = searchParams.get("userId");
 
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [fromDate, setFromDate] = useState<Date>();
   const [toDate, setToDate] = useState<Date>();
   const [userSearch, setUserSearch] = useState("");
-  const [selectedUserId, setSelectedUserId] = useState<string>();
+  const [selectedUserId, setSelectedUserId] = useState<string>(userIdFromUrl || "");
+
+  const resolvedUserId = userIdFromUrl || selectedUserId;
 
   const { data: walletData, isLoading } = useQuery({
-    queryKey: ["wallet", selectedUserId],
+    queryKey: ["wallet", resolvedUserId, packageIdFilter],
     queryFn: () => {
-      if (isAdmin && selectedUserId) return admin.userWallet(selectedUserId);
+      if (isAdmin && resolvedUserId) return admin.userWallet(resolvedUserId);
       return wallet.get();
     },
+    enabled: isAdmin ? !!resolvedUserId : true,
   });
 
   const filteredTransactions = walletData?.transactions.filter((txn) => {
