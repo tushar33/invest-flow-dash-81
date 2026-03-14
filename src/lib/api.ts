@@ -197,6 +197,7 @@ export interface AdminUser {
   role: string;
   totalPackages: number;
   currentBalance: number;
+  autoPayMode?: string;
 }
 
 export interface AdminPackage {
