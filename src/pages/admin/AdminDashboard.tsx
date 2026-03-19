@@ -1,6 +1,7 @@
 import { AdminLayout } from "@/components/AdminLayout";
 import { StatCard } from "@/components/StatCard";
 import { Users, DollarSign, TrendingUp, CreditCard, Package, Activity } from "lucide-react";
+import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { admin as adminApi } from "@/lib/api";
 
