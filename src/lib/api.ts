@@ -1,4 +1,15 @@
-const API_BASE = "https://web-wheat-nine-77.vercel.app/api";
+// Base URL for the backend API.
+// Priority:
+// 1) Explicit env override (VITE_API_BASE)
+// 2) Localhost dev -> local Nest backend
+// 3) Non-localhost (e.g., Vercel) -> Render backend
+const DEFAULT_LOCAL_API_BASE = "http://localhost:3000";
+const DEFAULT_PROD_API_BASE = "https://roi-backend-fiyp.onrender.com";
+const isLocalHost =
+  typeof window !== "undefined" &&
+  (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
+
+const API_BASE = import.meta.env.VITE_API_BASE ?? (isLocalHost ? DEFAULT_LOCAL_API_BASE : DEFAULT_PROD_API_BASE);
 
 function getToken(): string | null {
   return localStorage.getItem("auth_token");
@@ -92,7 +103,8 @@ export interface Package {
 }
 
 export const packages = {
-  list: () => request<Package[]>("/packages"),
+  list: () =>
+    request<PaginatedResponse<Package[]>>("/packages").then((res) => res.data),
   getById: (id: string) => request<Package>(`/packages/${id}`),
   maturity: (id: string) => request<any>(`/packages/${id}/maturity`),
   roiCycles: (id: string) => request<RoiCycle[]>(`/packages/${id}/roi-cycles`),
@@ -153,6 +165,13 @@ export interface PayoutRequest {
   package?: any;
 }
 
+interface PaginatedResponse<T> {
+  data: T;
+  page: number;
+  limit: number;
+  total: number;
+}
+
 export const payouts = {
   create: (data: { requestType: string; amount: number; packageId?: string }) =>
     request<PayoutRequest>("/payouts", { method: "POST", body: JSON.stringify(data) }),
@@ -161,7 +180,8 @@ export const payouts = {
     if (params?.type) qs.set("type", params.type);
     if (params?.sourceType) qs.set("sourceType", params.sourceType);
     const q = qs.toString();
-    return request<PayoutRequest[]>(`/payouts${q ? `?${q}` : ""}`);
+    // Backend returns: { data: PayoutRequest[], page, limit, total }
+    return request<PaginatedResponse<PayoutRequest[]>>(`/payouts${q ? `?${q}` : ""}`).then((res) => res.data);
   },
   getById: (id: string) => request<PayoutRequest>(`/payouts/${id}`),
 };
@@ -218,14 +238,23 @@ export interface AdminPackage {
 export const admin = {
   summary: () => request<AdminSummary>("/admin/summary"),
   financialSummary: () => request<AdminFinancialSummary>("/admin/financial-summary"),
-  users: () => request<AdminUser[]>("/admin/users"),
-  packages: () => request<AdminPackage[]>("/admin/packages"),
+  users: () =>
+    request<PaginatedResponse<AdminUser[]>>("/admin/users").then((res) => res.data),
+  packages: async () => {
+    // Backend returns an array directly for GET /admin/packages (not paginated).
+    // Some environments may still return { data: [...] }, so handle both.
+    const res = await request<AdminPackage[] | PaginatedResponse<AdminPackage[]>>("/admin/packages");
+    return Array.isArray(res) ? res : res.data;
+  },
   payoutsAll: (params?: { status?: string; type?: string }) => {
     const qs = new URLSearchParams();
     if (params?.status) qs.set("status", params.status);
     if (params?.type) qs.set("type", params.type);
     const q = qs.toString();
-    return request<PayoutRequest[]>(`/payouts/admin/all${q ? `?${q}` : ""}`);
+    // Backend returns: { data: PayoutRequest[], page, limit, total }
+    return request<PaginatedResponse<PayoutRequest[]>>(`/payouts/admin/all${q ? `?${q}` : ""}`).then(
+      (res) => res.data,
+    );
   },
   processPayout: (id: string, data: { status: string; rejectionReason?: string }) =>
     request<PayoutRequest>(`/payouts/${id}/process`, { method: "PATCH", body: JSON.stringify(data) }),
