@@ -21,12 +21,12 @@ export default function AdminDashboard() {
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-          <Link to="/admin/users"><StatCard label="Total Users" value={String(summary?.totalUsers ?? 0)} icon={Users} /></Link>
-          <Link to="/admin/packages"><StatCard label="Total Invested" value={formatINR(financial?.totalInvestment ?? 0)} icon={DollarSign} /></Link>
-          <Link to="/admin/roi-logs"><StatCard label="ROI Generated" value={formatINR(financial?.totalRoiGenerated ?? 0)} icon={TrendingUp} /></Link>
-          <Link to="/admin/payouts"><StatCard label="Pending Payouts" value={String(summary?.totalPendingPayouts ?? 0)} icon={CreditCard} /></Link>
-          <Link to="/admin/packages"><StatCard label="Active Packages" value={String(summary?.totalActivePackages ?? 0)} icon={Package} /></Link>
-          <Link to="/admin/settings"><StatCard label="Current Liability" value={formatINR(financial?.currentLiability ?? 0)} icon={Activity} /></Link>
+          <Link to="/admin/users" className="animate-fade-in" style={{ animationDelay: "0ms" }}><StatCard label="Total Users" value={String(summary?.totalUsers ?? 0)} icon={Users} /></Link>
+          <Link to="/admin/packages" className="animate-fade-in" style={{ animationDelay: "60ms", animationFillMode: "both" }}><StatCard label="Total Invested" value={formatINR(financial?.totalInvestment ?? 0)} icon={DollarSign} /></Link>
+          <Link to="/admin/roi-logs" className="animate-fade-in" style={{ animationDelay: "120ms", animationFillMode: "both" }}><StatCard label="ROI Generated" value={formatINR(financial?.totalRoiGenerated ?? 0)} icon={TrendingUp} /></Link>
+          <Link to="/admin/payouts" className="animate-fade-in" style={{ animationDelay: "180ms", animationFillMode: "both" }}><StatCard label="Pending Payouts" value={String(summary?.totalPendingPayouts ?? 0)} icon={CreditCard} /></Link>
+          <Link to="/admin/packages" className="animate-fade-in" style={{ animationDelay: "240ms", animationFillMode: "both" }}><StatCard label="Active Packages" value={String(summary?.totalActivePackages ?? 0)} icon={Package} /></Link>
+          <Link to="/admin/settings" className="animate-fade-in" style={{ animationDelay: "300ms", animationFillMode: "both" }}><StatCard label="Current Liability" value={formatINR(financial?.currentLiability ?? 0)} icon={Activity} /></Link>
         </div>
 
         <div className="bg-card rounded-xl border border-border p-4">
