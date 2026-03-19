@@ -1,6 +1,7 @@
 import { AdminLayout } from "@/components/AdminLayout";
 import { StatCard } from "@/components/StatCard";
 import { Users, DollarSign, TrendingUp, CreditCard, Package, Activity } from "lucide-react";
+import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { admin as adminApi } from "@/lib/api";
 
@@ -20,12 +21,12 @@ export default function AdminDashboard() {
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-          <StatCard label="Total Users" value={String(summary?.totalUsers ?? 0)} icon={Users} />
-          <StatCard label="Total Invested" value={formatINR(financial?.totalInvestment ?? 0)} icon={DollarSign} />
-          <StatCard label="ROI Generated" value={formatINR(financial?.totalRoiGenerated ?? 0)} icon={TrendingUp} />
-          <StatCard label="Pending Payouts" value={String(summary?.totalPendingPayouts ?? 0)} icon={CreditCard} />
-          <StatCard label="Active Packages" value={String(summary?.totalActivePackages ?? 0)} icon={Package} />
-          <StatCard label="Current Liability" value={formatINR(financial?.currentLiability ?? 0)} icon={Activity} />
+          <Link to="/admin/users"><StatCard label="Total Users" value={String(summary?.totalUsers ?? 0)} icon={Users} /></Link>
+          <Link to="/admin/packages"><StatCard label="Total Invested" value={formatINR(financial?.totalInvestment ?? 0)} icon={DollarSign} /></Link>
+          <Link to="/admin/roi-logs"><StatCard label="ROI Generated" value={formatINR(financial?.totalRoiGenerated ?? 0)} icon={TrendingUp} /></Link>
+          <Link to="/admin/payouts"><StatCard label="Pending Payouts" value={String(summary?.totalPendingPayouts ?? 0)} icon={CreditCard} /></Link>
+          <Link to="/admin/packages"><StatCard label="Active Packages" value={String(summary?.totalActivePackages ?? 0)} icon={Package} /></Link>
+          <Link to="/admin/settings"><StatCard label="Current Liability" value={formatINR(financial?.currentLiability ?? 0)} icon={Activity} /></Link>
         </div>
 
         <div className="bg-card rounded-xl border border-border p-4">
