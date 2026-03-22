@@ -41,7 +41,7 @@ export function DesktopSidebar({ role }: DesktopSidebarProps) {
   };
 
   return (
-    <aside className="hidden md:flex md:w-60 flex-col fintech-gradient min-h-screen sticky top-0">
+    <aside className="hidden md:flex md:w-60 flex-col fintech-gradient h-screen sticky top-0 overflow-y-auto">
       <div className="p-6">
         <h1 className="text-lg font-bold text-primary-foreground tracking-tight flex items-center gap-2">
           <Shield className="h-5 w-5 text-accent" />
