@@ -114,17 +114,25 @@ export const packages = {
 export interface WalletTransaction {
   id: string;
   userId: string;
-  type: "ROI_CREDIT" | "PAYOUT_DEBIT" | "PRINCIPAL_DEBIT";
+  /** Legacy: ROI_CREDIT; backend may return ROI / PRINCIPAL / PAYOUT_DEBIT etc. */
+  type: "ROI_CREDIT" | "PAYOUT_DEBIT" | "PRINCIPAL_DEBIT" | "ROI" | "PRINCIPAL" | string;
   amount: string;
   direction: "CREDIT" | "DEBIT";
   referenceId: string | null;
   description: string | null;
   createdAt: string;
+  autoPayoutRequestCreated?: boolean;
+  roiCycleNumber?: number | null;
 }
 
 export interface WalletData {
   availableBalance: number;
+  /** Server aggregate of ROI credited (preferred over summing transactions). */
+  totalRoiCredited?: number;
   transactions: WalletTransaction[];
+  total?: number;
+  page?: number;
+  limit?: number;
 }
 
 export const wallet = {

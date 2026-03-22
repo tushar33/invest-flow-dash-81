@@ -51,8 +51,17 @@ export default function WalletLedger() {
     enabled: isAdmin ? !!resolvedUserId : true,
   });
 
+  const matchesTypeFilter = (txnType: string, filter: string) => {
+    if (filter === "all") return true;
+    if (filter === "ROI_CREDIT")
+      return txnType === "ROI_CREDIT" || txnType === "ROI";
+    if (filter === "PRINCIPAL_DEBIT")
+      return txnType === "PRINCIPAL_DEBIT" || txnType === "PRINCIPAL";
+    return txnType === filter;
+  };
+
   const filteredTransactions = walletData?.transactions.filter((txn) => {
-    if (typeFilter !== "all" && txn.type !== typeFilter) return false;
+    if (typeFilter !== "all" && !matchesTypeFilter(txn.type, typeFilter)) return false;
     if (fromDate && new Date(txn.createdAt) < fromDate) return false;
     if (toDate && new Date(txn.createdAt) > toDate) return false;
     if (packageIdFilter && txn.referenceId !== packageIdFilter) return false;
@@ -81,10 +90,16 @@ export default function WalletLedger() {
 
   const formatTransactionType = (type: string) => {
     switch (type) {
-      case "ROI_CREDIT": return "ROI Credit";
-      case "PAYOUT_DEBIT": return "Payout Debit";
-      case "PRINCIPAL_DEBIT": return "Principal Debit";
-      default: return type;
+      case "ROI_CREDIT":
+      case "ROI":
+        return "ROI Credit";
+      case "PAYOUT_DEBIT":
+        return "Payout Debit";
+      case "PRINCIPAL_DEBIT":
+      case "PRINCIPAL":
+        return "Principal Debit";
+      default:
+        return type.replace(/_/g, " ");
     }
   };
 
@@ -146,8 +161,10 @@ export default function WalletLedger() {
                   <SelectContent>
                     <SelectItem value="all">All Types</SelectItem>
                     <SelectItem value="ROI_CREDIT">ROI Credit</SelectItem>
+                    <SelectItem value="ROI">ROI (ledger)</SelectItem>
                     <SelectItem value="PAYOUT_DEBIT">Payout Debit</SelectItem>
                     <SelectItem value="PRINCIPAL_DEBIT">Principal Debit</SelectItem>
+                    <SelectItem value="PRINCIPAL">Principal (ledger)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

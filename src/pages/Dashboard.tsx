@@ -20,9 +20,17 @@ export default function Dashboard() {
 
   const walletBalance = walletData?.availableBalance ?? 0;
   const totalInvestment = pkgs?.reduce((s, p) => s + Number(p.principalAmount), 0) ?? 0;
-  const totalRoi = walletData?.transactions
-    ?.filter(t => t.type === "ROI_CREDIT")
-    .reduce((s, t) => s + Number(t.amount), 0) ?? 0;
+  // Prefer API aggregate; backend uses type "ROI" (not always "ROI_CREDIT") for credits.
+  const totalRoi =
+    walletData != null && typeof walletData.totalRoiCredited === "number"
+      ? walletData.totalRoiCredited
+      : (walletData?.transactions
+          ?.filter(
+            (t) =>
+              t.direction === "CREDIT" &&
+              (t.type === "ROI_CREDIT" || t.type === "ROI"),
+          )
+          .reduce((s, t) => s + Number(t.amount), 0) ?? 0);
   const pendingPayout = payoutsList?.filter(p => p.status === "PENDING")
     .reduce((s, p) => s + Number(p.amount), 0) ?? 0;
   const activePackages = pkgs?.filter(p => p.status === "ACTIVE").length ?? 0;
