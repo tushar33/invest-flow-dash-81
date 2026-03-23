@@ -1,16 +1,15 @@
 import { useState, type FormEvent } from "react";
 import { AdminLayout } from "@/components/AdminLayout";
 import { StatusBadge } from "@/components/StatusBadge";
+import { FilterBar, type FilterField } from "@/components/FilterBar";
+import { useUrlFilters } from "@/hooks/useUrlFilters";
 import { Package, BookOpen, Calendar } from "lucide-react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { admin as adminApi, type AdminPackage } from "@/lib/api";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogFooter,
+  Dialog, DialogContent, DialogHeader, DialogFooter,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,12 +17,7 @@ import { Label } from "@/components/ui/label";
 function formatINR(n: number) { return "₹" + n.toLocaleString("en-IN"); }
 
 /* ── Edit Assignment Date Modal ───────────────────────────────────────── */
-
-interface EditDateModalProps {
-  pkg: AdminPackage;
-  onClose: () => void;
-  onSuccess: () => void;
-}
+interface EditDateModalProps { pkg: AdminPackage; onClose: () => void; onSuccess: () => void; }
 
 function EditDateModal({ pkg, onClose, onSuccess }: EditDateModalProps) {
   const currentDate = pkg.assignedDate.slice(0, 10);
@@ -33,27 +27,15 @@ function EditDateModal({ pkg, onClose, onSuccess }: EditDateModalProps) {
   const mutation = useMutation({
     mutationFn: (assignedDate: string) =>
       adminApi.updateAssignmentDate(pkg.packageId, { assignedDate: new Date(assignedDate).toISOString() }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-packages"] });
-      onSuccess();
-      onClose();
-    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["admin-packages"] }); onSuccess(); onClose(); },
     onError: (err: Error) => setError(err.message),
   });
-
-  function handleSubmit(e: FormEvent) {
-    e.preventDefault();
-    setError("");
-    if (date === currentDate) return;
-    mutation.mutate(date);
-  }
+  function handleSubmit(e: FormEvent) { e.preventDefault(); setError(""); if (date === currentDate) return; mutation.mutate(date); }
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <h3 className="text-lg font-semibold">Edit Assignment Date</h3>
-        </DialogHeader>
+        <DialogHeader><h3 className="text-lg font-semibold">Edit Assignment Date</h3></DialogHeader>
         <div className="space-y-4 py-2">
           <div className="space-y-1 text-sm text-muted-foreground">
             <p><span className="font-medium text-foreground">User:</span> {pkg.userName}</p>
@@ -64,25 +46,12 @@ function EditDateModal({ pkg, onClose, onSuccess }: EditDateModalProps) {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="assignedDate">New Assignment Date</Label>
-              <Input
-                id="assignedDate"
-                type="date"
-                required
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-              />
-              <p className="text-xs text-muted-foreground">
-                Only allowed when no ROI cycles have been processed.
-              </p>
+              <Input id="assignedDate" type="date" required value={date} onChange={(e) => setDate(e.target.value)} />
+              <p className="text-xs text-muted-foreground">Only allowed when no ROI cycles have been processed.</p>
             </div>
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={onClose}>
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={mutation.isPending || date === currentDate}
-              >
+              <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
+              <Button type="submit" disabled={mutation.isPending || date === currentDate}>
                 {mutation.isPending ? "Updating…" : "Update Date"}
               </Button>
             </DialogFooter>
@@ -93,17 +62,48 @@ function EditDateModal({ pkg, onClose, onSuccess }: EditDateModalProps) {
   );
 }
 
+/* ── Filters ─────────────────────────────────────────────────────────── */
+const filterDefaults = { userId: "", status: "", roiPercentage: "", from: "", to: "" };
+
+const filterFields: FilterField[] = [
+  { key: "userId", label: "User Search", type: "search", placeholder: "User ID..." },
+  {
+    key: "status", label: "Status", type: "select", placeholder: "All",
+    options: [{ label: "Active", value: "ACTIVE" }, { label: "Completed", value: "MATURED" }, { label: "Closed", value: "CLOSED" }],
+  },
+  {
+    key: "roiPercentage", label: "ROI %", type: "select", placeholder: "All",
+    options: [{ label: "5%", value: "5" }, { label: "7%", value: "7" }, { label: "10%", value: "10" }],
+  },
+  { key: "from", label: "From Date", type: "date", placeholder: "Start date" },
+  { key: "to", label: "To Date", type: "date", placeholder: "End date" },
+];
+
 export default function AdminPackages() {
-  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const userIdFilter = searchParams.get("userId");
+  const { filters, setFilters, resetFilters, hasActiveFilters } = useUrlFilters(filterDefaults);
   const [editTarget, setEditTarget] = useState<AdminPackage | null>(null);
 
-  const { data: pkgs, isLoading } = useQuery({ queryKey: ["admin-packages"], queryFn: adminApi.packages });
+  const { data: pkgs, isLoading } = useQuery({
+    queryKey: ["admin-packages", filters],
+    queryFn: () => adminApi.packages({
+      userId: filters.userId || undefined,
+      status: filters.status || undefined,
+      roiPercentage: filters.roiPercentage || undefined,
+      from: filters.from || undefined,
+      to: filters.to || undefined,
+    }),
+  });
 
-  const filtered = userIdFilter
-    ? (pkgs ?? []).filter(p => p.userId === userIdFilter)
-    : (pkgs ?? []);
+  // Client-side fallback filtering
+  const filtered = (pkgs ?? []).filter(p => {
+    if (filters.userId && p.userId !== filters.userId && !p.userName.toLowerCase().includes(filters.userId.toLowerCase())) return false;
+    if (filters.status && p.status !== filters.status) return false;
+    if (filters.roiPercentage && String(p.roiPercentage) !== filters.roiPercentage) return false;
+    if (filters.from && p.assignedDate < filters.from) return false;
+    if (filters.to && p.assignedDate > filters.to) return false;
+    return true;
+  });
 
   const statusMap: Record<string, "active" | "completed" | "inactive"> = {
     ACTIVE: "active", MATURED: "completed", CLOSED: "inactive",
@@ -116,15 +116,23 @@ export default function AdminPackages() {
           <div>
             <h1 className="text-2xl font-bold">Packages</h1>
             <p className="text-sm text-muted-foreground mt-1">
-              {userIdFilter ? `Showing packages for user ${userIdFilter}` : "All assigned packages"}
+              {filters.userId ? `Filtered by user` : "All assigned packages"}
             </p>
           </div>
-          {userIdFilter && (
-            <Button variant="outline" size="sm" onClick={() => navigate("/admin/packages")}>
+          {filters.userId && (
+            <Button variant="outline" size="sm" onClick={() => setFilters({ userId: "" })}>
               Show All
             </Button>
           )}
         </div>
+
+        <FilterBar
+          fields={filterFields}
+          values={filters}
+          onChange={(k, v) => setFilters({ [k]: v })}
+          onReset={resetFilters}
+          hasActive={hasActiveFilters}
+        />
 
         {isLoading ? (
           <div className="flex justify-center py-12">
@@ -155,18 +163,10 @@ export default function AdminPackages() {
                   <span>Assigned: {new Date(pkg.assignedDate).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" })}</span>
                 </div>
                 <div className="mt-3 pt-3 border-t border-border flex flex-wrap gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="text-xs"
-                    onClick={() => navigate(`/wallet/ledger?userId=${pkg.userId}`)}
-                  >
+                  <Button size="sm" variant="outline" className="text-xs" onClick={() => navigate(`/wallet/ledger?userId=${pkg.userId}`)}>
                     <BookOpen className="h-3.5 w-3.5 mr-1" /> View Ledger
                   </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="text-xs"
+                  <Button size="sm" variant="outline" className="text-xs"
                     disabled={pkg.cyclesCompleted > 0}
                     title={pkg.cyclesCompleted > 0 ? "Cannot edit after ROI cycles are processed" : "Edit assignment date"}
                     onClick={() => setEditTarget(pkg)}
@@ -179,11 +179,7 @@ export default function AdminPackages() {
           </div>
         )}
         {editTarget && (
-          <EditDateModal
-            pkg={editTarget}
-            onClose={() => setEditTarget(null)}
-            onSuccess={() => setEditTarget(null)}
-          />
+          <EditDateModal pkg={editTarget} onClose={() => setEditTarget(null)} onSuccess={() => setEditTarget(null)} />
         )}
       </div>
     </AdminLayout>

@@ -13,8 +13,8 @@ function formatINR(n: number): string {
 
 export default function Dashboard() {
   const { user } = useAuth();
-  const { data: walletData } = useQuery({ queryKey: ["wallet"], queryFn: walletApi.get });
-  const { data: pkgs } = useQuery({ queryKey: ["packages"], queryFn: packagesApi.list });
+  const { data: walletData } = useQuery({ queryKey: ["wallet"], queryFn: () => walletApi.get() });
+  const { data: pkgs } = useQuery({ queryKey: ["packages"], queryFn: () => packagesApi.list() });
   const { data: payoutsList } = useQuery({ queryKey: ["payouts"], queryFn: () => payoutsApi.list() });
   const { data: bank } = useQuery({ queryKey: ["bank-details"], queryFn: bankApi.get });
 

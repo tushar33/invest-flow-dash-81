@@ -1,17 +1,54 @@
 import { UserLayout } from "@/components/UserLayout";
+import { FilterBar, type FilterField } from "@/components/FilterBar";
+import { useUrlFilters } from "@/hooks/useUrlFilters";
 import { ArrowUpRight, ArrowDownLeft, Wallet as WalletIcon, Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { wallet as walletApi } from "@/lib/api";
 
+const filterDefaults = { type: "", from: "", to: "" };
+
+const filterFields: FilterField[] = [
+  {
+    key: "type", label: "Type", type: "select", placeholder: "All",
+    options: [
+      { label: "ROI Credit", value: "ROI" },
+      { label: "Payout Debit", value: "PAYOUT_DEBIT" },
+    ],
+  },
+  { key: "from", label: "From Date", type: "date", placeholder: "Start date" },
+  { key: "to", label: "To Date", type: "date", placeholder: "End date" },
+];
+
 export default function WalletPage() {
   const [showBalance, setShowBalance] = useState(true);
-  const { data: walletData, isLoading } = useQuery({ queryKey: ["wallet"], queryFn: walletApi.get });
+  const { filters, setFilters, resetFilters, hasActiveFilters } = useUrlFilters(filterDefaults);
+
+  const { data: walletData, isLoading } = useQuery({
+    queryKey: ["wallet", filters],
+    queryFn: () => walletApi.get({
+      type: filters.type || undefined,
+      from: filters.from || undefined,
+      to: filters.to || undefined,
+    }),
+  });
 
   const balance = walletData?.availableBalance ?? 0;
   const transactions = walletData?.transactions ?? [];
-  const totalCredited = transactions.filter(t => t.direction === "CREDIT").reduce((s, t) => s + Number(t.amount), 0);
-  const totalDebited = transactions.filter(t => t.direction === "DEBIT").reduce((s, t) => s + Number(t.amount), 0);
+
+  // Client-side fallback filter
+  const filtered = transactions.filter(t => {
+    if (filters.type) {
+      if (filters.type === "ROI" && t.type !== "ROI_CREDIT" && t.type !== "ROI") return false;
+      if (filters.type === "PAYOUT_DEBIT" && t.type !== "PAYOUT_DEBIT") return false;
+    }
+    if (filters.from && new Date(t.createdAt) < new Date(filters.from)) return false;
+    if (filters.to && new Date(t.createdAt) > new Date(filters.to)) return false;
+    return true;
+  });
+
+  const totalCredited = filtered.filter(t => t.direction === "CREDIT").reduce((s, t) => s + Number(t.amount), 0);
+  const totalDebited = filtered.filter(t => t.direction === "DEBIT").reduce((s, t) => s + Number(t.amount), 0);
 
   return (
     <UserLayout>
@@ -48,6 +85,14 @@ export default function WalletPage() {
           </div>
         </div>
 
+        <FilterBar
+          fields={filterFields}
+          values={filters}
+          onChange={(k, v) => setFilters({ [k]: v })}
+          onReset={resetFilters}
+          hasActive={hasActiveFilters}
+        />
+
         <div>
           <h2 className="text-sm font-bold mb-3">Ledger</h2>
           {isLoading ? (
@@ -56,12 +101,12 @@ export default function WalletPage() {
             </div>
           ) : (
             <div className="bg-card rounded-2xl border border-border overflow-hidden">
-              {transactions.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-8">No transactions yet</p>
-              ) : transactions.map((tx, i) => {
+              {filtered.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-8">No transactions found</p>
+              ) : filtered.map((tx, i) => {
                 const isCredit = tx.direction === "CREDIT";
                 return (
-                  <div key={tx.id} className={`flex items-center justify-between p-3.5 ${i < transactions.length - 1 ? "border-b border-border/50" : ""}`}>
+                  <div key={tx.id} className={`flex items-center justify-between p-3.5 ${i < filtered.length - 1 ? "border-b border-border/50" : ""}`}>
                     <div className="flex items-center gap-3">
                       <div className={`h-9 w-9 rounded-xl flex items-center justify-center ${isCredit ? "bg-success/10" : "bg-muted"}`}>
                         {isCredit ? <ArrowDownLeft className="h-4 w-4 text-success" /> : <ArrowUpRight className="h-4 w-4 text-muted-foreground" />}
