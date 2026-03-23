@@ -1,8 +1,4 @@
 // Base URL for the backend API.
-// Priority:
-// 1) Explicit env override (VITE_API_BASE)
-// 2) Localhost dev -> local Nest backend
-// 3) Non-localhost (e.g., Vercel) -> Render backend
 const DEFAULT_LOCAL_API_BASE = "http://localhost:3000";
 const DEFAULT_PROD_API_BASE = "https://roi-backend-fiyp.onrender.com";
 const isLocalHost =
@@ -21,6 +17,17 @@ export function setToken(token: string) {
 
 export function clearToken() {
   localStorage.removeItem("auth_token");
+}
+
+/** Build query string from params object, skipping undefined/null/empty values */
+function buildQs(params?: Record<string, string | number | undefined | null>): string {
+  if (!params) return "";
+  const qs = new URLSearchParams();
+  Object.entries(params).forEach(([k, v]) => {
+    if (v !== undefined && v !== null && v !== "") qs.set(k, String(v));
+  });
+  const s = qs.toString();
+  return s ? `?${s}` : "";
 }
 
 async function request<T>(
@@ -102,9 +109,17 @@ export interface Package {
   user?: { id: string; fullName: string; email: string | null; phone: string | null };
 }
 
+export interface PackageFilters {
+  status?: string;
+  roiPercentage?: string;
+  userId?: string;
+  page?: number;
+  limit?: number;
+}
+
 export const packages = {
-  list: () =>
-    request<PaginatedResponse<Package[]>>("/packages").then((res) => res.data),
+  list: (filters?: PackageFilters) =>
+    request<PaginatedResponse<Package[]>>(`/packages${buildQs(filters as any)}`).then((res) => res.data),
   getById: (id: string) => request<Package>(`/packages/${id}`),
   maturity: (id: string) => request<any>(`/packages/${id}/maturity`),
   roiCycles: (id: string) => request<RoiCycle[]>(`/packages/${id}/roi-cycles`),
@@ -114,7 +129,6 @@ export const packages = {
 export interface WalletTransaction {
   id: string;
   userId: string;
-  /** Legacy: ROI_CREDIT; backend may return ROI / PRINCIPAL / PAYOUT_DEBIT etc. */
   type: "ROI_CREDIT" | "PAYOUT_DEBIT" | "PRINCIPAL_DEBIT" | "ROI" | "PRINCIPAL" | string;
   amount: string;
   direction: "CREDIT" | "DEBIT";
@@ -127,7 +141,6 @@ export interface WalletTransaction {
 
 export interface WalletData {
   availableBalance: number;
-  /** Server aggregate of ROI credited (preferred over summing transactions). */
   totalRoiCredited?: number;
   transactions: WalletTransaction[];
   total?: number;
@@ -135,8 +148,17 @@ export interface WalletData {
   limit?: number;
 }
 
+export interface WalletFilters {
+  type?: string;
+  from?: string;
+  to?: string;
+  packageId?: string;
+  page?: number;
+  limit?: number;
+}
+
 export const wallet = {
-  get: () => request<WalletData>("/user/wallet"),
+  get: (filters?: WalletFilters) => request<WalletData>(`/user/wallet${buildQs(filters as any)}`),
 };
 
 // ── Bank Details ──
@@ -180,16 +202,21 @@ interface PaginatedResponse<T> {
   total: number;
 }
 
+export interface PayoutFilters {
+  status?: string;
+  type?: string;
+  sourceType?: string;
+  from?: string;
+  to?: string;
+  page?: number;
+  limit?: number;
+}
+
 export const payouts = {
   create: (data: { requestType: string; amount: number; packageId?: string }) =>
     request<PayoutRequest>("/payouts", { method: "POST", body: JSON.stringify(data) }),
-  list: (params?: { type?: string; sourceType?: string }) => {
-    const qs = new URLSearchParams();
-    if (params?.type) qs.set("type", params.type);
-    if (params?.sourceType) qs.set("sourceType", params.sourceType);
-    const q = qs.toString();
-    // Backend returns: { data: PayoutRequest[], page, limit, total }
-    return request<PaginatedResponse<PayoutRequest[]>>(`/payouts${q ? `?${q}` : ""}`).then((res) => res.data);
+  list: (params?: PayoutFilters) => {
+    return request<PaginatedResponse<PayoutRequest[]>>(`/payouts${buildQs(params as any)}`).then((res) => res.data);
   },
   getById: (id: string) => request<PayoutRequest>(`/payouts/${id}`),
 };
@@ -228,6 +255,14 @@ export interface AdminUser {
   autoPayMode?: string;
 }
 
+export interface AdminUserFilters {
+  search?: string;
+  role?: string;
+  autoPayMode?: string;
+  page?: number;
+  limit?: number;
+}
+
 export interface AdminPackage {
   packageId: string;
   userName: string;
@@ -243,26 +278,60 @@ export interface AdminPackage {
   status: string;
 }
 
+export interface AdminPackageFilters {
+  userId?: string;
+  status?: string;
+  roiPercentage?: string;
+  from?: string;
+  to?: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface AdminPayoutFilters {
+  status?: string;
+  type?: string;
+  sourceType?: string;
+  search?: string;
+  from?: string;
+  to?: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface AdminRoiLogFilters {
+  runType?: string;
+  status?: string;
+  from?: string;
+  to?: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface AdminWalletFilters {
+  type?: string;
+  from?: string;
+  to?: string;
+  page?: number;
+  limit?: number;
+}
+
 export const admin = {
   summary: () => request<AdminSummary>("/admin/summary"),
   financialSummary: () => request<AdminFinancialSummary>("/admin/financial-summary"),
-  users: () =>
-    request<PaginatedResponse<AdminUser[]>>("/admin/users").then((res) => res.data),
-  packages: async () => {
-    // Backend returns an array directly for GET /admin/packages (not paginated).
-    // Some environments may still return { data: [...] }, so handle both.
-    const res = await request<AdminPackage[] | PaginatedResponse<AdminPackage[]>>("/admin/packages");
+  users: (filters?: AdminUserFilters) =>
+    request<PaginatedResponse<AdminUser[]>>(`/admin/users${buildQs(filters as any)}`).then((res) => res.data),
+  packages: async (filters?: AdminPackageFilters) => {
+    const res = await request<AdminPackage[] | PaginatedResponse<AdminPackage[]>>(`/admin/packages${buildQs(filters as any)}`);
     return Array.isArray(res) ? res : res.data;
   },
-  payoutsAll: (params?: { status?: string; type?: string }) => {
-    const qs = new URLSearchParams();
-    if (params?.status) qs.set("status", params.status);
-    if (params?.type) qs.set("type", params.type);
-    const q = qs.toString();
-    // Backend returns: { data: PayoutRequest[], page, limit, total }
-    return request<PaginatedResponse<PayoutRequest[]>>(`/payouts/admin/all${q ? `?${q}` : ""}`).then(
+  payoutsAll: (params?: AdminPayoutFilters) => {
+    return request<PaginatedResponse<PayoutRequest[]>>(`/payouts/admin/all${buildQs(params as any)}`).then(
       (res) => res.data,
     );
+  },
+  roiLogs: (filters?: AdminRoiLogFilters) => {
+    return request<any>(`/admin/roi-logs${buildQs(filters as any)}`);
   },
   processPayout: (id: string, data: { status: string; rejectionReason?: string }) =>
     request<PayoutRequest>(`/payouts/${id}/process`, { method: "PATCH", body: JSON.stringify(data) }),
@@ -271,7 +340,8 @@ export const admin = {
   updatePackage: (id: string, data: { status: string }) =>
     request<Package>(`/packages/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
   triggerRoi: () => request<{ processed: number; message: string }>("/roi-engine/process", { method: "POST" }),
-  userWallet: (userId: string) => request<WalletData>(`/admin/users/${userId}/wallet`),
+  userWallet: (userId: string, filters?: AdminWalletFilters) =>
+    request<WalletData>(`/admin/users/${userId}/wallet${buildQs(filters as any)}`),
   configureAutopay: (userId: string, data: { autoPayMode: string }) =>
     request<AuthUser>(`/admin/users/${userId}/autopay`, { method: "PATCH", body: JSON.stringify(data) }),
   updateAssignmentDate: (id: string, data: { assignedDate: string }) =>
