@@ -3,103 +3,116 @@ import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 import { UserLayout } from "@/components/UserLayout";
 import { AdminLayout } from "@/components/AdminLayout";
+import { FilterBar, type FilterField } from "@/components/FilterBar";
 import { useAuth } from "@/contexts/AuthContext";
 import { wallet, admin } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  ArrowUpCircle,
-  ArrowDownCircle,
-  Filter,
-  Calendar as CalendarIcon,
-  Search,
-  Wallet,
-  TrendingUp,
-  TrendingDown,
-  DollarSign
+  ArrowUpCircle, ArrowDownCircle, Search, Wallet,
+  TrendingUp, TrendingDown, DollarSign
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 
+const filterFields: FilterField[] = [
+  {
+    key: "type", label: "Transaction Type", type: "select", placeholder: "All Types",
+    options: [
+      { label: "ROI Credit", value: "ROI" },
+      { label: "Payout Debit", value: "PAYOUT_DEBIT" },
+      { label: "Principal", value: "PRINCIPAL" },
+    ],
+  },
+  { key: "from", label: "From Date", type: "date", placeholder: "Start date" },
+  { key: "to", label: "To Date", type: "date", placeholder: "End date" },
+];
+
 export default function WalletLedger() {
   const { user } = useAuth();
   const isAdmin = user?.role === "ADMIN";
-  const [searchParams] = useSearchParams();
-  const packageIdFilter = searchParams.get("packageId");
-  const userIdFromUrl = searchParams.get("userId");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const packageIdFilter = searchParams.get("packageId") || "";
+  const userIdFromUrl = searchParams.get("userId") || "";
+  const typeFilter = searchParams.get("type") || "";
+  const fromFilter = searchParams.get("from") || "";
+  const toFilter = searchParams.get("to") || "";
 
-  const [typeFilter, setTypeFilter] = useState<string>("all");
-  const [fromDate, setFromDate] = useState<Date>();
-  const [toDate, setToDate] = useState<Date>();
   const [userSearch, setUserSearch] = useState("");
-  const [selectedUserId, setSelectedUserId] = useState<string>(userIdFromUrl || "");
+  const [selectedUserId, setSelectedUserId] = useState(userIdFromUrl);
 
   const resolvedUserId = userIdFromUrl || selectedUserId;
 
+  const filterValues = { type: typeFilter, from: fromFilter, to: toFilter };
+
+  const setFilter = (key: string, value: string) => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (!value) next.delete(key); else next.set(key, value);
+      return next;
+    }, { replace: true });
+  };
+
+  const resetFilters = () => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams();
+      // Keep userId/packageId
+      if (prev.get("userId")) next.set("userId", prev.get("userId")!);
+      if (prev.get("packageId")) next.set("packageId", prev.get("packageId")!);
+      return next;
+    }, { replace: true });
+  };
+
+  const hasActiveFilters = !!(typeFilter || fromFilter || toFilter);
+
   const { data: walletData, isLoading } = useQuery({
-    queryKey: ["wallet", resolvedUserId, packageIdFilter],
+    queryKey: ["wallet", resolvedUserId, packageIdFilter, typeFilter, fromFilter, toFilter],
     queryFn: () => {
-      if (isAdmin && resolvedUserId) return admin.userWallet(resolvedUserId);
-      return wallet.get();
+      const filterParams = {
+        type: typeFilter || undefined,
+        from: fromFilter || undefined,
+        to: toFilter || undefined,
+        packageId: packageIdFilter || undefined,
+      };
+      if (isAdmin && resolvedUserId) return admin.userWallet(resolvedUserId, filterParams);
+      return wallet.get(filterParams);
     },
     enabled: isAdmin ? !!resolvedUserId : true,
   });
 
   const matchesTypeFilter = (txnType: string, filter: string) => {
-    if (filter === "all") return true;
-    if (filter === "ROI_CREDIT")
-      return txnType === "ROI_CREDIT" || txnType === "ROI";
-    if (filter === "PRINCIPAL_DEBIT")
-      return txnType === "PRINCIPAL_DEBIT" || txnType === "PRINCIPAL";
+    if (!filter) return true;
+    if (filter === "ROI") return txnType === "ROI_CREDIT" || txnType === "ROI";
+    if (filter === "PRINCIPAL") return txnType === "PRINCIPAL_DEBIT" || txnType === "PRINCIPAL";
     return txnType === filter;
   };
 
   const filteredTransactions = walletData?.transactions.filter((txn) => {
-    if (typeFilter !== "all" && !matchesTypeFilter(txn.type, typeFilter)) return false;
-    if (fromDate && new Date(txn.createdAt) < fromDate) return false;
-    if (toDate && new Date(txn.createdAt) > toDate) return false;
+    if (typeFilter && !matchesTypeFilter(txn.type, typeFilter)) return false;
+    if (fromFilter && new Date(txn.createdAt) < new Date(fromFilter)) return false;
+    if (toFilter && new Date(txn.createdAt) > new Date(toFilter)) return false;
     if (packageIdFilter && txn.referenceId !== packageIdFilter) return false;
     return true;
   }) || [];
 
-  const totalCredits = filteredTransactions
-    .filter(txn => txn.direction === "CREDIT")
-    .reduce((sum, txn) => sum + parseFloat(txn.amount), 0);
+  const totalCredits = filteredTransactions.filter(txn => txn.direction === "CREDIT").reduce((sum, txn) => sum + parseFloat(txn.amount), 0);
+  const totalDebits = filteredTransactions.filter(txn => txn.direction === "DEBIT").reduce((sum, txn) => sum + parseFloat(txn.amount), 0);
 
-  const totalDebits = filteredTransactions
-    .filter(txn => txn.direction === "DEBIT")
-    .reduce((sum, txn) => sum + parseFloat(txn.amount), 0);
+  const getTransactionIcon = (_type: string, direction: string) =>
+    direction === "CREDIT" ? <ArrowUpCircle className="h-5 w-5 text-success" /> : <ArrowDownCircle className="h-5 w-5 text-destructive" />;
 
-  const getTransactionIcon = (_type: string, direction: string) => {
-    return direction === "CREDIT"
-      ? <ArrowUpCircle className="h-5 w-5 text-success" />
-      : <ArrowDownCircle className="h-5 w-5 text-destructive" />;
-  };
-
-  const getTransactionColor = (direction: string) =>
-    direction === "CREDIT" ? "text-success" : "text-destructive";
-
-  const getTransactionSign = (direction: string) =>
-    direction === "CREDIT" ? "+" : "-";
+  const getTransactionColor = (direction: string) => direction === "CREDIT" ? "text-success" : "text-destructive";
+  const getTransactionSign = (direction: string) => direction === "CREDIT" ? "+" : "-";
 
   const formatTransactionType = (type: string) => {
     switch (type) {
-      case "ROI_CREDIT":
-      case "ROI":
-        return "ROI Credit";
-      case "PAYOUT_DEBIT":
-        return "Payout Debit";
-      case "PRINCIPAL_DEBIT":
-      case "PRINCIPAL":
-        return "Principal Debit";
-      default:
-        return type.replace(/_/g, " ");
+      case "ROI_CREDIT": case "ROI": return "ROI Credit";
+      case "PAYOUT_DEBIT": return "Payout Debit";
+      case "PRINCIPAL_DEBIT": case "PRINCIPAL": return "Principal Debit";
+      default: return type.replace(/_/g, " ");
     }
   };
 
@@ -114,17 +127,13 @@ export default function WalletLedger() {
             <h1 className="text-2xl font-bold text-foreground">Wallet Ledger</h1>
           </div>
           <p className="text-muted-foreground text-sm">
-            {packageIdFilter
-              ? `Showing transactions for package ${packageIdFilter}`
-              : "Complete transaction history and wallet summary."}
+            {packageIdFilter ? `Transactions for package ${packageIdFilter}` : "Complete transaction history and wallet summary."}
           </p>
         </div>
 
         {isAdmin && !userIdFromUrl && (
           <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Select User</CardTitle>
-            </CardHeader>
+            <CardHeader className="pb-3"><CardTitle className="text-base">Select User</CardTitle></CardHeader>
             <CardContent>
               <div className="flex gap-2">
                 <div className="relative flex-1">
@@ -145,67 +154,13 @@ export default function WalletLedger() {
           </div>
         )}
 
-        <Card>
-          <CardHeader className="pb-3">
-            <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4 text-accent" />
-              <CardTitle className="text-base">Filters</CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="text-sm font-medium">Transaction Type</label>
-                <Select value={typeFilter} onValueChange={setTypeFilter}>
-                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Types</SelectItem>
-                    <SelectItem value="ROI_CREDIT">ROI Credit</SelectItem>
-                    <SelectItem value="ROI">ROI (ledger)</SelectItem>
-                    <SelectItem value="PAYOUT_DEBIT">Payout Debit</SelectItem>
-                    <SelectItem value="PRINCIPAL_DEBIT">Principal Debit</SelectItem>
-                    <SelectItem value="PRINCIPAL">Principal (ledger)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <label className="text-sm font-medium">From Date</label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" className="mt-1 w-full justify-start text-left font-normal">
-                      <CalendarIcon className="h-4 w-4" />
-                      {fromDate ? format(fromDate, "MMM d, yyyy") : "Select date"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar mode="single" selected={fromDate} onSelect={setFromDate} className={cn("p-3 pointer-events-auto")} />
-                  </PopoverContent>
-                </Popover>
-              </div>
-              <div>
-                <label className="text-sm font-medium">To Date</label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" className="mt-1 w-full justify-start text-left font-normal">
-                      <CalendarIcon className="h-4 w-4" />
-                      {toDate ? format(toDate, "MMM d, yyyy") : "Select date"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar mode="single" selected={toDate} onSelect={setToDate} className={cn("p-3 pointer-events-auto")} />
-                  </PopoverContent>
-                </Popover>
-              </div>
-            </div>
-            {(typeFilter !== "all" || fromDate || toDate || packageIdFilter) && (
-              <div className="flex gap-2 mt-3 pt-3 border-t">
-                <Button variant="outline" size="sm" onClick={() => { setTypeFilter("all"); setFromDate(undefined); setToDate(undefined); }}>
-                  Clear Filters
-                </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <FilterBar
+          fields={filterFields}
+          values={filterValues}
+          onChange={(k, v) => setFilter(k, v)}
+          onReset={resetFilters}
+          hasActive={hasActiveFilters}
+        />
 
         <Card>
           <CardHeader>

@@ -1,5 +1,7 @@
 import { AdminLayout } from "@/components/AdminLayout";
 import { AutoPayModeBadge } from "@/components/AutoPayModeBadge";
+import { FilterBar, type FilterField } from "@/components/FilterBar";
+import { useUrlFilters } from "@/hooks/useUrlFilters";
 import { Search, Package, Eye, Plus, BookOpen } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { admin as adminApi } from "@/lib/api";
@@ -18,15 +20,36 @@ type AutoPayModeValue = (typeof AUTO_PAY_MODES)[number];
 
 function formatINR(n: number) { return "₹" + n.toLocaleString("en-IN"); }
 
+const filterDefaults = { search: "", role: "", autoPayMode: "" };
+
+const filterFields: FilterField[] = [
+  { key: "search", label: "Search", type: "search", placeholder: "Name or email..." },
+  {
+    key: "role", label: "Role", type: "select", placeholder: "All Roles",
+    options: [{ label: "User", value: "USER" }, { label: "Admin", value: "ADMIN" }],
+  },
+  {
+    key: "autoPayMode", label: "Auto Pay Mode", type: "select", placeholder: "All Modes",
+    options: [{ label: "None", value: "NONE" }, { label: "Half", value: "HALF" }, { label: "Full", value: "FULL" }],
+  },
+];
+
 export default function AdminUsers() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { user: currentUser } = useAuth();
-  const { data: users, isLoading } = useQuery({ queryKey: ["admin-users"], queryFn: adminApi.users });
-  const [search, setSearch] = useState("");
-  const [autopayUpdatingUserId, setAutopayUpdatingUserId] = useState<string | null>(null);
+  const { filters, setFilters, resetFilters, hasActiveFilters } = useUrlFilters(filterDefaults);
 
-  // Assign package modal state
+  const { data: users, isLoading } = useQuery({
+    queryKey: ["admin-users", filters],
+    queryFn: () => adminApi.users({
+      search: filters.search || undefined,
+      role: filters.role || undefined,
+      autoPayMode: filters.autoPayMode || undefined,
+    }),
+  });
+
+  const [autopayUpdatingUserId, setAutopayUpdatingUserId] = useState<string | null>(null);
   const [assignOpen, setAssignOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState("");
   const [selectedUserName, setSelectedUserName] = useState("");
@@ -56,7 +79,7 @@ export default function AdminUsers() {
   const autopayMutation = useMutation({
     mutationFn: ({ userId, autoPayMode }: { userId: string; autoPayMode: AutoPayModeValue }) =>
       adminApi.configureAutopay(userId, { autoPayMode }),
-    onSuccess: (_, { userId }) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-users"] });
       setAutopayUpdatingUserId(null);
       toast({ title: "Auto Pay mode updated" });
@@ -80,10 +103,13 @@ export default function AdminUsers() {
     setAssignOpen(true);
   };
 
-  const filtered = (users ?? []).filter(u =>
-    u.name.toLowerCase().includes(search.toLowerCase()) ||
-    (u.email ?? "").toLowerCase().includes(search.toLowerCase())
-  );
+  // Client-side fallback filter for role/autoPayMode if backend doesn't support it
+  const filtered = (users ?? []).filter(u => {
+    if (filters.search && !u.name.toLowerCase().includes(filters.search.toLowerCase()) && !(u.email ?? "").toLowerCase().includes(filters.search.toLowerCase())) return false;
+    if (filters.role && u.role !== filters.role) return false;
+    if (filters.autoPayMode && (u.autoPayMode ?? "NONE") !== filters.autoPayMode) return false;
+    return true;
+  });
 
   return (
     <AdminLayout>
@@ -93,11 +119,13 @@ export default function AdminUsers() {
           <p className="text-sm text-muted-foreground mt-1">Manage platform users</p>
         </div>
 
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search users..."
-            className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-input bg-card text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
-        </div>
+        <FilterBar
+          fields={filterFields}
+          values={filters}
+          onChange={(k, v) => setFilters({ [k]: v })}
+          onReset={resetFilters}
+          hasActive={hasActiveFilters}
+        />
 
         {isLoading ? (
           <div className="flex justify-center py-12">
@@ -158,6 +186,9 @@ export default function AdminUsers() {
                   </div>
                 </div>
               ))}
+              {filtered.length === 0 && (
+                <p className="text-center text-muted-foreground py-12">No users found</p>
+              )}
             </div>
 
             {/* Desktop table */}
@@ -217,6 +248,9 @@ export default function AdminUsers() {
                       </td>
                     </tr>
                   ))}
+                  {filtered.length === 0 && (
+                    <tr><td colSpan={7} className="text-center text-muted-foreground py-12">No users found</td></tr>
+                  )}
                 </tbody>
               </table>
             </div>

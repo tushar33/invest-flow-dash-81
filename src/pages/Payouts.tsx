@@ -1,5 +1,7 @@
 import { UserLayout } from "@/components/UserLayout";
 import { StatusBadge } from "@/components/StatusBadge";
+import { FilterBar, type FilterField } from "@/components/FilterBar";
+import { useUrlFilters } from "@/hooks/useUrlFilters";
 import { CreditCard, Plus, X, Clock, Info } from "lucide-react";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -12,15 +14,38 @@ function isPayoutWindow(): boolean {
   return hours >= 9 && hours < 12;
 }
 
+const filterDefaults = { status: "", from: "", to: "" };
+
+const filterFields: FilterField[] = [
+  {
+    key: "status", label: "Status", type: "select", placeholder: "All",
+    options: [
+      { label: "Pending", value: "PENDING" },
+      { label: "Approved", value: "PROCESSED" },
+      { label: "Rejected", value: "REJECTED" },
+    ],
+  },
+  { key: "from", label: "From Date", type: "date", placeholder: "Start date" },
+  { key: "to", label: "To Date", type: "date", placeholder: "End date" },
+];
+
 export default function Payouts() {
   const [amount, setAmount] = useState("");
   const [showForm, setShowForm] = useState(false);
   const withinWindow = isPayoutWindow();
   const { toast } = useToast();
   const qc = useQueryClient();
+  const { filters, setFilters, resetFilters, hasActiveFilters } = useUrlFilters(filterDefaults);
 
-  const { data: payoutsList, isLoading } = useQuery({ queryKey: ["payouts"], queryFn: () => payoutsApi.list() });
-  const { data: walletData } = useQuery({ queryKey: ["wallet"], queryFn: walletApi.get });
+  const { data: payoutsList, isLoading } = useQuery({
+    queryKey: ["payouts", filters],
+    queryFn: () => payoutsApi.list({
+      status: filters.status || undefined,
+      from: filters.from || undefined,
+      to: filters.to || undefined,
+    }),
+  });
+  const { data: walletData } = useQuery({ queryKey: ["wallet"], queryFn: () => walletApi.get() });
   const { data: bank } = useQuery({ queryKey: ["bank-details"], queryFn: bankApi.get });
 
   const pendingAmount = payoutsList?.filter(p => p.status === "PENDING").reduce((s, p) => s + Number(p.amount), 0) ?? 0;
@@ -51,6 +76,14 @@ export default function Payouts() {
   const statusMap: Record<string, "pending" | "approved" | "rejected"> = {
     PENDING: "pending", PROCESSED: "approved", REJECTED: "rejected",
   };
+
+  // Client-side fallback
+  const filtered = (payoutsList ?? []).filter(p => {
+    if (filters.status && p.status !== filters.status) return false;
+    if (filters.from && p.requestedAt < filters.from) return false;
+    if (filters.to && p.requestedAt > filters.to) return false;
+    return true;
+  });
 
   return (
     <UserLayout>
@@ -140,33 +173,44 @@ export default function Payouts() {
 
         <div>
           <h2 className="text-sm font-bold mb-3">Payout History</h2>
-          {isLoading ? (
-            <div className="flex justify-center py-8">
-              <div className="h-8 w-8 border-2 border-accent border-t-transparent rounded-full animate-spin" />
-            </div>
-          ) : (
-            <div className="bg-card rounded-2xl border border-border overflow-hidden">
-              {!payoutsList?.length ? (
-                <p className="text-sm text-muted-foreground text-center py-8">No payout requests yet</p>
-              ) : payoutsList.map((p, i) => (
-                <div key={p.id} className={`flex items-center justify-between p-3.5 ${i < payoutsList.length - 1 ? "border-b border-border/50" : ""}`}>
-                  <div className="flex items-center gap-3">
-                    <div className="h-9 w-9 rounded-xl bg-muted flex items-center justify-center">
-                      <CreditCard className="h-4 w-4 text-muted-foreground" />
+
+          <FilterBar
+            fields={filterFields}
+            values={filters}
+            onChange={(k, v) => setFilters({ [k]: v })}
+            onReset={resetFilters}
+            hasActive={hasActiveFilters}
+          />
+
+          <div className="mt-3">
+            {isLoading ? (
+              <div className="flex justify-center py-8">
+                <div className="h-8 w-8 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : (
+              <div className="bg-card rounded-2xl border border-border overflow-hidden">
+                {!filtered.length ? (
+                  <p className="text-sm text-muted-foreground text-center py-8">No payout requests found</p>
+                ) : filtered.map((p, i) => (
+                  <div key={p.id} className={`flex items-center justify-between p-3.5 ${i < filtered.length - 1 ? "border-b border-border/50" : ""}`}>
+                    <div className="flex items-center gap-3">
+                      <div className="h-9 w-9 rounded-xl bg-muted flex items-center justify-center">
+                        <CreditCard className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                      <div>
+                        <p className="text-[13px] font-bold">₹{Number(p.amount).toLocaleString("en-IN")}</p>
+                        <p className="text-[11px] text-muted-foreground">{p.requestType}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-[13px] font-bold">₹{Number(p.amount).toLocaleString("en-IN")}</p>
-                      <p className="text-[11px] text-muted-foreground">{p.requestType}</p>
+                    <div className="text-right">
+                      <StatusBadge status={statusMap[p.status] || "pending"}>{p.status}</StatusBadge>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">{new Date(p.requestedAt).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" })}</p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <StatusBadge status={statusMap[p.status] || "pending"}>{p.status}</StatusBadge>
-                    <p className="text-[10px] text-muted-foreground mt-0.5">{new Date(p.requestedAt).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" })}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </UserLayout>

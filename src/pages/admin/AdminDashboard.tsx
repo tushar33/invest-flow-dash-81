@@ -10,7 +10,7 @@ function formatINR(n: number) { return "₹" + n.toLocaleString("en-IN"); }
 export default function AdminDashboard() {
   const { data: summary } = useQuery({ queryKey: ["admin-summary"], queryFn: adminApi.summary });
   const { data: financial } = useQuery({ queryKey: ["admin-financial"], queryFn: adminApi.financialSummary });
-  const { data: users } = useQuery({ queryKey: ["admin-users"], queryFn: adminApi.users });
+  const { data: users } = useQuery({ queryKey: ["admin-users"], queryFn: () => adminApi.users() });
 
   return (
     <AdminLayout>

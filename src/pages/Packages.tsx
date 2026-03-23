@@ -1,5 +1,7 @@
 import { UserLayout } from "@/components/UserLayout";
 import { StatusBadge } from "@/components/StatusBadge";
+import { FilterBar, type FilterField } from "@/components/FilterBar";
+import { useUrlFilters } from "@/hooks/useUrlFilters";
 import { TrendingUp, Clock, CalendarDays, RefreshCw } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { packages as packagesApi } from "@/lib/api";
@@ -8,11 +10,39 @@ function formatINR(n: number): string {
   return "₹" + n.toLocaleString("en-IN");
 }
 
-export default function Packages() {
-  const { data: pkgs, isLoading } = useQuery({ queryKey: ["packages"], queryFn: packagesApi.list });
+const filterDefaults = { status: "", roiPercentage: "" };
 
-  const totalInvested = pkgs?.reduce((s, p) => s + Number(p.principalAmount), 0) ?? 0;
-  const activeCount = pkgs?.filter(p => p.status === "ACTIVE").length ?? 0;
+const filterFields: FilterField[] = [
+  {
+    key: "status", label: "Status", type: "select", placeholder: "All",
+    options: [{ label: "Active", value: "ACTIVE" }, { label: "Completed", value: "MATURED" }],
+  },
+  {
+    key: "roiPercentage", label: "ROI %", type: "select", placeholder: "All",
+    options: [{ label: "5%", value: "5" }, { label: "7%", value: "7" }, { label: "10%", value: "10" }],
+  },
+];
+
+export default function Packages() {
+  const { filters, setFilters, resetFilters, hasActiveFilters } = useUrlFilters(filterDefaults);
+
+  const { data: pkgs, isLoading } = useQuery({
+    queryKey: ["packages", filters],
+    queryFn: () => packagesApi.list({
+      status: filters.status || undefined,
+      roiPercentage: filters.roiPercentage || undefined,
+    }),
+  });
+
+  // Client-side fallback
+  const filtered = (pkgs ?? []).filter(p => {
+    if (filters.status && p.status !== filters.status) return false;
+    if (filters.roiPercentage && p.roiPercentage !== filters.roiPercentage) return false;
+    return true;
+  });
+
+  const totalInvested = filtered.reduce((s, p) => s + Number(p.principalAmount), 0);
+  const activeCount = filtered.filter(p => p.status === "ACTIVE").length;
 
   return (
     <UserLayout>
@@ -35,15 +65,23 @@ export default function Packages() {
           </div>
         </div>
 
+        <FilterBar
+          fields={filterFields}
+          values={filters}
+          onChange={(k, v) => setFilters({ [k]: v })}
+          onReset={resetFilters}
+          hasActive={hasActiveFilters}
+        />
+
         {isLoading ? (
           <div className="flex justify-center py-12">
             <div className="h-8 w-8 border-2 border-accent border-t-transparent rounded-full animate-spin" />
           </div>
-        ) : !pkgs?.length ? (
-          <p className="text-center text-muted-foreground py-12">No packages assigned yet</p>
+        ) : !filtered.length ? (
+          <p className="text-center text-muted-foreground py-12">No packages found</p>
         ) : (
           <div className="space-y-3">
-            {pkgs.map((pkg) => {
+            {filtered.map((pkg) => {
               const statusMap: Record<string, "active" | "completed" | "inactive"> = {
                 ACTIVE: "active", MATURED: "completed", CLOSED: "inactive"
               };

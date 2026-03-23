@@ -1,24 +1,52 @@
 import { AdminLayout } from "@/components/AdminLayout";
+import { FilterBar, type FilterField } from "@/components/FilterBar";
+import { useUrlFilters } from "@/hooks/useUrlFilters";
 import { TrendingUp, Zap } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { admin as adminApi } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 
+const filterDefaults = { runType: "", status: "", from: "", to: "" };
+
+const filterFields: FilterField[] = [
+  {
+    key: "runType", label: "Run Type", type: "select", placeholder: "All",
+    options: [{ label: "Manual", value: "MANUAL" }, { label: "Cron", value: "CRON" }],
+  },
+  {
+    key: "status", label: "Status", type: "select", placeholder: "All",
+    options: [{ label: "Success", value: "SUCCESS" }, { label: "Failed", value: "FAILED" }],
+  },
+  { key: "from", label: "From Date", type: "date", placeholder: "Start date" },
+  { key: "to", label: "To Date", type: "date", placeholder: "End date" },
+];
+
 export default function AdminROILogs() {
   const { toast } = useToast();
   const qc = useQueryClient();
+  const { filters, setFilters, resetFilters, hasActiveFilters } = useUrlFilters(filterDefaults);
 
-  // We show packages with their ROI cycle info
-  const { data: pkgs, isLoading } = useQuery({ queryKey: ["admin-packages"], queryFn: adminApi.packages });
+  const { data: logs, isLoading } = useQuery({
+    queryKey: ["admin-roi-logs", filters],
+    queryFn: () => adminApi.roiLogs({
+      runType: filters.runType || undefined,
+      status: filters.status || undefined,
+      from: filters.from || undefined,
+      to: filters.to || undefined,
+    }),
+  });
 
   const triggerMutation = useMutation({
     mutationFn: adminApi.triggerRoi,
     onSuccess: (data) => {
       toast({ title: "ROI Processed", description: data.message });
-      qc.invalidateQueries({ queryKey: ["admin-packages"] });
+      qc.invalidateQueries({ queryKey: ["admin-roi-logs"] });
     },
     onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
   });
+
+  // Handle both array and paginated response
+  const logItems: any[] = Array.isArray(logs) ? logs : (logs?.data ?? logs?.logs ?? []);
 
   return (
     <AdminLayout>
@@ -35,26 +63,40 @@ export default function AdminROILogs() {
           </button>
         </div>
 
+        <FilterBar
+          fields={filterFields}
+          values={filters}
+          onChange={(k, v) => setFilters({ [k]: v })}
+          onReset={resetFilters}
+          hasActive={hasActiveFilters}
+        />
+
         {isLoading ? (
           <div className="flex justify-center py-12">
             <div className="h-8 w-8 border-2 border-accent border-t-transparent rounded-full animate-spin" />
           </div>
+        ) : logItems.length === 0 ? (
+          <p className="text-center text-muted-foreground py-12">No ROI logs found</p>
         ) : (
           <div className="bg-card rounded-xl border border-border divide-y divide-border">
-            {(pkgs ?? []).map((pkg) => (
-              <div key={pkg.packageId} className="flex items-center justify-between p-4">
+            {logItems.map((item: any, idx: number) => (
+              <div key={item.id ?? item.packageId ?? idx} className="flex items-center justify-between p-4">
                 <div className="flex items-center gap-3">
                   <div className="h-8 w-8 rounded-full bg-success/10 flex items-center justify-center">
                     <TrendingUp className="h-4 w-4 text-success" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium">{pkg.userName}</p>
-                    <p className="text-xs text-muted-foreground">₹{pkg.principalAmount.toLocaleString("en-IN")} · {pkg.roiPercentage}%</p>
+                    <p className="text-sm font-medium">{item.userName ?? item.runType ?? "ROI Run"}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {item.principalAmount ? `₹${Number(item.principalAmount).toLocaleString("en-IN")} · ${item.roiPercentage}%` : item.status ?? ""}
+                    </p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm font-semibold">{pkg.cyclesCompleted}/{pkg.totalCycles} cycles</p>
-                  <p className="text-xs text-muted-foreground">{pkg.status}</p>
+                  <p className="text-sm font-semibold">
+                    {item.cyclesCompleted !== undefined ? `${item.cyclesCompleted}/${item.totalCycles} cycles` : item.processedCount ?? ""}
+                  </p>
+                  <p className="text-xs text-muted-foreground">{item.status ?? ""}</p>
                 </div>
               </div>
             ))}

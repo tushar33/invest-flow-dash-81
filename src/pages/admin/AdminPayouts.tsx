@@ -1,5 +1,7 @@
 import { AdminLayout } from "@/components/AdminLayout";
 import { StatusBadge } from "@/components/StatusBadge";
+import { FilterBar, type FilterField } from "@/components/FilterBar";
+import { useUrlFilters } from "@/hooks/useUrlFilters";
 import { Check, X } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { admin as adminApi } from "@/lib/api";
@@ -8,12 +10,44 @@ import { useState } from "react";
 
 function formatINR(n: number) { return "₹" + n.toLocaleString("en-IN"); }
 
+const filterDefaults = { status: "", sourceType: "", from: "", to: "" };
+
+const filterFields: FilterField[] = [
+  {
+    key: "status", label: "Status", type: "select", placeholder: "All",
+    options: [
+      { label: "Pending", value: "PENDING" },
+      { label: "Approved", value: "PROCESSED" },
+      { label: "Rejected", value: "REJECTED" },
+    ],
+  },
+  {
+    key: "sourceType", label: "Source Type", type: "select", placeholder: "All",
+    options: [
+      { label: "Manual", value: "MANUAL" },
+      { label: "Auto Pay", value: "AUTO_PAY" },
+    ],
+  },
+  { key: "from", label: "From Date", type: "date", placeholder: "Start date" },
+  { key: "to", label: "To Date", type: "date", placeholder: "End date" },
+];
+
 export default function AdminPayouts() {
   const { toast } = useToast();
   const qc = useQueryClient();
-  const { data: payoutsList, isLoading } = useQuery({ queryKey: ["admin-payouts"], queryFn: () => adminApi.payoutsAll() });
+  const { filters, setFilters, resetFilters, hasActiveFilters } = useUrlFilters(filterDefaults);
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState("");
+
+  const { data: payoutsList, isLoading } = useQuery({
+    queryKey: ["admin-payouts", filters],
+    queryFn: () => adminApi.payoutsAll({
+      status: filters.status || undefined,
+      sourceType: filters.sourceType || undefined,
+      from: filters.from || undefined,
+      to: filters.to || undefined,
+    }),
+  });
 
   const processMutation = useMutation({
     mutationFn: ({ id, status, rejectionReason }: { id: string; status: string; rejectionReason?: string }) =>
@@ -31,6 +65,15 @@ export default function AdminPayouts() {
     PENDING: "pending", PROCESSED: "approved", REJECTED: "rejected",
   };
 
+  // Client-side fallback
+  const filtered = (payoutsList ?? []).filter(p => {
+    if (filters.status && p.status !== filters.status) return false;
+    if (filters.sourceType && (p.sourceType ?? "MANUAL") !== filters.sourceType) return false;
+    if (filters.from && p.requestedAt < filters.from) return false;
+    if (filters.to && p.requestedAt > filters.to) return false;
+    return true;
+  });
+
   return (
     <AdminLayout>
       <div className="space-y-6">
@@ -39,13 +82,23 @@ export default function AdminPayouts() {
           <p className="text-sm text-muted-foreground mt-1">Review and process withdrawal requests</p>
         </div>
 
+        <FilterBar
+          fields={filterFields}
+          values={filters}
+          onChange={(k, v) => setFilters({ [k]: v })}
+          onReset={resetFilters}
+          hasActive={hasActiveFilters}
+        />
+
         {isLoading ? (
           <div className="flex justify-center py-12">
             <div className="h-8 w-8 border-2 border-accent border-t-transparent rounded-full animate-spin" />
           </div>
+        ) : filtered.length === 0 ? (
+          <p className="text-center text-muted-foreground py-12">No payouts found</p>
         ) : (
           <div className="space-y-3">
-            {(payoutsList ?? []).map((p) => (
+            {filtered.map((p) => (
               <div key={p.id} className="bg-card rounded-xl border border-border p-4 animate-fade-in">
                 <div className="flex items-start justify-between">
                   <div>
