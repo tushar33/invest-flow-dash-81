@@ -106,9 +106,9 @@ export function DesktopSidebar({ role }: DesktopSidebarProps) {
         {/* Sign Out Button */}
         <button
           onClick={handleLogout}
-          className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors w-full"
+          className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold bg-destructive/15 text-destructive hover:bg-destructive hover:text-destructive-foreground transition-all duration-200 w-full group"
         >
-          <LogOut className="h-4 w-4" />
+          <LogOut className="h-5 w-5 transition-transform duration-200 group-hover:-translate-x-0.5" />
           Sign Out
         </button>
       </div>
