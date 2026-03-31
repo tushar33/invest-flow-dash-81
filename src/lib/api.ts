@@ -346,4 +346,6 @@ export const admin = {
     request<AuthUser>(`/admin/users/${userId}/autopay`, { method: "PATCH", body: JSON.stringify(data) }),
   updateAssignmentDate: (id: string, data: { assignedDate: string }) =>
     request<any>(`/admin/packages/${id}/assignment-date`, { method: "PATCH", body: JSON.stringify(data) }),
+  cancelPackage: (id: string) =>
+    request<any>(`/packages/${id}/cancel`, { method: "PATCH" }),
 };

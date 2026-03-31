@@ -3,7 +3,7 @@ import { AdminLayout } from "@/components/AdminLayout";
 import { StatusBadge } from "@/components/StatusBadge";
 import { FilterBar, type FilterField } from "@/components/FilterBar";
 import { useUrlFilters } from "@/hooks/useUrlFilters";
-import { Package, BookOpen, Calendar } from "lucide-react";
+import { Package, BookOpen, Calendar, XCircle } from "lucide-react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { admin as adminApi, type AdminPackage } from "@/lib/api";
 import { useNavigate } from "react-router-dom";
@@ -11,8 +11,13 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog, DialogContent, DialogHeader, DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
 
 function formatINR(n: number) { return "₹" + n.toLocaleString("en-IN"); }
 
@@ -62,6 +67,52 @@ function EditDateModal({ pkg, onClose, onSuccess }: EditDateModalProps) {
   );
 }
 
+/* ── Cancel Package Confirmation ──────────────────────────────────────── */
+interface CancelModalProps { pkg: AdminPackage; onClose: () => void; }
+
+function CancelPackageModal({ pkg, onClose }: CancelModalProps) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const mutation = useMutation({
+    mutationFn: () => adminApi.cancelPackage(pkg.packageId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-packages"] });
+      toast({ title: "Package cancelled successfully" });
+      onClose();
+    },
+    onError: (err: Error) => {
+      toast({ title: "Cannot cancel package after ROI started", description: err.message, variant: "destructive" });
+      onClose();
+    },
+  });
+
+  return (
+    <AlertDialog open onOpenChange={(open) => !open && onClose()}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Cancel Package</AlertDialogTitle>
+          <AlertDialogDescription>
+            Are you sure you want to cancel this package?
+            <span className="block mt-2 text-foreground font-medium">
+              {pkg.userName} — {formatINR(Number(pkg.principalAmount))}
+            </span>
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={mutation.isPending}>No, keep it</AlertDialogCancel>
+          <AlertDialogAction
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            disabled={mutation.isPending}
+            onClick={(e) => { e.preventDefault(); mutation.mutate(); }}
+          >
+            {mutation.isPending ? "Cancelling…" : "Yes, cancel package"}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+
 /* ── Filters ─────────────────────────────────────────────────────────── */
 const filterDefaults = { userId: "", status: "", roiPercentage: "", from: "", to: "" };
 
@@ -83,6 +134,7 @@ export default function AdminPackages() {
   const navigate = useNavigate();
   const { filters, setFilters, resetFilters, hasActiveFilters } = useUrlFilters(filterDefaults);
   const [editTarget, setEditTarget] = useState<AdminPackage | null>(null);
+  const [cancelTarget, setCancelTarget] = useState<AdminPackage | null>(null);
 
   const { data: pkgs, isLoading } = useQuery({
     queryKey: ["admin-packages", filters],
@@ -173,6 +225,13 @@ export default function AdminPackages() {
                   >
                     <Calendar className="h-3.5 w-3.5 mr-1" /> Edit Date
                   </Button>
+                  <Button size="sm" variant="outline" className="text-xs text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                    disabled={pkg.status !== "ACTIVE"}
+                    title={pkg.status !== "ACTIVE" ? "Only active packages can be cancelled" : "Cancel this package"}
+                    onClick={() => setCancelTarget(pkg)}
+                  >
+                    <XCircle className="h-3.5 w-3.5 mr-1" /> Cancel Package
+                  </Button>
                 </div>
               </div>
             ))}
@@ -180,6 +239,9 @@ export default function AdminPackages() {
         )}
         {editTarget && (
           <EditDateModal pkg={editTarget} onClose={() => setEditTarget(null)} onSuccess={() => setEditTarget(null)} />
+        )}
+        {cancelTarget && (
+          <CancelPackageModal pkg={cancelTarget} onClose={() => setCancelTarget(null)} />
         )}
       </div>
     </AdminLayout>
