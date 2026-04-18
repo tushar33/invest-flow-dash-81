@@ -5,6 +5,7 @@ import { ArrowUpRight, ArrowDownLeft, Wallet as WalletIcon, Eye, EyeOff } from "
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { wallet as walletApi } from "@/lib/api";
+import { formatCredits, formatCreditsSigned, formatTransactionLabel } from "@/lib/format";
 
 const filterDefaults = { type: "", from: "", to: "" };
 
@@ -12,8 +13,8 @@ const filterFields: FilterField[] = [
   {
     key: "type", label: "Type", type: "select", placeholder: "All",
     options: [
-      { label: "ROI Credit", value: "ROI" },
-      { label: "Payout Debit", value: "PAYOUT_DEBIT" },
+      { label: "Reward Credit", value: "ROI" },
+      { label: "Redemption", value: "PAYOUT_DEBIT" },
     ],
   },
   { key: "from", label: "From Date", type: "date", placeholder: "Start date" },
@@ -36,7 +37,6 @@ export default function WalletPage() {
   const balance = walletData?.availableBalance ?? 0;
   const transactions = walletData?.transactions ?? [];
 
-  // Client-side fallback filter
   const filtered = transactions.filter(t => {
     if (filters.type) {
       if (filters.type === "ROI" && t.type !== "ROI_CREDIT" && t.type !== "ROI") return false;
@@ -54,8 +54,8 @@ export default function WalletPage() {
     <UserLayout>
       <div className="space-y-5">
         <div>
-          <h1 className="text-xl font-bold">Wallet</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">ROI credits & payout debits</p>
+          <h1 className="text-xl font-bold">Activity</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">Reward credits & redemption activity</p>
         </div>
 
         <div className="fintech-gradient rounded-2xl p-5 text-primary-foreground relative overflow-hidden">
@@ -69,7 +69,7 @@ export default function WalletPage() {
               </button>
             </div>
             <p className="text-[32px] font-bold leading-tight">
-              {showBalance ? "₹" + balance.toLocaleString("en-IN") : "••••••"}
+              {showBalance ? formatCredits(balance) : "••••••"}
             </p>
           </div>
         </div>
@@ -77,11 +77,11 @@ export default function WalletPage() {
         <div className="grid grid-cols-2 gap-3">
           <div className="bg-card rounded-xl border border-border p-3">
             <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Total Credited</p>
-            <p className="text-base font-bold text-success mt-0.5">+₹{totalCredited.toLocaleString("en-IN")}</p>
+            <p className="text-base font-bold text-success mt-0.5">+{formatCredits(totalCredited)}</p>
           </div>
           <div className="bg-card rounded-xl border border-border p-3">
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Total Debited</p>
-            <p className="text-base font-bold text-foreground mt-0.5">-₹{totalDebited.toLocaleString("en-IN")}</p>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Total Redeemed</p>
+            <p className="text-base font-bold text-foreground mt-0.5">-{formatCredits(totalDebited)}</p>
           </div>
         </div>
 
@@ -102,7 +102,7 @@ export default function WalletPage() {
           ) : (
             <div className="bg-card rounded-2xl border border-border overflow-hidden">
               {filtered.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-8">No transactions found</p>
+                <p className="text-sm text-muted-foreground text-center py-8">No activity found</p>
               ) : filtered.map((tx, i) => {
                 const isCredit = tx.direction === "CREDIT";
                 return (
@@ -112,13 +112,13 @@ export default function WalletPage() {
                         {isCredit ? <ArrowDownLeft className="h-4 w-4 text-success" /> : <ArrowUpRight className="h-4 w-4 text-muted-foreground" />}
                       </div>
                       <div>
-                        <p className="text-[13px] font-semibold">{tx.type.replace(/_/g, " ")}</p>
+                        <p className="text-[13px] font-semibold">{formatTransactionLabel(tx.type)}</p>
                         <p className="text-[11px] text-muted-foreground">{tx.description || ""}</p>
                       </div>
                     </div>
                     <div className="text-right">
                       <p className={`text-[13px] font-bold ${isCredit ? "text-success" : "text-foreground"}`}>
-                        {isCredit ? "+" : "-"}₹{Number(tx.amount).toLocaleString("en-IN")}
+                        {formatCreditsSigned(tx.amount, tx.direction)}
                       </p>
                       <p className="text-[10px] text-muted-foreground">{new Date(tx.createdAt).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" })}</p>
                     </div>

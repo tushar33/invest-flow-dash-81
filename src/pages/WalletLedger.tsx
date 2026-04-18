@@ -13,18 +13,19 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   ArrowUpCircle, ArrowDownCircle, Search, Wallet,
-  TrendingUp, TrendingDown, DollarSign
+  TrendingUp, TrendingDown, Coins
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
+import { formatCredits, formatCreditsSigned, formatTransactionLabel } from "@/lib/format";
 
 const filterFields: FilterField[] = [
   {
-    key: "type", label: "Transaction Type", type: "select", placeholder: "All Types",
+    key: "type", label: "Activity Type", type: "select", placeholder: "All Types",
     options: [
-      { label: "ROI Credit", value: "ROI" },
-      { label: "Payout Debit", value: "PAYOUT_DEBIT" },
-      { label: "Principal", value: "PRINCIPAL" },
+      { label: "Reward Credit", value: "ROI" },
+      { label: "Redemption", value: "PAYOUT_DEBIT" },
+      { label: "Balance Adjustment", value: "PRINCIPAL" },
     ],
   },
   { key: "from", label: "From Date", type: "date", placeholder: "Start date" },
@@ -59,7 +60,6 @@ export default function WalletLedger() {
   const resetFilters = () => {
     setSearchParams((prev) => {
       const next = new URLSearchParams();
-      // Keep userId/packageId
       if (prev.get("userId")) next.set("userId", prev.get("userId")!);
       if (prev.get("packageId")) next.set("packageId", prev.get("packageId")!);
       return next;
@@ -105,16 +105,6 @@ export default function WalletLedger() {
     direction === "CREDIT" ? <ArrowUpCircle className="h-5 w-5 text-success" /> : <ArrowDownCircle className="h-5 w-5 text-destructive" />;
 
   const getTransactionColor = (direction: string) => direction === "CREDIT" ? "text-success" : "text-destructive";
-  const getTransactionSign = (direction: string) => direction === "CREDIT" ? "+" : "-";
-
-  const formatTransactionType = (type: string) => {
-    switch (type) {
-      case "ROI_CREDIT": case "ROI": return "ROI Credit";
-      case "PAYOUT_DEBIT": return "Payout Debit";
-      case "PRINCIPAL_DEBIT": case "PRINCIPAL": return "Principal Debit";
-      default: return type.replace(/_/g, " ");
-    }
-  };
 
   const Layout = isAdmin ? AdminLayout : UserLayout;
 
@@ -124,10 +114,10 @@ export default function WalletLedger() {
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <Wallet className="h-6 w-6 text-accent" />
-            <h1 className="text-2xl font-bold text-foreground">Wallet Ledger</h1>
+            <h1 className="text-2xl font-bold text-foreground">Activity / Ledger</h1>
           </div>
           <p className="text-muted-foreground text-sm">
-            {packageIdFilter ? `Transactions for package ${packageIdFilter}` : "Complete transaction history and wallet summary."}
+            {packageIdFilter ? `Activity for plan ${packageIdFilter}` : "Complete activity history and balance summary."}
           </p>
         </div>
 
@@ -140,7 +130,7 @@ export default function WalletLedger() {
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input placeholder="Search by user ID..." value={userSearch} onChange={(e) => setUserSearch(e.target.value)} className="pl-9" />
                 </div>
-                <Button onClick={() => setSelectedUserId(userSearch)} disabled={!userSearch.trim()}>Load Wallet</Button>
+                <Button onClick={() => setSelectedUserId(userSearch)} disabled={!userSearch.trim()}>Load Activity</Button>
               </div>
             </CardContent>
           </Card>
@@ -148,9 +138,9 @@ export default function WalletLedger() {
 
         {walletData && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card><CardContent className="p-4"><div className="flex items-center gap-3"><div className="h-10 w-10 rounded-lg bg-accent/10 flex items-center justify-center"><DollarSign className="h-5 w-5 text-accent" /></div><div><p className="text-sm text-muted-foreground">Wallet Balance</p><p className="text-xl font-bold">₹{walletData.availableBalance.toLocaleString()}</p></div></div></CardContent></Card>
-            <Card><CardContent className="p-4"><div className="flex items-center gap-3"><div className="h-10 w-10 rounded-lg bg-success/10 flex items-center justify-center"><TrendingUp className="h-5 w-5 text-success" /></div><div><p className="text-sm text-muted-foreground">Total Credits</p><p className="text-xl font-bold text-success">₹{totalCredits.toLocaleString()}</p></div></div></CardContent></Card>
-            <Card><CardContent className="p-4"><div className="flex items-center gap-3"><div className="h-10 w-10 rounded-lg bg-destructive/10 flex items-center justify-center"><TrendingDown className="h-5 w-5 text-destructive" /></div><div><p className="text-sm text-muted-foreground">Total Debits</p><p className="text-xl font-bold text-destructive">₹{totalDebits.toLocaleString()}</p></div></div></CardContent></Card>
+            <Card><CardContent className="p-4"><div className="flex items-center gap-3"><div className="h-10 w-10 rounded-lg bg-accent/10 flex items-center justify-center"><Coins className="h-5 w-5 text-accent" /></div><div><p className="text-sm text-muted-foreground">Balance</p><p className="text-xl font-bold">{formatCredits(walletData.availableBalance)}</p></div></div></CardContent></Card>
+            <Card><CardContent className="p-4"><div className="flex items-center gap-3"><div className="h-10 w-10 rounded-lg bg-success/10 flex items-center justify-center"><TrendingUp className="h-5 w-5 text-success" /></div><div><p className="text-sm text-muted-foreground">Total Credits</p><p className="text-xl font-bold text-success">{formatCredits(totalCredits)}</p></div></div></CardContent></Card>
+            <Card><CardContent className="p-4"><div className="flex items-center gap-3"><div className="h-10 w-10 rounded-lg bg-destructive/10 flex items-center justify-center"><TrendingDown className="h-5 w-5 text-destructive" /></div><div><p className="text-sm text-muted-foreground">Total Debits</p><p className="text-xl font-bold text-destructive">{formatCredits(totalDebits)}</p></div></div></CardContent></Card>
           </div>
         )}
 
@@ -164,8 +154,8 @@ export default function WalletLedger() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Transaction History</CardTitle>
-            <p className="text-sm text-muted-foreground">Showing {filteredTransactions.length} transaction{filteredTransactions.length !== 1 ? 's' : ''}</p>
+            <CardTitle className="text-lg">Activity History</CardTitle>
+            <p className="text-sm text-muted-foreground">Showing {filteredTransactions.length} entr{filteredTransactions.length !== 1 ? 'ies' : 'y'}</p>
           </CardHeader>
           <CardContent>
             {isLoading ? (
@@ -181,8 +171,8 @@ export default function WalletLedger() {
             ) : filteredTransactions.length === 0 ? (
               <div className="text-center py-12">
                 <Wallet className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-medium mb-2">No wallet transactions found</h3>
-                <p className="text-muted-foreground">No transactions match your current filters.</p>
+                <h3 className="text-lg font-medium mb-2">No activity found</h3>
+                <p className="text-muted-foreground">No entries match your current filters.</p>
               </div>
             ) : (
               <div className="space-y-3">
@@ -191,7 +181,7 @@ export default function WalletLedger() {
                     <div className="flex-shrink-0">{getTransactionIcon(txn.type, txn.direction)}</div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <p className="font-medium text-sm">{formatTransactionType(txn.type)}</p>
+                        <p className="font-medium text-sm">{formatTransactionLabel(txn.type)}</p>
                         <Badge variant={txn.direction === "CREDIT" ? "default" : "destructive"} className="text-xs">{txn.direction}</Badge>
                       </div>
                       <p className="text-xs text-muted-foreground">{format(new Date(txn.createdAt), "MMM d, yyyy 'at' h:mm a")}</p>
@@ -200,7 +190,7 @@ export default function WalletLedger() {
                     </div>
                     <div className="text-right">
                       <p className={cn("font-bold text-sm", getTransactionColor(txn.direction))}>
-                        {getTransactionSign(txn.direction)}₹{parseFloat(txn.amount).toLocaleString()}
+                        {formatCreditsSigned(txn.amount, txn.direction)}
                       </p>
                     </div>
                   </div>

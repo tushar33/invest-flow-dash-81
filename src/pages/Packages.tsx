@@ -2,13 +2,10 @@ import { UserLayout } from "@/components/UserLayout";
 import { StatusBadge } from "@/components/StatusBadge";
 import { FilterBar, type FilterField } from "@/components/FilterBar";
 import { useUrlFilters } from "@/hooks/useUrlFilters";
-import { TrendingUp, Clock, CalendarDays, RefreshCw } from "lucide-react";
+import { Gift, CalendarDays, RefreshCw } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { packages as packagesApi } from "@/lib/api";
-
-function formatINR(n: number): string {
-  return "₹" + n.toLocaleString("en-IN");
-}
+import { formatCredits } from "@/lib/format";
 
 const filterDefaults = { status: "", roiPercentage: "" };
 
@@ -18,7 +15,7 @@ const filterFields: FilterField[] = [
     options: [{ label: "Active", value: "ACTIVE" }, { label: "Completed", value: "MATURED" }],
   },
   {
-    key: "roiPercentage", label: "ROI %", type: "select", placeholder: "All",
+    key: "roiPercentage", label: "Reward %", type: "select", placeholder: "All",
     options: [{ label: "5%", value: "5" }, { label: "7%", value: "7" }, { label: "10%", value: "10" }],
   },
 ];
@@ -34,32 +31,31 @@ export default function Packages() {
     }),
   });
 
-  // Client-side fallback
   const filtered = (pkgs ?? []).filter(p => {
     if (filters.status && p.status !== filters.status) return false;
     if (filters.roiPercentage && p.roiPercentage !== filters.roiPercentage) return false;
     return true;
   });
 
-  const totalInvested = filtered.reduce((s, p) => s + Number(p.principalAmount), 0);
+  const totalContribution = filtered.reduce((s, p) => s + Number(p.principalAmount), 0);
   const activeCount = filtered.filter(p => p.status === "ACTIVE").length;
 
   return (
     <UserLayout>
       <div className="space-y-5">
         <div>
-          <h1 className="text-xl font-bold">My Packages</h1>
+          <h1 className="text-xl font-bold">My Plans</h1>
           <p className="text-sm text-muted-foreground mt-0.5">Assigned by administrator</p>
         </div>
 
         <div className="fintech-gradient rounded-2xl p-4 text-primary-foreground">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <p className="text-[11px] uppercase tracking-widest opacity-70">Total Invested</p>
-              <p className="text-xl font-bold mt-0.5">{formatINR(totalInvested)}</p>
+              <p className="text-[11px] uppercase tracking-widest opacity-70">Total Contribution</p>
+              <p className="text-xl font-bold mt-0.5">{formatCredits(totalContribution)}</p>
             </div>
             <div className="text-right">
-              <p className="text-[11px] uppercase tracking-widest opacity-70">Active Packages</p>
+              <p className="text-[11px] uppercase tracking-widest opacity-70">Active Plans</p>
               <p className="text-xl font-bold mt-0.5 text-accent">{activeCount}</p>
             </div>
           </div>
@@ -78,30 +74,46 @@ export default function Packages() {
             <div className="h-8 w-8 border-2 border-accent border-t-transparent rounded-full animate-spin" />
           </div>
         ) : !filtered.length ? (
-          <p className="text-center text-muted-foreground py-12">No packages found</p>
+          <p className="text-center text-muted-foreground py-12">No plans found</p>
         ) : (
           <div className="space-y-3">
             {filtered.map((pkg) => {
               const statusMap: Record<string, "active" | "completed" | "inactive"> = {
                 ACTIVE: "active", MATURED: "completed", CLOSED: "inactive"
               };
+              const remainingCycles = Math.max(0, pkg.totalCycles - pkg.cyclesCompleted);
+              const remainingBalance = remainingCycles * Number(pkg.roiCycleAmount);
               return (
                 <div key={pkg.id} className="bg-card rounded-2xl border border-border p-4 animate-fade-in">
                   <div className="flex items-center justify-between mb-3">
-                    <p className="text-xl font-bold">{formatINR(Number(pkg.principalAmount))}</p>
+                    <div>
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Contribution</p>
+                      <p className="text-xl font-bold">{formatCredits(Number(pkg.principalAmount))}</p>
+                    </div>
                     <StatusBadge status={statusMap[pkg.status] || "inactive"}>{pkg.status}</StatusBadge>
                   </div>
 
                   <div className="flex items-center gap-2 mb-3">
                     <div className="flex items-center gap-1.5 text-[11px] bg-accent/10 text-accent font-semibold rounded-lg px-2.5 py-1.5">
-                      <TrendingUp className="h-3 w-3" />
-                      {pkg.roiPercentage}% ROI · {formatINR(Number(pkg.roiCycleAmount))}/cycle
+                      <Gift className="h-3 w-3" />
+                      {pkg.roiPercentage}% Reward · {formatCredits(Number(pkg.roiCycleAmount))}/cycle
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 mb-3 pt-3 border-t border-border/50">
+                    <div>
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Monthly Benefit</p>
+                      <p className="text-[13px] font-semibold mt-0.5">{formatCredits(Number(pkg.roiCycleAmount))}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Remaining Balance</p>
+                      <p className="text-[13px] font-semibold mt-0.5">{formatCredits(remainingBalance)}</p>
                     </div>
                   </div>
 
                   <div className="mb-3">
                     <div className="flex items-center justify-between text-[11px] mb-1.5">
-                      <span className="text-muted-foreground">Cycles</span>
+                      <span className="text-muted-foreground">Cycles Completed</span>
                       <span className="font-semibold">{pkg.cyclesCompleted}/{pkg.totalCycles}</span>
                     </div>
                     <div className="h-1.5 bg-muted rounded-full overflow-hidden">
@@ -123,7 +135,7 @@ export default function Packages() {
                     <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
                       <RefreshCw className="h-3 w-3 shrink-0" />
                       <div>
-                        <p className="text-[10px] opacity-70">Next ROI</p>
+                        <p className="text-[10px] opacity-70">Next Reward</p>
                         <p className="font-medium text-foreground">{pkg.status === "ACTIVE" ? new Date(pkg.nextRoiDate).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" }) : "—"}</p>
                       </div>
                     </div>

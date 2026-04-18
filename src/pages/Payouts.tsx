@@ -7,6 +7,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { payouts as payoutsApi, wallet as walletApi, bankDetails as bankApi } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
+import { formatCredits } from "@/lib/format";
 
 function isPayoutWindow(): boolean {
   const now = new Date();
@@ -53,7 +54,7 @@ export default function Payouts() {
   const createMutation = useMutation({
     mutationFn: (amt: number) => payoutsApi.create({ requestType: "ROI", amount: amt }),
     onSuccess: () => {
-      toast({ title: "Payout requested" });
+      toast({ title: "Redemption requested" });
       setAmount("");
       setShowForm(false);
       qc.invalidateQueries({ queryKey: ["payouts"] });
@@ -77,7 +78,6 @@ export default function Payouts() {
     PENDING: "pending", PROCESSED: "approved", REJECTED: "rejected",
   };
 
-  // Client-side fallback
   const filtered = (payoutsList ?? []).filter(p => {
     if (filters.status && p.status !== filters.status) return false;
     if (filters.from && p.requestedAt < filters.from) return false;
@@ -90,8 +90,8 @@ export default function Payouts() {
       <div className="space-y-5">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-bold">Payouts</h1>
-            <p className="text-sm text-muted-foreground mt-0.5">Request & track withdrawals</p>
+            <h1 className="text-xl font-bold">Redemptions</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">Request & track redemptions</p>
           </div>
           <button
             onClick={() => setShowForm(!showForm)}
@@ -106,10 +106,10 @@ export default function Payouts() {
           <Clock className={`h-4 w-4 mt-0.5 shrink-0 ${withinWindow ? "text-success" : "text-warning"}`} />
           <div>
             <p className={`text-[12px] font-semibold ${withinWindow ? "text-success" : "text-warning"}`}>
-              {withinWindow ? "Payout Window Open" : "Payout Window Closed"}
+              {withinWindow ? "Redemption Window Open" : "Redemption Window Closed"}
             </p>
             <p className="text-[11px] text-muted-foreground mt-0.5">
-              Payout requests accepted between <span className="font-semibold text-foreground">9:00 AM – 12:00 PM</span>.
+              Redemption requests accepted between <span className="font-semibold text-foreground">9:00 AM – 12:00 PM</span>.
             </p>
           </div>
         </div>
@@ -117,38 +117,38 @@ export default function Payouts() {
         <div className="fintech-gradient rounded-2xl p-4 text-primary-foreground">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <p className="text-[11px] uppercase tracking-widest opacity-70">Wallet Balance</p>
-              <p className="text-xl font-bold mt-0.5 text-accent">₹{(walletData?.availableBalance ?? 0).toLocaleString("en-IN")}</p>
+              <p className="text-[11px] uppercase tracking-widest opacity-70">Balance</p>
+              <p className="text-xl font-bold mt-0.5 text-accent">{formatCredits(walletData?.availableBalance ?? 0)}</p>
             </div>
             <div className="text-right">
-              <p className="text-[11px] uppercase tracking-widest opacity-70">Pending Payout</p>
-              <p className="text-xl font-bold mt-0.5">₹{pendingAmount.toLocaleString("en-IN")}</p>
+              <p className="text-[11px] uppercase tracking-widest opacity-70">Pending Redemption</p>
+              <p className="text-xl font-bold mt-0.5">{formatCredits(pendingAmount)}</p>
             </div>
           </div>
         </div>
 
         {showForm && (
           <div className="bg-card rounded-2xl border border-accent/30 p-4 animate-fade-in">
-            <h3 className="font-bold text-sm mb-1">New Payout Request</h3>
-            <p className="text-[11px] text-muted-foreground mb-4">Amount will be deducted from your wallet balance</p>
+            <h3 className="font-bold text-sm mb-1">New Redemption Request</h3>
+            <p className="text-[11px] text-muted-foreground mb-4">Amount will be deducted from your balance</p>
 
             {!bank ? (
               <div className="flex items-start gap-2 bg-warning/10 rounded-lg p-2.5 mb-3">
                 <Info className="h-3.5 w-3.5 text-warning mt-0.5 shrink-0" />
-                <p className="text-[11px] text-warning">Please add bank details before requesting a payout.</p>
+                <p className="text-[11px] text-warning">Please add account details before requesting a redemption.</p>
               </div>
             ) : (
               <div className="space-y-3">
                 <div>
-                  <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Amount (₹)</label>
+                  <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Amount (Credits)</label>
                   <div className="relative mt-1.5">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-muted-foreground">₹</span>
                     <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0"
-                      className="w-full pl-7 pr-4 py-3 rounded-xl border border-input bg-background text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all" />
+                      className="w-full pl-4 pr-20 py-3 rounded-xl border border-input bg-background text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all" />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-muted-foreground">Credits</span>
                   </div>
                 </div>
                 <div>
-                  <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Bank Account</label>
+                  <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Account</label>
                   <div className="mt-1.5 px-3 py-3 rounded-xl border border-input bg-muted/50 text-sm font-medium flex items-center gap-2">
                     <CreditCard className="h-4 w-4 text-muted-foreground" />
                     <span>{bank.bankName} – ****{bank.accountNumber.slice(-4)} ({bank.accountHolderName})</span>
@@ -158,13 +158,13 @@ export default function Payouts() {
                 {!withinWindow && (
                   <div className="flex items-start gap-2 bg-warning/10 rounded-lg p-2.5">
                     <Info className="h-3.5 w-3.5 text-warning mt-0.5 shrink-0" />
-                    <p className="text-[11px] text-warning">Request will be queued and processed in the next payout window.</p>
+                    <p className="text-[11px] text-warning">Request will be queued and processed in the next redemption window.</p>
                   </div>
                 )}
 
                 <button onClick={handleSubmit} disabled={createMutation.isPending}
                   className="w-full accent-gradient text-accent-foreground text-sm font-semibold py-3.5 rounded-xl disabled:opacity-50 active:scale-[0.98] transition-transform">
-                  {createMutation.isPending ? "Submitting..." : "Submit Payout Request"}
+                  {createMutation.isPending ? "Submitting..." : "Submit Redemption Request"}
                 </button>
               </div>
             )}
@@ -172,7 +172,7 @@ export default function Payouts() {
         )}
 
         <div>
-          <h2 className="text-sm font-bold mb-3">Payout History</h2>
+          <h2 className="text-sm font-bold mb-3">Redemption Requests</h2>
 
           <FilterBar
             fields={filterFields}
@@ -190,7 +190,7 @@ export default function Payouts() {
             ) : (
               <div className="bg-card rounded-2xl border border-border overflow-hidden">
                 {!filtered.length ? (
-                  <p className="text-sm text-muted-foreground text-center py-8">No payout requests found</p>
+                  <p className="text-sm text-muted-foreground text-center py-8">No redemption requests found</p>
                 ) : filtered.map((p, i) => (
                   <div key={p.id} className={`flex items-center justify-between p-3.5 ${i < filtered.length - 1 ? "border-b border-border/50" : ""}`}>
                     <div className="flex items-center gap-3">
@@ -198,8 +198,8 @@ export default function Payouts() {
                         <CreditCard className="h-4 w-4 text-muted-foreground" />
                       </div>
                       <div>
-                        <p className="text-[13px] font-bold">₹{Number(p.amount).toLocaleString("en-IN")}</p>
-                        <p className="text-[11px] text-muted-foreground">{p.requestType}</p>
+                        <p className="text-[13px] font-bold">{formatCredits(p.amount)}</p>
+                        <p className="text-[11px] text-muted-foreground">Redemption</p>
                       </div>
                     </div>
                     <div className="text-right">
