@@ -35,7 +35,7 @@ export default function AdminSettings() {
       return;
     }
     if (!maxRoiCycles || Number(maxRoiCycles) < 1) {
-      toast({ title: "Validation Error", description: "Max ROI cycles must be at least 1.", variant: "destructive" });
+      toast({ title: "Validation Error", description: "Max reward cycles must be at least 1.", variant: "destructive" });
       return;
     }
 
@@ -62,15 +62,15 @@ export default function AdminSettings() {
           <CardHeader className="pb-4">
             <div className="flex items-center gap-2">
               <Clock className="h-5 w-5 text-accent" />
-              <CardTitle className="text-lg">Payout Window Settings</CardTitle>
+              <CardTitle className="text-lg">Redemption Window Settings</CardTitle>
             </div>
-            <CardDescription>Control when users are allowed to request payouts.</CardDescription>
+            <CardDescription>Control when users are allowed to request redemptions.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-5">
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <Label htmlFor="payout-validation">Enable Payout Time Validation</Label>
-                <p className="text-xs text-muted-foreground">Restrict payouts to the configured time window.</p>
+                <Label htmlFor="payout-validation">Enable Redemption Time Validation</Label>
+                <p className="text-xs text-muted-foreground">Restrict redemptions to the configured time window.</p>
               </div>
               <Switch id="payout-validation" checked={payoutValidation} onCheckedChange={setPayoutValidation} />
             </div>
@@ -78,18 +78,18 @@ export default function AdminSettings() {
             {payoutValidation && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
                 <div className="space-y-1.5">
-                  <Label htmlFor="payout-start">Payout Window Start</Label>
+                  <Label htmlFor="payout-start">Window Start</Label>
                   <Input id="payout-start" type="time" value={payoutStart} onChange={(e) => setPayoutStart(e.target.value)} />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="payout-end">Payout Window End</Label>
+                  <Label htmlFor="payout-end">Window End</Label>
                   <Input id="payout-end" type="time" value={payoutEnd} onChange={(e) => setPayoutEnd(e.target.value)} />
                 </div>
               </div>
             )}
 
             <p className="text-xs text-muted-foreground border-l-2 border-accent/40 pl-3">
-              Users can only request payouts during this time window.
+              Users can only request redemptions during this time window.
             </p>
           </CardContent>
         </Card>
@@ -99,37 +99,37 @@ export default function AdminSettings() {
           <CardHeader className="pb-4">
             <div className="flex items-center gap-2">
               <Zap className="h-5 w-5 text-accent" />
-              <CardTitle className="text-lg">Auto Pay Configuration</CardTitle>
+              <CardTitle className="text-lg">Auto Redemption Configuration</CardTitle>
             </div>
-            <CardDescription>Manage automatic payout behavior when ROI is credited.</CardDescription>
+            <CardDescription>Manage automatic redemption behavior when rewards are credited.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-5">
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <Label htmlFor="autopay-toggle">Enable Auto Pay System</Label>
-                <p className="text-xs text-muted-foreground">Automatically generate payout requests on ROI credit.</p>
+                <Label htmlFor="autopay-toggle">Enable Auto Redemption System</Label>
+                <p className="text-xs text-muted-foreground">Automatically generate redemption requests on reward credit.</p>
               </div>
               <Switch id="autopay-toggle" checked={autoPayEnabled} onCheckedChange={setAutoPayEnabled} />
             </div>
 
             {autoPayEnabled && (
               <div className="space-y-1.5 max-w-xs">
-                <Label>Default Auto Pay Mode</Label>
+                <Label>Default Auto Redemption Mode</Label>
                 <Select value={defaultAutoPayMode} onValueChange={setDefaultAutoPayMode}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="NONE">None</SelectItem>
-                    <SelectItem value="HALF">Half Auto Pay</SelectItem>
-                    <SelectItem value="FULL">Full Auto Pay</SelectItem>
+                    <SelectItem value="HALF">Half Auto Redemption</SelectItem>
+                    <SelectItem value="FULL">Full Auto Redemption</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             )}
 
             <p className="text-xs text-muted-foreground border-l-2 border-accent/40 pl-3">
-              If enabled, ROI payouts can be automatically generated based on user configuration.
+              If enabled, reward credits can be automatically redeemed based on user configuration.
             </p>
           </CardContent>
         </Card>
@@ -145,7 +145,7 @@ export default function AdminSettings() {
           </CardHeader>
           <CardContent className="space-y-5">
             <div className="space-y-1.5 max-w-xs">
-              <Label htmlFor="max-cycles">Maximum ROI Cycles Per Package</Label>
+              <Label htmlFor="max-cycles">Maximum Reward Cycles Per Plan</Label>
               <Input
                 id="max-cycles"
                 type="number"
@@ -157,8 +157,8 @@ export default function AdminSettings() {
 
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <Label htmlFor="multi-pkg">Allow Multiple Active Packages</Label>
-                <p className="text-xs text-muted-foreground">Users can have multiple packages active at the same time.</p>
+                <Label htmlFor="multi-pkg">Allow Multiple Active Plans</Label>
+                <p className="text-xs text-muted-foreground">Users can have multiple plans active at the same time.</p>
               </div>
               <Switch id="multi-pkg" checked={multiplePackages} onCheckedChange={setMultiplePackages} />
             </div>
@@ -178,7 +178,7 @@ export default function AdminSettings() {
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
                 <Label htmlFor="email-notif">Enable Email Notifications</Label>
-                <p className="text-xs text-muted-foreground">Send email alerts for payout events.</p>
+                <p className="text-xs text-muted-foreground">Send email alerts for redemption events.</p>
               </div>
               <Switch id="email-notif" checked={emailNotifications} onCheckedChange={setEmailNotifications} />
             </div>
@@ -186,13 +186,13 @@ export default function AdminSettings() {
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
                 <Label htmlFor="sms-notif">Enable SMS Notifications</Label>
-                <p className="text-xs text-muted-foreground">Send SMS alerts for payout events.</p>
+                <p className="text-xs text-muted-foreground">Send SMS alerts for redemption events.</p>
               </div>
               <Switch id="sms-notif" checked={smsNotifications} onCheckedChange={setSmsNotifications} />
             </div>
 
             <p className="text-xs text-muted-foreground border-l-2 border-accent/40 pl-3">
-              Send alerts to admin and users when payouts are requested or processed.
+              Send alerts to admin and users when redemptions are requested or processed.
             </p>
           </CardContent>
         </Card>

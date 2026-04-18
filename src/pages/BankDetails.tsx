@@ -24,7 +24,7 @@ export default function BankDetails() {
       });
     },
     onSuccess: () => {
-      toast({ title: "Bank details saved" });
+      toast({ title: "Account details saved" });
       setShowForm(false);
       setForm({ accountHolderName: "", bankName: "", accountNumber: "", confirmAccount: "", ifscCode: "" });
       qc.invalidateQueries({ queryKey: ["bank-details"] });
@@ -57,15 +57,15 @@ export default function BankDetails() {
       <div className="space-y-5">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-bold">Bank Details</h1>
-            <p className="text-sm text-muted-foreground mt-0.5">Required for payouts</p>
+            <h1 className="text-xl font-bold">Account Details</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">Required for redemptions</p>
           </div>
           <button
             onClick={() => { setShowForm(!showForm); if (!showForm && bank) { setForm({ accountHolderName: bank.accountHolderName, bankName: bank.bankName, accountNumber: bank.accountNumber, confirmAccount: bank.accountNumber, ifscCode: bank.ifscCode }); } }}
             className="accent-gradient text-accent-foreground text-xs font-semibold px-4 py-2.5 rounded-xl flex items-center gap-1.5 active:scale-[0.98] transition-transform"
           >
             {showForm ? <X className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
-            {showForm ? "Cancel" : bank ? "Edit" : "Add Bank"}
+            {showForm ? "Cancel" : bank ? "Edit" : "Add Account"}
           </button>
         </div>
 
@@ -73,16 +73,16 @@ export default function BankDetails() {
           <div className="bg-warning/10 border border-warning/20 rounded-2xl p-4 flex items-start gap-3 animate-fade-in">
             <AlertCircle className="h-5 w-5 text-warning shrink-0 mt-0.5" />
             <div>
-              <p className="text-[13px] font-semibold text-warning">Bank Details Required</p>
-              <p className="text-[11px] text-muted-foreground mt-0.5">You must add your bank details before requesting a payout.</p>
+              <p className="text-[13px] font-semibold text-warning">Account Details Required</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">You must add your account details before requesting a redemption.</p>
             </div>
           </div>
         )}
 
         {showForm && (
           <div className="bg-card rounded-2xl border border-accent/30 p-4 animate-fade-in">
-            <h3 className="font-bold text-sm mb-1">{bank ? "Update" : "Add"} Bank Account</h3>
-            <p className="text-[11px] text-muted-foreground mb-4">Please enter details exactly as per your bank records</p>
+            <h3 className="font-bold text-sm mb-1">{bank ? "Update" : "Add"} Account</h3>
+            <p className="text-[11px] text-muted-foreground mb-4">Please enter details exactly as per your records</p>
             <div className="space-y-3">
               {formFields.map((field) => (
                 <div key={field.name}>
@@ -98,7 +98,7 @@ export default function BankDetails() {
               ))}
               <button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending}
                 className="w-full accent-gradient text-accent-foreground text-sm font-semibold py-3.5 rounded-xl disabled:opacity-50 active:scale-[0.98] transition-transform mt-1">
-                {saveMutation.isPending ? "Saving..." : "Save Bank Details"}
+                {saveMutation.isPending ? "Saving..." : "Save Account Details"}
               </button>
             </div>
           </div>

@@ -7,8 +7,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { admin as adminApi } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
-
-function formatINR(n: number) { return "₹" + n.toLocaleString("en-IN"); }
+import { formatCredits } from "@/lib/format";
 
 const filterDefaults = { status: "", sourceType: "", from: "", to: "" };
 
@@ -25,7 +24,7 @@ const filterFields: FilterField[] = [
     key: "sourceType", label: "Source Type", type: "select", placeholder: "All",
     options: [
       { label: "Manual", value: "MANUAL" },
-      { label: "Auto Pay", value: "AUTO_PAY" },
+      { label: "Auto Redemption", value: "AUTO_PAY" },
     ],
   },
   { key: "from", label: "From Date", type: "date", placeholder: "Start date" },
@@ -53,7 +52,7 @@ export default function AdminPayouts() {
     mutationFn: ({ id, status, rejectionReason }: { id: string; status: string; rejectionReason?: string }) =>
       adminApi.processPayout(id, { status, rejectionReason }),
     onSuccess: () => {
-      toast({ title: "Payout processed" });
+      toast({ title: "Redemption processed" });
       qc.invalidateQueries({ queryKey: ["admin-payouts"] });
       setRejectingId(null);
       setRejectReason("");
@@ -65,7 +64,6 @@ export default function AdminPayouts() {
     PENDING: "pending", PROCESSED: "approved", REJECTED: "rejected",
   };
 
-  // Client-side fallback
   const filtered = (payoutsList ?? []).filter(p => {
     if (filters.status && p.status !== filters.status) return false;
     if (filters.sourceType && (p.sourceType ?? "MANUAL") !== filters.sourceType) return false;
@@ -78,8 +76,8 @@ export default function AdminPayouts() {
     <AdminLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold">Payout Approvals</h1>
-          <p className="text-sm text-muted-foreground mt-1">Review and process withdrawal requests</p>
+          <h1 className="text-2xl font-bold">Redemption Approvals</h1>
+          <p className="text-sm text-muted-foreground mt-1">Review and process redemption requests</p>
         </div>
 
         <FilterBar
@@ -95,18 +93,18 @@ export default function AdminPayouts() {
             <div className="h-8 w-8 border-2 border-accent border-t-transparent rounded-full animate-spin" />
           </div>
         ) : filtered.length === 0 ? (
-          <p className="text-center text-muted-foreground py-12">No payouts found</p>
+          <p className="text-center text-muted-foreground py-12">No redemptions found</p>
         ) : (
           <div className="space-y-3">
             {filtered.map((p) => (
               <div key={p.id} className="bg-card rounded-xl border border-border p-4 animate-fade-in">
                 <div className="flex items-start justify-between">
                   <div>
-                    <p className="font-semibold text-sm">{p.requestType} Payout</p>
-                    <p className="text-xs text-muted-foreground">{p.sourceType || "MANUAL"}</p>
+                    <p className="font-semibold text-sm">Redemption Request</p>
+                    <p className="text-xs text-muted-foreground">{(p.sourceType || "MANUAL") === "AUTO_PAY" ? "Auto Redemption" : "Manual"}</p>
                   </div>
                   <div className="text-right">
-                    <p className="font-bold text-sm">{formatINR(Number(p.amount))}</p>
+                    <p className="font-bold text-sm">{formatCredits(Number(p.amount))}</p>
                     <StatusBadge status={statusMap[p.status] || "pending"}>{p.status}</StatusBadge>
                   </div>
                 </div>
