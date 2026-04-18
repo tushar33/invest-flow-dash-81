@@ -2,7 +2,7 @@ import { AdminLayout } from "@/components/AdminLayout";
 import { AutoPayModeBadge } from "@/components/AutoPayModeBadge";
 import { FilterBar, type FilterField } from "@/components/FilterBar";
 import { useUrlFilters } from "@/hooks/useUrlFilters";
-import { Search, Package, Eye, Plus, BookOpen } from "lucide-react";
+import { Eye, Plus, BookOpen } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { admin as adminApi } from "@/lib/api";
 import { useState } from "react";
@@ -14,11 +14,10 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
+import { formatCredits } from "@/lib/format";
 
 const AUTO_PAY_MODES = ["NONE", "HALF", "FULL"] as const;
 type AutoPayModeValue = (typeof AUTO_PAY_MODES)[number];
-
-function formatINR(n: number) { return "₹" + n.toLocaleString("en-IN"); }
 
 const filterDefaults = { search: "", role: "", autoPayMode: "" };
 
@@ -29,7 +28,7 @@ const filterFields: FilterField[] = [
     options: [{ label: "User", value: "USER" }, { label: "Admin", value: "ADMIN" }],
   },
   {
-    key: "autoPayMode", label: "Auto Pay Mode", type: "select", placeholder: "All Modes",
+    key: "autoPayMode", label: "Auto Redemption", type: "select", placeholder: "All Modes",
     options: [{ label: "None", value: "NONE" }, { label: "Half", value: "HALF" }, { label: "Full", value: "FULL" }],
   },
 ];
@@ -64,7 +63,7 @@ export default function AdminUsers() {
         roiPercentage: Number(roiPct),
       }),
     onSuccess: () => {
-      toast({ title: "Package assigned successfully" });
+      toast({ title: "Plan assigned successfully" });
       queryClient.invalidateQueries({ queryKey: ["admin-users"] });
       queryClient.invalidateQueries({ queryKey: ["admin-packages"] });
       setAssignOpen(false);
@@ -72,7 +71,7 @@ export default function AdminUsers() {
       setRoiPct("");
     },
     onError: (err: Error) => {
-      toast({ title: "Failed to assign package", description: err.message, variant: "destructive" });
+      toast({ title: "Failed to assign plan", description: err.message, variant: "destructive" });
     },
   });
 
@@ -82,11 +81,11 @@ export default function AdminUsers() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-users"] });
       setAutopayUpdatingUserId(null);
-      toast({ title: "Auto Pay mode updated" });
+      toast({ title: "Auto Redemption mode updated" });
     },
     onError: (err: Error) => {
       setAutopayUpdatingUserId(null);
-      toast({ title: "Failed to update Auto Pay", description: err.message, variant: "destructive" });
+      toast({ title: "Failed to update Auto Redemption", description: err.message, variant: "destructive" });
     },
   });
 
@@ -103,7 +102,6 @@ export default function AdminUsers() {
     setAssignOpen(true);
   };
 
-  // Client-side fallback filter for role/autoPayMode if backend doesn't support it
   const filtered = (users ?? []).filter(u => {
     if (filters.search && !u.name.toLowerCase().includes(filters.search.toLowerCase()) && !(u.email ?? "").toLowerCase().includes(filters.search.toLowerCase())) return false;
     if (filters.role && u.role !== filters.role) return false;
@@ -146,14 +144,14 @@ export default function AdminUsers() {
                   </div>
                   <div className="flex items-center justify-between mt-3 pt-3 border-t border-border">
                     <span className="text-xs text-muted-foreground">Balance</span>
-                    <span className="text-sm font-semibold">{formatINR(u.currentBalance)}</span>
+                    <span className="text-sm font-semibold">{formatCredits(u.currentBalance)}</span>
                   </div>
                   <div className="flex items-center justify-between mt-1">
-                    <span className="text-xs text-muted-foreground">Packages</span>
+                    <span className="text-xs text-muted-foreground">Plans</span>
                     <span className="text-sm font-semibold">{u.totalPackages}</span>
                   </div>
                   <div className="mt-2 pt-2 border-t border-border">
-                    <p className="text-xs text-muted-foreground mb-1.5">Auto Pay Mode</p>
+                    <p className="text-xs text-muted-foreground mb-1.5">Auto Redemption Mode</p>
                     {currentUser?.id === u.id ? (
                       <AutoPayModeBadge mode={u.autoPayMode ?? "NONE"} />
                     ) : (
@@ -175,10 +173,10 @@ export default function AdminUsers() {
                   </div>
                   <div className="flex flex-col gap-2 mt-3 pt-3 border-t border-border">
                     <Button size="sm" variant="outline" className="w-full justify-start text-xs" onClick={() => openAssignModal(u.id, u.name)}>
-                      <Plus className="h-3.5 w-3.5 mr-1" /> Assign Package
+                      <Plus className="h-3.5 w-3.5 mr-1" /> Assign Plan
                     </Button>
                     <Button size="sm" variant="outline" className="w-full justify-start text-xs" onClick={() => navigate(`/admin/packages?userId=${u.id}`)}>
-                      <Eye className="h-3.5 w-3.5 mr-1" /> View Packages
+                      <Eye className="h-3.5 w-3.5 mr-1" /> View Plans
                     </Button>
                     <Button size="sm" variant="outline" className="w-full justify-start text-xs" onClick={() => navigate(`/wallet/ledger?userId=${u.id}`)}>
                       <BookOpen className="h-3.5 w-3.5 mr-1" /> View Ledger
@@ -198,8 +196,8 @@ export default function AdminUsers() {
                   <tr className="border-b border-border">
                     <th className="text-left text-xs font-medium text-muted-foreground p-4">Name</th>
                     <th className="text-left text-xs font-medium text-muted-foreground p-4">Email</th>
-                    <th className="text-left text-xs font-medium text-muted-foreground p-4">Auto Pay</th>
-                    <th className="text-left text-xs font-medium text-muted-foreground p-4">Packages</th>
+                    <th className="text-left text-xs font-medium text-muted-foreground p-4">Auto Redemption</th>
+                    <th className="text-left text-xs font-medium text-muted-foreground p-4">Plans</th>
                     <th className="text-left text-xs font-medium text-muted-foreground p-4">Balance</th>
                     <th className="text-left text-xs font-medium text-muted-foreground p-4">Role</th>
                     <th className="text-right text-xs font-medium text-muted-foreground p-4">Actions</th>
@@ -231,15 +229,15 @@ export default function AdminUsers() {
                         )}
                       </td>
                       <td className="p-4 text-sm font-semibold">{u.totalPackages}</td>
-                      <td className="p-4 text-sm font-semibold">{formatINR(u.currentBalance)}</td>
+                      <td className="p-4 text-sm font-semibold">{formatCredits(u.currentBalance)}</td>
                       <td className="p-4"><span className="text-[10px] font-bold bg-accent/15 text-accent px-2 py-0.5 rounded-full">{u.role}</span></td>
                       <td className="p-4 text-right">
                         <div className="flex flex-col gap-2 w-[160px] ml-auto">
                           <Button size="sm" variant="outline" className="text-xs justify-center w-full" onClick={() => openAssignModal(u.id, u.name)}>
-                            <Plus className="h-3.5 w-3.5 mr-1" /> Assign Package
+                            <Plus className="h-3.5 w-3.5 mr-1" /> Assign Plan
                           </Button>
                           <Button size="sm" variant="outline" className="text-xs justify-center w-full" onClick={() => navigate(`/admin/packages?userId=${u.id}`)}>
-                            <Eye className="h-3.5 w-3.5 mr-1" /> View Packages
+                            <Eye className="h-3.5 w-3.5 mr-1" /> View Plans
                           </Button>
                           <Button size="sm" variant="outline" className="text-xs justify-center w-full" onClick={() => navigate(`/wallet/ledger?userId=${u.id}`)}>
                             <BookOpen className="h-3.5 w-3.5 mr-1" /> View Ledger
@@ -258,22 +256,22 @@ export default function AdminUsers() {
         )}
       </div>
 
-      {/* Assign Package Modal */}
+      {/* Assign Plan Modal */}
       <Dialog open={assignOpen} onOpenChange={setAssignOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Assign Package</DialogTitle>
-            <DialogDescription>Assign a new investment package to <span className="font-semibold text-foreground">{selectedUserName}</span>.</DialogDescription>
+            <DialogTitle>Assign Plan</DialogTitle>
+            <DialogDescription>Assign a new plan to <span className="font-semibold text-foreground">{selectedUserName}</span>.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label>Package Amount (₹)</Label>
+              <Label>Contribution Amount (Credits)</Label>
               <Input type="number" placeholder="e.g. 100000" value={pkgAmount} onChange={(e) => setPkgAmount(e.target.value)} />
             </div>
             <div className="space-y-2">
-              <Label>ROI Percentage</Label>
+              <Label>Reward Percentage</Label>
               <Select value={roiPct} onValueChange={setRoiPct}>
-                <SelectTrigger><SelectValue placeholder="Select ROI %" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder="Select Reward %" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="5">5%</SelectItem>
                   <SelectItem value="7">7%</SelectItem>
@@ -288,7 +286,7 @@ export default function AdminUsers() {
               onClick={() => assignMutation.mutate()}
               disabled={!pkgAmount || !roiPct || assignMutation.isPending}
             >
-              {assignMutation.isPending ? "Assigning..." : "Assign Package"}
+              {assignMutation.isPending ? "Assigning..." : "Assign Plan"}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -18,8 +18,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-
-function formatINR(n: number) { return "₹" + n.toLocaleString("en-IN"); }
+import { formatCredits } from "@/lib/format";
 
 /* ── Edit Assignment Date Modal ───────────────────────────────────────── */
 interface EditDateModalProps { pkg: AdminPackage; onClose: () => void; onSuccess: () => void; }
@@ -44,7 +43,7 @@ function EditDateModal({ pkg, onClose, onSuccess }: EditDateModalProps) {
         <div className="space-y-4 py-2">
           <div className="space-y-1 text-sm text-muted-foreground">
             <p><span className="font-medium text-foreground">User:</span> {pkg.userName}</p>
-            <p><span className="font-medium text-foreground">Principal:</span> {formatINR(Number(pkg.principalAmount))}</p>
+            <p><span className="font-medium text-foreground">Contribution:</span> {formatCredits(Number(pkg.principalAmount))}</p>
             <p><span className="font-medium text-foreground">Cycles completed:</span> {pkg.cyclesCompleted}/{pkg.totalCycles}</p>
           </div>
           {error && <p className="text-sm text-destructive">{error}</p>}
@@ -52,7 +51,7 @@ function EditDateModal({ pkg, onClose, onSuccess }: EditDateModalProps) {
             <div className="space-y-2">
               <Label htmlFor="assignedDate">New Assignment Date</Label>
               <Input id="assignedDate" type="date" required value={date} onChange={(e) => setDate(e.target.value)} />
-              <p className="text-xs text-muted-foreground">Only allowed when no ROI cycles have been processed.</p>
+              <p className="text-xs text-muted-foreground">Only allowed when no reward cycles have been processed.</p>
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
@@ -67,7 +66,7 @@ function EditDateModal({ pkg, onClose, onSuccess }: EditDateModalProps) {
   );
 }
 
-/* ── Cancel Package Confirmation ──────────────────────────────────────── */
+/* ── Cancel Plan Confirmation ──────────────────────────────────────── */
 interface CancelModalProps { pkg: AdminPackage; onClose: () => void; }
 
 function CancelPackageModal({ pkg, onClose }: CancelModalProps) {
@@ -77,11 +76,11 @@ function CancelPackageModal({ pkg, onClose }: CancelModalProps) {
     mutationFn: () => adminApi.cancelPackage(pkg.packageId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-packages"] });
-      toast({ title: "Package cancelled successfully" });
+      toast({ title: "Plan cancelled successfully" });
       onClose();
     },
     onError: (err: Error) => {
-      toast({ title: "Cannot cancel package after ROI started", description: err.message, variant: "destructive" });
+      toast({ title: "Cannot cancel plan after rewards started", description: err.message, variant: "destructive" });
       onClose();
     },
   });
@@ -90,11 +89,11 @@ function CancelPackageModal({ pkg, onClose }: CancelModalProps) {
     <AlertDialog open onOpenChange={(open) => !open && onClose()}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Cancel Package</AlertDialogTitle>
+          <AlertDialogTitle>Cancel Plan</AlertDialogTitle>
           <AlertDialogDescription>
-            Are you sure you want to cancel this package?
+            Are you sure you want to cancel this plan?
             <span className="block mt-2 text-foreground font-medium">
-              {pkg.userName} — {formatINR(Number(pkg.principalAmount))}
+              {pkg.userName} — {formatCredits(Number(pkg.principalAmount))}
             </span>
           </AlertDialogDescription>
         </AlertDialogHeader>
@@ -105,7 +104,7 @@ function CancelPackageModal({ pkg, onClose }: CancelModalProps) {
             disabled={mutation.isPending}
             onClick={(e) => { e.preventDefault(); mutation.mutate(); }}
           >
-            {mutation.isPending ? "Cancelling…" : "Yes, cancel package"}
+            {mutation.isPending ? "Cancelling…" : "Yes, cancel plan"}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
@@ -123,7 +122,7 @@ const filterFields: FilterField[] = [
     options: [{ label: "Active", value: "ACTIVE" }, { label: "Completed", value: "MATURED" }, { label: "Closed", value: "CLOSED" }],
   },
   {
-    key: "roiPercentage", label: "ROI %", type: "select", placeholder: "All",
+    key: "roiPercentage", label: "Reward %", type: "select", placeholder: "All",
     options: [{ label: "5%", value: "5" }, { label: "7%", value: "7" }, { label: "10%", value: "10" }],
   },
   { key: "from", label: "From Date", type: "date", placeholder: "Start date" },
@@ -147,7 +146,6 @@ export default function AdminPackages() {
     }),
   });
 
-  // Client-side fallback filtering
   const filtered = (pkgs ?? []).filter(p => {
     if (filters.userId && p.userId !== filters.userId && !p.userName.toLowerCase().includes(filters.userId.toLowerCase())) return false;
     if (filters.status && p.status !== filters.status) return false;
@@ -166,9 +164,9 @@ export default function AdminPackages() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold">Packages</h1>
+            <h1 className="text-2xl font-bold">Plans</h1>
             <p className="text-sm text-muted-foreground mt-1">
-              {filters.userId ? `Filtered by user` : "All assigned packages"}
+              {filters.userId ? `Filtered by user` : "All assigned plans"}
             </p>
           </div>
           {filters.userId && (
@@ -191,7 +189,7 @@ export default function AdminPackages() {
             <div className="h-8 w-8 border-2 border-accent border-t-transparent rounded-full animate-spin" />
           </div>
         ) : !filtered.length ? (
-          <p className="text-center text-muted-foreground py-12">No packages found</p>
+          <p className="text-center text-muted-foreground py-12">No plans found</p>
         ) : (
           <div className="space-y-3">
             {filtered.map((pkg) => (
@@ -203,15 +201,15 @@ export default function AdminPackages() {
                     </div>
                     <div>
                       <p className="font-semibold text-sm">{pkg.userName}</p>
-                      <p className="text-lg font-bold">{formatINR(Number(pkg.principalAmount))}</p>
+                      <p className="text-lg font-bold">{formatCredits(Number(pkg.principalAmount))}</p>
                     </div>
                   </div>
                   <StatusBadge status={statusMap[pkg.status] || "inactive"}>{pkg.status}</StatusBadge>
                 </div>
                 <div className="flex items-center gap-4 mt-3 pt-3 border-t border-border text-xs text-muted-foreground flex-wrap">
-                  <span>ROI: {pkg.roiPercentage}%</span>
+                  <span>Reward: {pkg.roiPercentage}%</span>
                   <span>Cycles: {pkg.cyclesCompleted}/{pkg.totalCycles}</span>
-                  <span>Next ROI: {new Date(pkg.nextRoiDate).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" })}</span>
+                  <span>Next Reward: {new Date(pkg.nextRoiDate).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" })}</span>
                   <span>Assigned: {new Date(pkg.assignedDate).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" })}</span>
                 </div>
                 <div className="mt-3 pt-3 border-t border-border flex flex-wrap gap-2">
@@ -220,17 +218,17 @@ export default function AdminPackages() {
                   </Button>
                   <Button size="sm" variant="outline" className="text-xs"
                     disabled={pkg.cyclesCompleted > 0}
-                    title={pkg.cyclesCompleted > 0 ? "Cannot edit after ROI cycles are processed" : "Edit assignment date"}
+                    title={pkg.cyclesCompleted > 0 ? "Cannot edit after reward cycles are processed" : "Edit assignment date"}
                     onClick={() => setEditTarget(pkg)}
                   >
                     <Calendar className="h-3.5 w-3.5 mr-1" /> Edit Date
                   </Button>
                   <Button size="sm" variant="outline" className="text-xs text-destructive hover:bg-destructive hover:text-destructive-foreground"
                     disabled={pkg.status !== "ACTIVE"}
-                    title={pkg.status !== "ACTIVE" ? "Only active packages can be cancelled" : "Cancel this package"}
+                    title={pkg.status !== "ACTIVE" ? "Only active plans can be cancelled" : "Cancel this plan"}
                     onClick={() => setCancelTarget(pkg)}
                   >
-                    <XCircle className="h-3.5 w-3.5 mr-1" /> Cancel Package
+                    <XCircle className="h-3.5 w-3.5 mr-1" /> Cancel Plan
                   </Button>
                 </div>
               </div>

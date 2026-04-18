@@ -8,20 +8,20 @@ import {
 
 const userNav = [
   { to: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
-  { to: "/packages", icon: Package, label: "Packages" },
-  { to: "/wallet", icon: Wallet, label: "Wallet" },
+  { to: "/packages", icon: Package, label: "Plans" },
+  { to: "/wallet", icon: Wallet, label: "Activity" },
   { to: "/wallet/ledger", icon: FileText, label: "Ledger" },
-  { to: "/payouts", icon: CreditCard, label: "Payouts" },
-  { to: "/bank-details", icon: Settings, label: "Bank Details" },
+  { to: "/payouts", icon: CreditCard, label: "Redemptions" },
+  { to: "/bank-details", icon: Settings, label: "Account Details" },
   { to: "/profile", icon: User, label: "Profile" },
 ];
 
 const adminNav = [
   { to: "/admin", icon: LayoutDashboard, label: "Dashboard" },
   { to: "/admin/users", icon: Users, label: "Users" },
-  { to: "/admin/packages", icon: Package, label: "Packages" },
-  { to: "/admin/payouts", icon: CreditCard, label: "Payouts" },
-  { to: "/admin/roi-logs", icon: TrendingUp, label: "ROI Logs" },
+  { to: "/admin/packages", icon: Package, label: "Plans" },
+  { to: "/admin/payouts", icon: CreditCard, label: "Redemptions" },
+  { to: "/admin/roi-logs", icon: TrendingUp, label: "Reward Logs" },
   { to: "/admin/settings", icon: Settings, label: "Settings" },
 ];
 
