@@ -134,9 +134,11 @@ function useToast() {
 
   return {
     ...state,
-    toast,
+    toast: toast as ToastFn,
     dismiss: (toastId?: string) => dispatch({ type: "DISMISS_TOAST", toastId }),
   };
 }
 
-export { useToast, toast };
+const typedToast = toast as ToastFn;
+export { useToast, typedToast as toast };
+
