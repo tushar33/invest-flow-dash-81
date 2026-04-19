@@ -33,69 +33,55 @@ export function BottomNav() {
   };
 
   const profileActive = location.pathname === "/profile" || location.pathname.startsWith("/profile/");
+  const initials = user?.fullName?.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2) || "U";
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden">
-      <div className="bg-card/80 backdrop-blur-xl border-t border-border/50 safe-area-bottom">
-        <div className="flex items-center justify-around h-[68px] px-1">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden px-3 pb-3 pointer-events-none">
+      <div className="pointer-events-auto bg-card/85 backdrop-blur-2xl border border-border/60 rounded-2xl shadow-elevated">
+        <div className="flex items-center justify-around h-[64px] px-1">
           {userNav.map((item) => {
             const isActive = location.pathname === item.to || location.pathname.startsWith(item.to + "/");
             return (
               <RouterNavLink
                 key={item.to}
                 to={item.to}
-                className="flex flex-col items-center justify-center gap-1 flex-1 relative py-1"
+                className="flex flex-col items-center justify-center gap-0.5 flex-1 relative py-1"
               >
-                {isActive && (
-                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-6 h-0.5 rounded-full bg-accent" />
-                )}
                 <div className={cn(
-                  "h-9 w-9 rounded-xl flex items-center justify-center transition-all duration-200",
-                  isActive ? "bg-accent/12 scale-105" : ""
+                  "h-9 w-9 rounded-xl flex items-center justify-center transition-all duration-300",
+                  isActive ? "bg-gradient-accent shadow-glow scale-110" : "bg-transparent"
                 )}>
-                  <item.icon
-                    className={cn(
-                      "h-[20px] w-[20px] transition-all duration-200",
-                      isActive ? "text-accent" : "text-muted-foreground"
-                    )}
-                  />
+                  <item.icon className={cn(
+                    "h-[18px] w-[18px] transition-colors",
+                    isActive ? "text-accent-foreground" : "text-muted-foreground"
+                  )} />
                 </div>
-                <span
-                  className={cn(
-                    "text-[10px] font-semibold leading-none transition-all duration-200",
-                    isActive ? "text-accent" : "text-muted-foreground"
-                  )}
-                >
+                <span className={cn(
+                  "text-[9px] font-semibold leading-none transition-colors",
+                  isActive ? "text-accent" : "text-muted-foreground"
+                )}>
                   {item.label}
                 </span>
               </RouterNavLink>
             );
           })}
 
-          {/* Profile Sheet */}
           <Sheet open={profileOpen} onOpenChange={setProfileOpen}>
             <SheetTrigger asChild>
-              <button className="flex flex-col items-center justify-center gap-1 flex-1 relative py-1">
-                {profileActive && (
-                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-6 h-0.5 rounded-full bg-accent" />
-                )}
+              <button className="flex flex-col items-center justify-center gap-0.5 flex-1 relative py-1">
                 <div className={cn(
-                  "h-9 w-9 rounded-xl flex items-center justify-center transition-all duration-200",
-                  profileActive ? "bg-accent/12 scale-105" : ""
+                  "h-9 w-9 rounded-xl flex items-center justify-center transition-all duration-300",
+                  profileActive ? "bg-gradient-accent shadow-glow scale-110" : "bg-transparent"
                 )}>
-                  <User
-                    className={cn(
-                      "h-[20px] w-[20px] transition-all duration-200",
-                      profileActive ? "text-accent" : "text-muted-foreground"
-                    )}
-                  />
+                  <User className={cn(
+                    "h-[18px] w-[18px] transition-colors",
+                    profileActive ? "text-accent-foreground" : "text-muted-foreground"
+                  )} />
                 </div>
-                <span
-                  className={cn(
-                    "text-[10px] font-semibold leading-none transition-all duration-200",
-                    profileActive ? "text-accent" : "text-muted-foreground"
-                  )}
-                >
+                <span className={cn(
+                  "text-[9px] font-semibold leading-none transition-colors",
+                  profileActive ? "text-accent" : "text-muted-foreground"
+                )}>
                   Profile
                 </span>
               </button>
@@ -105,31 +91,20 @@ export function BottomNav() {
                 <SheetTitle>Profile</SheetTitle>
               </SheetHeader>
               <div className="mt-4 space-y-3">
-                <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-                  <div className="h-12 w-12 rounded-full bg-accent/20 flex items-center justify-center">
-                    <User className="h-6 w-6 text-accent" />
+                <div className="flex items-center gap-3 p-3 rounded-2xl bg-gradient-subtle border border-border">
+                  <div className="h-12 w-12 rounded-2xl bg-gradient-accent flex items-center justify-center text-sm font-bold text-accent-foreground shadow-glow">
+                    {initials}
                   </div>
                   <div>
                     <p className="text-sm font-semibold">{user?.fullName}</p>
                     <p className="text-xs text-muted-foreground">{user?.email || user?.phone}</p>
                   </div>
                 </div>
-                <Button
-                  variant="ghost"
-                  onClick={() => {
-                    setProfileOpen(false);
-                    navigate("/profile");
-                  }}
-                  className="w-full justify-start"
-                >
+                <Button variant="ghost" onClick={() => { setProfileOpen(false); navigate("/profile"); }} className="w-full justify-start">
                   <User className="h-4 w-4" />
                   View Profile
                 </Button>
-                <Button
-                  variant="ghost"
-                  onClick={handleLogout}
-                  className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10"
-                >
+                <Button variant="ghost" onClick={handleLogout} className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10">
                   <LogOut className="h-4 w-4" />
                   Sign Out
                 </Button>

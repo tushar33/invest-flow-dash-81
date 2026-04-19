@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   LayoutDashboard, Package, Wallet, CreditCard, User,
-  Users, Settings, FileText, TrendingUp, Shield, LogOut
+  Users, Settings, FileText, TrendingUp, Shield, LogOut, Sparkles
 } from "lucide-react";
 
 const userNav = [
@@ -40,15 +40,29 @@ export function DesktopSidebar({ role }: DesktopSidebarProps) {
     navigate("/login", { replace: true });
   };
 
+  const initials = user?.fullName?.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2) || "U";
+
   return (
-    <aside className="hidden md:flex md:w-60 flex-col fintech-gradient h-screen sticky top-0 overflow-y-auto">
-      <div className="p-6">
-        <h1 className="text-lg font-bold text-primary-foreground tracking-tight flex items-center gap-2">
-          <Shield className="h-5 w-5 text-accent" />
-          InvestROI
-        </h1>
+    <aside className="hidden md:flex md:w-64 flex-col bg-sidebar h-screen sticky top-0 overflow-hidden border-r border-sidebar-border">
+      {/* Decorative mesh */}
+      <div aria-hidden className="absolute inset-0 opacity-30 pointer-events-none">
+        <div className="absolute -top-20 -left-10 h-56 w-56 rounded-full bg-accent/30 blur-3xl" />
+        <div className="absolute top-1/3 -right-16 h-48 w-48 rounded-full bg-primary-glow/40 blur-3xl" />
       </div>
-      <nav className="flex-1 px-3 space-y-1">
+
+      <div className="relative px-6 pt-6 pb-5">
+        <div className="flex items-center gap-2.5">
+          <div className="h-9 w-9 rounded-xl bg-gradient-accent flex items-center justify-center shadow-glow">
+            <Sparkles className="h-4 w-4 text-accent-foreground" />
+          </div>
+          <div>
+            <h1 className="text-base font-bold text-sidebar-foreground tracking-tight leading-none">InvestROI</h1>
+            <p className="text-[10px] text-sidebar-foreground/50 mt-0.5 uppercase tracking-widest">{role === "admin" ? "Admin Console" : "Member"}</p>
+          </div>
+        </div>
+      </div>
+
+      <nav className="relative flex-1 px-3 space-y-0.5 overflow-y-auto">
         {nav.map((item) => {
           const isActive = role === "admin"
             ? (item.to === "/admin" ? location.pathname === "/admin" : location.pathname.startsWith(item.to))
@@ -58,57 +72,51 @@ export function DesktopSidebar({ role }: DesktopSidebarProps) {
               key={item.to}
               to={item.to}
               className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
+                "group relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200",
                 isActive
-                  ? "bg-sidebar-accent text-primary-foreground"
-                  : "text-sidebar-foreground/70 hover:text-primary-foreground hover:bg-sidebar-accent/50"
+                  ? "bg-sidebar-accent text-sidebar-foreground shadow-sm"
+                  : "text-sidebar-foreground/65 hover:text-sidebar-foreground hover:bg-sidebar-accent/40"
               )}
             >
-              <item.icon className="h-4 w-4" />
-              {item.label}
+              {isActive && (
+                <span className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-0.5 rounded-r-full bg-accent shadow-glow" />
+              )}
+              <item.icon className={cn("h-4 w-4 transition-transform", isActive && "text-accent")} />
+              <span className="flex-1">{item.label}</span>
             </RouterNavLink>
           );
         })}
       </nav>
-      
-      {/* Profile Menu & Role Switcher */}
-      <div className="p-3 space-y-2">
+
+      <div className="relative p-3 space-y-2 border-t border-sidebar-border/60">
         {role === "user" && user?.role === "ADMIN" && (
-          <RouterNavLink
-            to="/admin"
-            className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-sidebar-foreground/50 hover:text-primary-foreground transition-colors"
-          >
+          <RouterNavLink to="/admin" className="flex items-center gap-2 px-3 py-2 rounded-lg text-[11px] text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/40 transition-colors">
             <Shield className="h-3 w-3" />
-            Admin Panel
+            Switch to Admin
           </RouterNavLink>
         )}
         {role === "admin" && (
-          <RouterNavLink
-            to="/dashboard"
-            className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-sidebar-foreground/50 hover:text-primary-foreground transition-colors"
-          >
+          <RouterNavLink to="/dashboard" className="flex items-center gap-2 px-3 py-2 rounded-lg text-[11px] text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/40 transition-colors">
             <User className="h-3 w-3" />
-            User Dashboard
+            Member View
           </RouterNavLink>
         )}
 
-        {/* Profile Info */}
-        <div className="flex items-center gap-2 px-3 py-2">
-          <div className="h-8 w-8 rounded-full bg-accent/20 flex items-center justify-center">
-            <User className="h-4 w-4 text-accent" />
+        <div className="flex items-center gap-2.5 px-2 py-2 rounded-xl bg-sidebar-accent/40">
+          <div className="h-9 w-9 rounded-full bg-gradient-accent flex items-center justify-center text-[11px] font-bold text-accent-foreground shrink-0">
+            {initials}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-semibold text-primary-foreground truncate">{user?.fullName}</p>
-            <p className="text-[10px] text-sidebar-foreground/60 truncate">{user?.email || user?.phone}</p>
+            <p className="text-xs font-semibold text-sidebar-foreground truncate">{user?.fullName}</p>
+            <p className="text-[10px] text-sidebar-foreground/55 truncate">{user?.email || user?.phone}</p>
           </div>
         </div>
 
-        {/* Sign Out Button */}
         <button
           onClick={handleLogout}
-          className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold bg-destructive/15 text-destructive hover:bg-destructive hover:text-destructive-foreground transition-all duration-200 w-full group"
+          className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-semibold bg-destructive/10 text-destructive hover:bg-destructive hover:text-destructive-foreground transition-all duration-200 w-full group"
         >
-          <LogOut className="h-5 w-5 transition-transform duration-200 group-hover:-translate-x-0.5" />
+          <LogOut className="h-3.5 w-3.5 transition-transform duration-200 group-hover:-translate-x-0.5" />
           Sign Out
         </button>
       </div>
