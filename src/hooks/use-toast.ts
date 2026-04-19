@@ -106,14 +106,20 @@ function toast({ ...props }: Toast) {
 }
 
 // Premium helpers
-toast.success = (title: React.ReactNode, description?: React.ReactNode) =>
-  toast({ title, description, variant: "success" });
-toast.error = (title: React.ReactNode, description?: React.ReactNode) =>
-  toast({ title, description, variant: "error" });
-toast.warning = (title: React.ReactNode, description?: React.ReactNode) =>
-  toast({ title, description, variant: "warning" });
-toast.info = (title: React.ReactNode, description?: React.ReactNode) =>
-  toast({ title, description, variant: "info" });
+type ToastFn = typeof toast & {
+  success: (title: React.ReactNode, description?: React.ReactNode) => ReturnType<typeof toast>;
+  error: (title: React.ReactNode, description?: React.ReactNode) => ReturnType<typeof toast>;
+  warning: (title: React.ReactNode, description?: React.ReactNode) => ReturnType<typeof toast>;
+  info: (title: React.ReactNode, description?: React.ReactNode) => ReturnType<typeof toast>;
+};
+(toast as ToastFn).success = (title, description) =>
+  toast({ title: title as string, description: description as string, variant: "success" });
+(toast as ToastFn).error = (title, description) =>
+  toast({ title: title as string, description: description as string, variant: "error" });
+(toast as ToastFn).warning = (title, description) =>
+  toast({ title: title as string, description: description as string, variant: "warning" });
+(toast as ToastFn).info = (title, description) =>
+  toast({ title: title as string, description: description as string, variant: "info" });
 
 function useToast() {
   const [state, setState] = React.useState<State>(memoryState);
