@@ -11,6 +11,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PageHeader } from "@/components/ui/page-header";
+import { StatTile } from "@/components/ui/stat-tile";
+import { EmptyState } from "@/components/ui/empty-state";
 import {
   ArrowUpCircle, ArrowDownCircle, Search, Wallet,
   TrendingUp, TrendingDown, Coins
@@ -111,18 +114,14 @@ export default function WalletLedger() {
   return (
     <Layout>
       <div className="space-y-6">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <Wallet className="h-6 w-6 text-accent" />
-            <h1 className="text-2xl font-bold text-foreground">Activity / Ledger</h1>
-          </div>
-          <p className="text-muted-foreground text-sm">
-            {packageIdFilter ? `Activity for plan ${packageIdFilter}` : "Complete activity history and balance summary."}
-          </p>
-        </div>
+        <PageHeader
+          icon={<Wallet className="h-5 w-5" />}
+          title="Activity / Ledger"
+          subtitle={packageIdFilter ? `Activity for plan ${packageIdFilter}` : "Complete activity history and balance summary."}
+        />
 
         {isAdmin && !userIdFromUrl && (
-          <Card>
+          <Card className="shadow-card">
             <CardHeader className="pb-3"><CardTitle className="text-base">Select User</CardTitle></CardHeader>
             <CardContent>
               <div className="flex gap-2">
@@ -130,7 +129,7 @@ export default function WalletLedger() {
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input placeholder="Search by user ID..." value={userSearch} onChange={(e) => setUserSearch(e.target.value)} className="pl-9" />
                 </div>
-                <Button onClick={() => setSelectedUserId(userSearch)} disabled={!userSearch.trim()}>Load Activity</Button>
+                <Button onClick={() => setSelectedUserId(userSearch)} disabled={!userSearch.trim()} className="bg-gradient-accent text-accent-foreground shadow-glow">Load Activity</Button>
               </div>
             </CardContent>
           </Card>
@@ -138,9 +137,9 @@ export default function WalletLedger() {
 
         {walletData && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card><CardContent className="p-4"><div className="flex items-center gap-3"><div className="h-10 w-10 rounded-lg bg-accent/10 flex items-center justify-center"><Coins className="h-5 w-5 text-accent" /></div><div><p className="text-sm text-muted-foreground">Balance</p><p className="text-xl font-bold">{formatCredits(walletData.availableBalance)}</p></div></div></CardContent></Card>
-            <Card><CardContent className="p-4"><div className="flex items-center gap-3"><div className="h-10 w-10 rounded-lg bg-success/10 flex items-center justify-center"><TrendingUp className="h-5 w-5 text-success" /></div><div><p className="text-sm text-muted-foreground">Total Credits</p><p className="text-xl font-bold text-success">{formatCredits(totalCredits)}</p></div></div></CardContent></Card>
-            <Card><CardContent className="p-4"><div className="flex items-center gap-3"><div className="h-10 w-10 rounded-lg bg-destructive/10 flex items-center justify-center"><TrendingDown className="h-5 w-5 text-destructive" /></div><div><p className="text-sm text-muted-foreground">Total Debits</p><p className="text-xl font-bold text-destructive">{formatCredits(totalDebits)}</p></div></div></CardContent></Card>
+            <StatTile label="Balance" value={formatCredits(walletData.availableBalance)} icon={Coins} accent="primary" />
+            <StatTile label="Total Credits" value={formatCredits(totalCredits)} icon={TrendingUp} accent="success" />
+            <StatTile label="Total Debits" value={formatCredits(totalDebits)} icon={TrendingDown} accent="warning" />
           </div>
         )}
 
@@ -152,7 +151,7 @@ export default function WalletLedger() {
           hasActive={hasActiveFilters}
         />
 
-        <Card>
+        <Card className="shadow-card">
           <CardHeader>
             <CardTitle className="text-lg">Activity History</CardTitle>
             <p className="text-sm text-muted-foreground">Showing {filteredTransactions.length} entr{filteredTransactions.length !== 1 ? 'ies' : 'y'}</p>
@@ -161,7 +160,7 @@ export default function WalletLedger() {
             {isLoading ? (
               <div className="space-y-4">
                 {Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="flex items-center gap-4 p-4 border rounded-lg">
+                  <div key={i} className="flex items-center gap-4 p-4 border rounded-xl">
                     <Skeleton className="h-10 w-10 rounded-full" />
                     <div className="flex-1 space-y-2"><Skeleton className="h-4 w-1/4" /><Skeleton className="h-3 w-1/3" /></div>
                     <Skeleton className="h-6 w-20" />
@@ -169,15 +168,11 @@ export default function WalletLedger() {
                 ))}
               </div>
             ) : filteredTransactions.length === 0 ? (
-              <div className="text-center py-12">
-                <Wallet className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-medium mb-2">No activity found</h3>
-                <p className="text-muted-foreground">No entries match your current filters.</p>
-              </div>
+              <EmptyState icon={Wallet} title="No activity found" description="No entries match your current filters." />
             ) : (
               <div className="space-y-3">
                 {filteredTransactions.map((txn) => (
-                  <div key={txn.id} className="flex items-center gap-4 p-4 border rounded-lg hover:bg-muted/50 transition-colors">
+                  <div key={txn.id} className="flex items-center gap-4 p-4 border rounded-xl hover:bg-muted/30 hover:border-accent/30 transition-all">
                     <div className="flex-shrink-0">{getTransactionIcon(txn.type, txn.direction)}</div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
