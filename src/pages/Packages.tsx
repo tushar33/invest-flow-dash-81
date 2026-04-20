@@ -2,7 +2,10 @@ import { UserLayout } from "@/components/UserLayout";
 import { StatusBadge } from "@/components/StatusBadge";
 import { FilterBar, type FilterField } from "@/components/FilterBar";
 import { useUrlFilters } from "@/hooks/useUrlFilters";
-import { Gift, CalendarDays, RefreshCw } from "lucide-react";
+import { PageHeader } from "@/components/ui/page-header";
+import { GradientCard } from "@/components/ui/gradient-card";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Gift, CalendarDays, RefreshCw, Package as PackageIcon } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { packages as packagesApi } from "@/lib/api";
 import { formatCredits } from "@/lib/format";
@@ -42,24 +45,25 @@ export default function Packages() {
 
   return (
     <UserLayout>
-      <div className="space-y-5">
-        <div>
-          <h1 className="text-xl font-bold">My Plans</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Assigned by administrator</p>
-        </div>
+      <div className="space-y-6">
+        <PageHeader
+          icon={<PackageIcon className="h-5 w-5" />}
+          title="My Plans"
+          subtitle="Assigned by administrator"
+        />
 
-        <div className="fintech-gradient rounded-2xl p-4 text-primary-foreground">
+        <GradientCard variant="hero" className="animate-slide-up-fade">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <p className="text-[11px] uppercase tracking-widest opacity-70">Total Contribution</p>
-              <p className="text-xl font-bold mt-0.5">{formatCredits(totalContribution)}</p>
+              <p className="text-[11px] uppercase tracking-widest opacity-80 font-semibold">Total Contribution</p>
+              <p className="text-2xl font-bold mt-1 tabular-nums">{formatCredits(totalContribution)}</p>
             </div>
             <div className="text-right">
-              <p className="text-[11px] uppercase tracking-widest opacity-70">Active Plans</p>
-              <p className="text-xl font-bold mt-0.5 text-accent">{activeCount}</p>
+              <p className="text-[11px] uppercase tracking-widest opacity-80 font-semibold">Active Plans</p>
+              <p className="text-2xl font-bold mt-1 text-accent tabular-nums">{activeCount}</p>
             </div>
           </div>
-        </div>
+        </GradientCard>
 
         <FilterBar
           fields={filterFields}
@@ -74,7 +78,7 @@ export default function Packages() {
             <div className="h-8 w-8 border-2 border-accent border-t-transparent rounded-full animate-spin" />
           </div>
         ) : !filtered.length ? (
-          <p className="text-center text-muted-foreground py-12">No plans found</p>
+          <EmptyState icon={PackageIcon} title="No plans found" description="Plans assigned by your administrator will appear here." />
         ) : (
           <div className="space-y-3">
             {filtered.map((pkg) => {
@@ -83,18 +87,19 @@ export default function Packages() {
               };
               const remainingCycles = Math.max(0, pkg.totalCycles - pkg.cyclesCompleted);
               const remainingBalance = remainingCycles * Number(pkg.roiCycleAmount);
+              const progress = (pkg.cyclesCompleted / pkg.totalCycles) * 100;
               return (
-                <div key={pkg.id} className="bg-card rounded-2xl border border-border p-4 animate-fade-in">
+                <div key={pkg.id} className="bg-card rounded-2xl border border-border p-4 shadow-card hover:shadow-elevated hover:border-accent/30 transition-all animate-slide-up-fade">
                   <div className="flex items-center justify-between mb-3">
                     <div>
-                      <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Contribution</p>
-                      <p className="text-xl font-bold">{formatCredits(Number(pkg.principalAmount))}</p>
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Contribution</p>
+                      <p className="text-xl font-bold tabular-nums">{formatCredits(Number(pkg.principalAmount))}</p>
                     </div>
                     <StatusBadge status={statusMap[pkg.status] || "inactive"}>{pkg.status}</StatusBadge>
                   </div>
 
                   <div className="flex items-center gap-2 mb-3">
-                    <div className="flex items-center gap-1.5 text-[11px] bg-accent/10 text-accent font-semibold rounded-lg px-2.5 py-1.5">
+                    <div className="flex items-center gap-1.5 text-[11px] bg-gradient-to-r from-accent/15 to-accent/5 text-accent font-semibold rounded-lg px-2.5 py-1.5 border border-accent/20">
                       <Gift className="h-3 w-3" />
                       {pkg.roiPercentage}% Reward · {formatCredits(Number(pkg.roiCycleAmount))}/cycle
                     </div>
@@ -102,24 +107,24 @@ export default function Packages() {
 
                   <div className="grid grid-cols-2 gap-3 mb-3 pt-3 border-t border-border/50">
                     <div>
-                      <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Monthly Benefit</p>
-                      <p className="text-[13px] font-semibold mt-0.5">{formatCredits(Number(pkg.roiCycleAmount))}</p>
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Monthly Benefit</p>
+                      <p className="text-[13px] font-semibold mt-0.5 tabular-nums">{formatCredits(Number(pkg.roiCycleAmount))}</p>
                     </div>
                     <div>
-                      <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Remaining Balance</p>
-                      <p className="text-[13px] font-semibold mt-0.5">{formatCredits(remainingBalance)}</p>
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Remaining Balance</p>
+                      <p className="text-[13px] font-semibold mt-0.5 tabular-nums">{formatCredits(remainingBalance)}</p>
                     </div>
                   </div>
 
                   <div className="mb-3">
                     <div className="flex items-center justify-between text-[11px] mb-1.5">
                       <span className="text-muted-foreground">Cycles Completed</span>
-                      <span className="font-semibold">{pkg.cyclesCompleted}/{pkg.totalCycles}</span>
+                      <span className="font-semibold tabular-nums">{pkg.cyclesCompleted}/{pkg.totalCycles}</span>
                     </div>
-                    <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                    <div className="h-2 bg-muted rounded-full overflow-hidden">
                       <div
-                        className="h-full accent-gradient rounded-full transition-all duration-500"
-                        style={{ width: `${(pkg.cyclesCompleted / pkg.totalCycles) * 100}%` }}
+                        className="h-full bg-gradient-accent rounded-full transition-all duration-700 shadow-glow"
+                        style={{ width: `${progress}%` }}
                       />
                     </div>
                   </div>

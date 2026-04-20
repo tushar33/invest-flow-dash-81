@@ -1,7 +1,11 @@
 import { UserLayout } from "@/components/UserLayout";
 import { FilterBar, type FilterField } from "@/components/FilterBar";
 import { useUrlFilters } from "@/hooks/useUrlFilters";
-import { ArrowUpRight, ArrowDownLeft, Wallet as WalletIcon, Eye, EyeOff } from "lucide-react";
+import { PageHeader } from "@/components/ui/page-header";
+import { GradientCard } from "@/components/ui/gradient-card";
+import { StatTile } from "@/components/ui/stat-tile";
+import { EmptyState } from "@/components/ui/empty-state";
+import { ArrowUpRight, ArrowDownLeft, Wallet as WalletIcon, Eye, EyeOff, Activity, TrendingUp, TrendingDown } from "lucide-react";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { wallet as walletApi } from "@/lib/api";
@@ -52,37 +56,31 @@ export default function WalletPage() {
 
   return (
     <UserLayout>
-      <div className="space-y-5">
-        <div>
-          <h1 className="text-xl font-bold">Activity</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Reward credits & redemption activity</p>
-        </div>
+      <div className="space-y-6">
+        <PageHeader
+          icon={<Activity className="h-5 w-5" />}
+          title="Activity"
+          subtitle="Reward credits & redemption activity"
+        />
 
-        <div className="fintech-gradient rounded-2xl p-5 text-primary-foreground relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-28 h-28 bg-accent/5 rounded-full -translate-y-6 translate-x-6" />
-          <div className="relative">
-            <div className="flex items-center gap-2 mb-1">
-              <WalletIcon className="h-4 w-4 text-accent" />
-              <span className="text-[11px] uppercase tracking-widest opacity-70 font-medium">Available Balance</span>
-              <button onClick={() => setShowBalance(!showBalance)} className="ml-auto opacity-60 hover:opacity-100 transition-opacity">
-                {showBalance ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-              </button>
+        <GradientCard variant="hero" glow className="animate-slide-up-fade">
+          <div className="flex items-center gap-2 mb-1.5">
+            <div className="h-7 w-7 rounded-lg bg-white/10 backdrop-blur flex items-center justify-center">
+              <WalletIcon className="h-3.5 w-3.5 text-accent" />
             </div>
-            <p className="text-[32px] font-bold leading-tight">
-              {showBalance ? formatCredits(balance) : "••••••"}
-            </p>
+            <span className="text-[11px] uppercase tracking-widest opacity-80 font-semibold">Available Balance</span>
+            <button onClick={() => setShowBalance(!showBalance)} className="ml-auto opacity-70 hover:opacity-100 transition-opacity">
+              {showBalance ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+            </button>
           </div>
-        </div>
+          <p className="text-[36px] font-bold leading-tight tabular-nums">
+            {showBalance ? formatCredits(balance) : "••••••"}
+          </p>
+        </GradientCard>
 
         <div className="grid grid-cols-2 gap-3">
-          <div className="bg-card rounded-xl border border-border p-3">
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Total Credited</p>
-            <p className="text-base font-bold text-success mt-0.5">+{formatCredits(totalCredited)}</p>
-          </div>
-          <div className="bg-card rounded-xl border border-border p-3">
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Total Redeemed</p>
-            <p className="text-base font-bold text-foreground mt-0.5">-{formatCredits(totalDebited)}</p>
-          </div>
+          <StatTile label="Total Credited" value={`+${formatCredits(totalCredited)}`} icon={TrendingUp} accent="success" />
+          <StatTile label="Total Redeemed" value={`-${formatCredits(totalDebited)}`} icon={TrendingDown} accent="warning" />
         </div>
 
         <FilterBar
@@ -93,20 +91,20 @@ export default function WalletPage() {
           hasActive={hasActiveFilters}
         />
 
-        <div>
-          <h2 className="text-sm font-bold mb-3">Ledger</h2>
+        <div className="animate-slide-up-fade">
+          <h2 className="text-sm font-bold tracking-tight mb-3">Ledger</h2>
           {isLoading ? (
             <div className="flex justify-center py-12">
               <div className="h-8 w-8 border-2 border-accent border-t-transparent rounded-full animate-spin" />
             </div>
           ) : (
-            <div className="bg-card rounded-2xl border border-border overflow-hidden">
+            <div className="bg-card rounded-2xl border border-border overflow-hidden shadow-card">
               {filtered.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-8">No activity found</p>
+                <EmptyState icon={Activity} title="No activity found" description="Try adjusting your filters or check back later." />
               ) : filtered.map((tx, i) => {
                 const isCredit = tx.direction === "CREDIT";
                 return (
-                  <div key={tx.id} className={`flex items-center justify-between p-3.5 ${i < filtered.length - 1 ? "border-b border-border/50" : ""}`}>
+                  <div key={tx.id} className={`flex items-center justify-between p-3.5 hover:bg-muted/30 transition-colors ${i < filtered.length - 1 ? "border-b border-border/50" : ""}`}>
                     <div className="flex items-center gap-3">
                       <div className={`h-9 w-9 rounded-xl flex items-center justify-center ${isCredit ? "bg-success/10" : "bg-muted"}`}>
                         {isCredit ? <ArrowDownLeft className="h-4 w-4 text-success" /> : <ArrowUpRight className="h-4 w-4 text-muted-foreground" />}
@@ -117,7 +115,7 @@ export default function WalletPage() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className={`text-[13px] font-bold ${isCredit ? "text-success" : "text-foreground"}`}>
+                      <p className={`text-[13px] font-bold tabular-nums ${isCredit ? "text-success" : "text-foreground"}`}>
                         {formatCreditsSigned(tx.amount, tx.direction)}
                       </p>
                       <p className="text-[10px] text-muted-foreground">{new Date(tx.createdAt).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" })}</p>
