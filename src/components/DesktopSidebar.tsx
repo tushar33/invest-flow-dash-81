@@ -3,8 +3,9 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   LayoutDashboard, Package, Wallet, CreditCard, User,
-  Users, Settings, FileText, TrendingUp, Shield, LogOut, Sparkles
+  Users, Settings, FileText, TrendingUp, Shield, LogOut
 } from "lucide-react";
+import trinityLogo from "@/assets/trinity-arrows-logo.png";
 
 const userNav = [
   { to: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
@@ -52,12 +53,12 @@ export function DesktopSidebar({ role }: DesktopSidebarProps) {
 
       <div className="relative px-6 pt-6 pb-5">
         <div className="flex items-center gap-2.5">
-          <div className="h-9 w-9 rounded-xl bg-gradient-accent flex items-center justify-center shadow-glow">
-            <Sparkles className="h-4 w-4 text-accent-foreground" />
+          <div className="h-10 w-10 rounded-xl bg-white/95 flex items-center justify-center shadow-glow p-1">
+            <img src={trinityLogo} alt="Trinity Arrows" className="h-full w-full object-contain" />
           </div>
           <div>
-            <h1 className="text-base font-bold text-sidebar-foreground tracking-tight leading-none">InvestROI</h1>
-            <p className="text-[10px] text-sidebar-foreground/50 mt-0.5 uppercase tracking-widest">{role === "admin" ? "Admin Console" : "Member"}</p>
+            <h1 className="text-base font-bold text-sidebar-foreground tracking-tight leading-none">Trinity Arrows</h1>
+            <p className="text-[10px] text-sidebar-foreground/50 mt-1 uppercase tracking-widest">{role === "admin" ? "Admin Console" : "Member"}</p>
           </div>
         </div>
       </div>
