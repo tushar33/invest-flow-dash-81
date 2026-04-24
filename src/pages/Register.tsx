@@ -45,11 +45,14 @@ export default function Register() {
         <div aria-hidden className="absolute bottom-10 -left-20 h-72 w-72 rounded-full bg-primary-glow/40 blur-3xl" />
 
         <div className="relative z-10 flex flex-col justify-between p-12 w-full">
-          <div className="flex items-center gap-2.5">
-            <div className="h-10 w-10 rounded-xl bg-gradient-accent flex items-center justify-center shadow-glow">
-              <Sparkles className="h-5 w-5 text-accent-foreground" />
+          <div className="flex items-center gap-3">
+            <div className="h-12 w-12 rounded-xl bg-white/95 flex items-center justify-center shadow-glow p-1.5">
+              <img src={trinityLogo} alt="Trinity Arrows" className="h-full w-full object-contain" />
             </div>
-            <span className="text-xl font-bold tracking-tight">InvestROI</span>
+            <div className="leading-tight">
+              <span className="block text-xl font-bold tracking-tight">Trinity Arrows</span>
+              <span className="block text-[10px] uppercase tracking-[0.2em] text-primary-foreground/60">Premium Credits</span>
+            </div>
           </div>
 
           <div className="space-y-6 max-w-md">
@@ -79,7 +82,7 @@ export default function Register() {
             </div>
           </div>
 
-          <p className="text-xs text-primary-foreground/50">© {new Date().getFullYear()} InvestROI. All rights reserved.</p>
+          <p className="text-xs text-primary-foreground/50">© {new Date().getFullYear()} Trinity Arrows. All rights reserved.</p>
         </div>
       </div>
 
