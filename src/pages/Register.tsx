@@ -93,8 +93,8 @@ export default function Register() {
 
         <div className="w-full max-w-sm space-y-6 relative z-10">
           <div className="text-center lg:text-left">
-            <div className="lg:hidden h-14 w-14 rounded-2xl bg-gradient-accent flex items-center justify-center mx-auto mb-4 shadow-glow">
-              <Sparkles className="h-6 w-6 text-accent-foreground" />
+            <div className="lg:hidden h-16 w-16 rounded-2xl bg-card border border-border flex items-center justify-center mx-auto mb-4 shadow-elevated p-2">
+              <img src={trinityLogo} alt="Trinity Arrows" className="h-full w-full object-contain" />
             </div>
             <h1 className="text-2xl font-bold tracking-tight text-foreground lg:text-3xl">Create Account</h1>
             <p className="text-sm text-muted-foreground mt-1">Join the credit platform in seconds</p>
