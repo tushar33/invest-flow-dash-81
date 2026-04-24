@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { Sparkles, User, Mail, Phone, Lock, Eye, EyeOff, ShieldCheck, TrendingUp, Coins } from "lucide-react";
+import { User, Mail, Phone, Lock, Eye, EyeOff, ShieldCheck, TrendingUp, Coins } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import trinityLogo from "@/assets/trinity-arrows-logo.png";
 
 export default function Register() {
   const [fullName, setFullName] = useState("");
