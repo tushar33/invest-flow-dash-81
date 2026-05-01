@@ -113,7 +113,7 @@ export function FilterBar({ fields, values, onChange, onReset, hasActive }: Filt
 
   if (isMobile) {
     return (
-      <div className="flex items-center gap-2">
+      <div className="sticky top-[64px] z-20 -mx-4 px-4 py-2 bg-background/85 backdrop-blur-xl border-b border-border/60 flex items-center gap-2">
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
             <Button variant="outline" size="sm" className="gap-1.5">
@@ -153,7 +153,7 @@ export function FilterBar({ fields, values, onChange, onReset, hasActive }: Filt
   }
 
   return (
-    <div className="bg-card rounded-xl border border-border p-4">
+    <div className="sticky top-[72px] z-20 bg-card/95 backdrop-blur-xl rounded-xl border border-border p-4 shadow-card">
       <div className="flex items-center gap-2 mb-3">
         <Filter className="h-4 w-4 text-accent" />
         <span className="text-sm font-medium">Filters</span>
