@@ -85,13 +85,17 @@ export default function WalletPage() {
           <StatTile label="Total Redeemed" value={`-${formatCredits(totalDebited)}`} icon={TrendingDown} accent="warning" />
         </div>
 
-        <FilterBar
-          fields={filterFields}
-          values={filters}
-          onChange={(k, v) => setFilters({ [k]: v })}
-          onReset={resetFilters}
-          hasActive={hasActiveFilters}
-        />
+          <FilterBar
+            fields={filterFields}
+            values={filters}
+            onChange={(k, v) => setFilters({ [k]: v })}
+            onReset={resetFilters}
+            hasActive={hasActiveFilters}
+          />
+
+          <h2 className="text-sm font-bold tracking-tight">Ledger</h2>
+        </div>
+
 
         <div className="animate-slide-up-fade">
           <h2 className="text-sm font-bold tracking-tight mb-3">Ledger</h2>
