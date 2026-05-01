@@ -98,7 +98,7 @@ export default function WalletPage() {
 
 
         <div className="animate-slide-up-fade">
-          <h2 className="text-sm font-bold tracking-tight mb-3">Ledger</h2>
+
           {isLoading ? (
             <div className="flex justify-center py-12">
               <div className="h-8 w-8 border-2 border-accent border-t-transparent rounded-full animate-spin" />
