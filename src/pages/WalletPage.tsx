@@ -56,14 +56,16 @@ export default function WalletPage() {
 
   return (
     <UserLayout>
-      <div className="space-y-6">
-        <PageHeader
-          icon={<Activity className="h-5 w-5" />}
-          title="Activity"
-          subtitle="Reward credits & redemption activity"
-        />
+      <div className="space-y-4">
+        <div className="sticky top-0 z-30 -mx-4 px-4 pb-4 bg-background/85 backdrop-blur-xl border-b border-border/60 space-y-4">
+          <PageHeader
+            icon={<Activity className="h-5 w-5" />}
+            title="Activity"
+            subtitle="Reward credits & redemption activity"
+            className="sticky-none static border-b-0 -mx-0 px-0 py-3 bg-transparent backdrop-blur-none"
+          />
 
-        <GradientCard variant="hero" glow className="animate-slide-up-fade">
+          <GradientCard variant="hero" glow className="animate-slide-up-fade">
           <div className="flex items-center gap-2 mb-1.5">
             <div className="h-7 w-7 rounded-lg bg-white/10 backdrop-blur flex items-center justify-center">
               <WalletIcon className="h-3.5 w-3.5 text-accent" />
