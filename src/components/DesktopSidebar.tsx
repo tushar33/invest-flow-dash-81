@@ -53,8 +53,8 @@ export function DesktopSidebar({ role }: DesktopSidebarProps) {
 
       <div className="relative px-6 pt-6 pb-5">
         <div className="flex items-center gap-2.5">
-          <div className="h-10 w-10 rounded-xl bg-white/95 flex items-center justify-center shadow-glow p-1">
-            <img src={trinityLogo} alt="Trinity Arrows" className="h-full w-full object-contain" />
+          <div className="h-10 w-10 flex items-center justify-center">
+            <img src={trinityLogo} alt="Trinity Arrows" className="h-full w-full object-contain drop-shadow-[0_0_12px_hsl(var(--accent)/0.4)]" />
           </div>
           <div>
             <h1 className="text-base font-bold text-sidebar-foreground tracking-tight leading-none">Trinity Arrows</h1>
