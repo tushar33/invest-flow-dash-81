@@ -162,7 +162,7 @@ export default function AdminPackages() {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="sticky top-0 z-30 -mx-4 px-4 py-3 bg-background/85 backdrop-blur-xl border-b border-border/60 flex items-center justify-between gap-3">
           <div>
             <h1 className="text-2xl font-bold">Plans</h1>
             <p className="text-sm text-muted-foreground mt-1">

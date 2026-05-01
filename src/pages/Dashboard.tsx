@@ -45,7 +45,7 @@ export default function Dashboard() {
   return (
     <UserLayout>
       <div className="space-y-6">
-        <div className="animate-slide-up-fade">
+        <div className="sticky top-0 z-30 -mx-4 px-4 py-3 bg-background/85 backdrop-blur-xl border-b border-border/60 animate-slide-up-fade">
           <p className="text-sm text-muted-foreground">{greeting}</p>
           <h1 className="text-2xl font-bold tracking-tight mt-0.5">{user?.fullName ?? "User"} <span className="inline-block">👋</span></h1>
         </div>

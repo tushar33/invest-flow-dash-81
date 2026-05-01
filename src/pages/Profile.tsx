@@ -56,7 +56,9 @@ export default function Profile() {
   return (
     <UserLayout>
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold tracking-tight animate-slide-up-fade">Profile</h1>
+        <div className="sticky top-0 z-30 -mx-4 px-4 py-3 bg-background/85 backdrop-blur-xl border-b border-border/60 animate-slide-up-fade">
+          <h1 className="text-2xl font-bold tracking-tight">Profile</h1>
+        </div>
 
         <GradientCard variant="hero" glow className="animate-slide-up-fade">
           <div className="flex items-center gap-4">
