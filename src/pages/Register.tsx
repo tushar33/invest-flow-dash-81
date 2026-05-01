@@ -47,8 +47,8 @@ export default function Register() {
 
         <div className="relative z-10 flex flex-col justify-between p-12 w-full">
           <div className="flex items-center gap-3">
-            <div className="h-12 w-12 rounded-xl bg-white/95 flex items-center justify-center shadow-glow p-1.5">
-              <img src={trinityLogo} alt="Trinity Arrows" className="h-full w-full object-contain" />
+            <div className="h-12 w-12 flex items-center justify-center">
+              <img src={trinityLogo} alt="Trinity Arrows" className="h-full w-full object-contain drop-shadow-[0_0_16px_hsl(var(--accent)/0.5)]" />
             </div>
             <div className="leading-tight">
               <span className="block text-xl font-bold tracking-tight">Trinity Arrows</span>
@@ -93,8 +93,8 @@ export default function Register() {
 
         <div className="w-full max-w-sm space-y-6 relative z-10">
           <div className="text-center lg:text-left">
-            <div className="lg:hidden h-16 w-16 rounded-2xl bg-card border border-border flex items-center justify-center mx-auto mb-4 shadow-elevated p-2">
-              <img src={trinityLogo} alt="Trinity Arrows" className="h-full w-full object-contain" />
+            <div className="lg:hidden h-20 w-20 flex items-center justify-center mx-auto mb-4">
+              <img src={trinityLogo} alt="Trinity Arrows" className="h-full w-full object-contain drop-shadow-[0_0_20px_hsl(var(--accent)/0.6)]" />
             </div>
             <h1 className="text-2xl font-bold tracking-tight text-foreground lg:text-3xl">Create Account</h1>
             <p className="text-sm text-muted-foreground mt-1">Join the credit platform in seconds</p>
