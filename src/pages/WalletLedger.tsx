@@ -89,7 +89,7 @@ export default function WalletLedger() {
   const matchesTypeFilter = (txnType: string, filter: string) => {
     if (!filter) return true;
     if (filter === "ROI") return txnType === "ROI_CREDIT" || txnType === "ROI";
-    if (filter === "PRINCIPAL") return txnType === "PRINCIPAL_DEBIT" || txnType === "PRINCIPAL";
+    if (filter === "PRINCIPAL") return txnType === "PRINCIPAL";
     return txnType === filter;
   };
 
@@ -97,7 +97,10 @@ export default function WalletLedger() {
     if (typeFilter && !matchesTypeFilter(txn.type, typeFilter)) return false;
     if (fromFilter && new Date(txn.createdAt) < new Date(fromFilter)) return false;
     if (toFilter && new Date(txn.createdAt) > new Date(toFilter)) return false;
-    if (packageIdFilter && txn.referenceId !== packageIdFilter) return false;
+    if (packageIdFilter) {
+      const pid = txn.packageId ?? txn.referenceId ?? "";
+      if (pid !== packageIdFilter) return false;
+    }
     return true;
   }) || [];
 

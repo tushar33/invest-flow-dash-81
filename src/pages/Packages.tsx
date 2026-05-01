@@ -85,9 +85,10 @@ export default function Packages() {
               const statusMap: Record<string, "active" | "completed" | "inactive"> = {
                 ACTIVE: "active", MATURED: "completed", CLOSED: "inactive"
               };
-              const remainingCycles = Math.max(0, pkg.totalCycles - pkg.cyclesCompleted);
+              const planCycles = pkg.totalCycles ?? pkg.durationMonths ?? 1;
+              const remainingCycles = Math.max(0, planCycles - pkg.cyclesCompleted);
               const remainingBalance = remainingCycles * Number(pkg.roiCycleAmount);
-              const progress = (pkg.cyclesCompleted / pkg.totalCycles) * 100;
+              const progress = (pkg.cyclesCompleted / planCycles) * 100;
               return (
                 <div key={pkg.id} className="bg-card rounded-2xl border border-border p-4 shadow-card hover:shadow-elevated hover:border-accent/30 transition-all animate-slide-up-fade">
                   <div className="flex items-center justify-between mb-3">
@@ -118,8 +119,8 @@ export default function Packages() {
 
                   <div className="mb-3">
                     <div className="flex items-center justify-between text-[11px] mb-1.5">
-                      <span className="text-muted-foreground">Cycles Completed</span>
-                      <span className="font-semibold tabular-nums">{pkg.cyclesCompleted}/{pkg.totalCycles}</span>
+                      <span className="text-muted-foreground">Cycles completed</span>
+                      <span className="font-semibold tabular-nums">{pkg.cyclesCompleted}/{planCycles}</span>
                     </div>
                     <div className="h-2 bg-muted rounded-full overflow-hidden">
                       <div

@@ -44,7 +44,7 @@ function EditDateModal({ pkg, onClose, onSuccess }: EditDateModalProps) {
           <div className="space-y-1 text-sm text-muted-foreground">
             <p><span className="font-medium text-foreground">User:</span> {pkg.userName}</p>
             <p><span className="font-medium text-foreground">Contribution:</span> {formatCredits(Number(pkg.principalAmount))}</p>
-            <p><span className="font-medium text-foreground">Cycles completed:</span> {pkg.cyclesCompleted}/{pkg.totalCycles}</p>
+            <p><span className="font-medium text-foreground">Cycles completed:</span> {pkg.cyclesCompleted}/{pkg.totalCycles ?? pkg.durationMonths ?? 1}</p>
           </div>
           {error && <p className="text-sm text-destructive">{error}</p>}
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -192,7 +192,9 @@ export default function AdminPackages() {
           <p className="text-center text-muted-foreground py-12">No plans found</p>
         ) : (
           <div className="space-y-3">
-            {filtered.map((pkg) => (
+            {filtered.map((pkg) => {
+              const planCycles = pkg.totalCycles ?? pkg.durationMonths ?? 1;
+              return (
               <div key={pkg.packageId} className="bg-card rounded-xl border border-border p-4 animate-fade-in">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
@@ -208,7 +210,7 @@ export default function AdminPackages() {
                 </div>
                 <div className="flex items-center gap-4 mt-3 pt-3 border-t border-border text-xs text-muted-foreground flex-wrap">
                   <span>Reward: {pkg.roiPercentage}%</span>
-                  <span>Cycles: {pkg.cyclesCompleted}/{pkg.totalCycles}</span>
+                  <span>Cycles: {pkg.cyclesCompleted}/{planCycles}</span>
                   <span>Next Reward: {new Date(pkg.nextRoiDate).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" })}</span>
                   <span>Assigned: {new Date(pkg.assignedDate).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" })}</span>
                 </div>
@@ -232,7 +234,8 @@ export default function AdminPackages() {
                   </Button>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
         {editTarget && (

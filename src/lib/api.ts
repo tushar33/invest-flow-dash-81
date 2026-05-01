@@ -96,9 +96,16 @@ export interface Package {
   id: string;
   userId: string;
   principalAmount: string;
+  /** 10% plans: original principal for ROI math */
+  originalAmount?: string;
+  /** 10% plans: remaining principal after amortization ledger */
+  currentPrincipal?: string;
   roiPercentage: string;
   roiCycleAmount: string;
-  totalCycles: number;
+  /** Canonical plan length in months (= ROI cycle count). */
+  durationMonths: number;
+  /** May be omitted on older API payloads; use `durationMonths`. */
+  totalCycles?: number;
   cyclesCompleted: number;
   startDate: string;
   nextRoiDate: string;
@@ -129,10 +136,14 @@ export const packages = {
 export interface WalletTransaction {
   id: string;
   userId: string;
-  type: "ROI_CREDIT" | "PAYOUT_DEBIT" | "PRINCIPAL_DEBIT" | "ROI" | "PRINCIPAL" | string;
+  /** Physical ledger type: ROI (10% plans), ROI_CREDIT, PAYOUT_DEBIT, PRINCIPAL */
+  type: "ROI_CREDIT" | "PAYOUT_DEBIT" | "ROI" | "PRINCIPAL" | string;
   amount: string;
   direction: "CREDIT" | "DEBIT";
-  referenceId: string | null;
+  packageId?: string | null;
+  payoutRequestId?: string | null;
+  /** API compatibility: packageId ?? payoutRequestId */
+  referenceId?: string | null;
   description: string | null;
   createdAt: string;
   autoPayoutRequestCreated?: boolean;
@@ -275,6 +286,7 @@ export interface AdminPackage {
   maturityDate: string;
   cyclesCompleted: number;
   totalCycles: number;
+  durationMonths?: number;
   status: string;
 }
 

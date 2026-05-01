@@ -95,7 +95,9 @@ export default function AdminROILogs() {
                 </div>
                 <div className="text-right">
                   <p className="text-sm font-semibold">
-                    {item.cyclesCompleted !== undefined ? `${item.cyclesCompleted}/${item.totalCycles} cycles` : item.processedCount ?? ""}
+                    {item.cyclesCompleted !== undefined
+                      ? `${item.cyclesCompleted}/${item.totalCycles ?? item.durationMonths ?? 1} cycles`
+                      : item.processedCount ?? ""}
                   </p>
                   <p className="text-xs text-muted-foreground">{item.status ?? ""}</p>
                 </div>
