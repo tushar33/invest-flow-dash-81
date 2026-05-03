@@ -44,13 +44,14 @@ export default function Dashboard() {
 
   return (
     <UserLayout>
-      <div className="space-y-6">
-        <div className="sticky top-0 z-30 -mx-4 px-4 py-3 bg-background/85 backdrop-blur-xl border-b border-border/60 animate-slide-up-fade">
-          <p className="text-sm text-muted-foreground">{greeting}</p>
-          <h1 className="text-2xl font-bold tracking-tight mt-0.5">{user?.fullName ?? "User"} <span className="inline-block">👋</span></h1>
-        </div>
+      <div className="space-y-4">
+        <div className="sticky top-0 z-30 -mx-4 px-4 pb-4 bg-background/85 backdrop-blur-xl border-b border-border/60 space-y-4">
+          <div className="pt-3 animate-slide-up-fade">
+            <p className="text-sm text-muted-foreground">{greeting}</p>
+            <h1 className="text-2xl font-bold tracking-tight mt-0.5">{user?.fullName ?? "User"} <span className="inline-block">👋</span></h1>
+          </div>
 
-        <GradientCard variant="hero" glow className="animate-slide-up-fade">
+          <GradientCard variant="hero" glow className="animate-slide-up-fade">
           <div className="flex items-center gap-2 mb-1.5">
             <div className="h-7 w-7 rounded-lg bg-white/10 backdrop-blur flex items-center justify-center">
               <Wallet className="h-3.5 w-3.5 text-accent" />
