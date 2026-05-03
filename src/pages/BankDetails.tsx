@@ -28,7 +28,7 @@ export default function BankDetails() {
     onSuccess: () => {
       toast({ title: "Account details saved" });
       setShowForm(false);
-      setForm({ accountHolderName: "", bankName: "", accountNumber: "", confirmAccount: "", ifscCode: "" });
+      setForm({ accountHolderName: "", bankName: "", accountNumber: "", confirmAccount: "", ifscCode: "", accountType: "SAVINGS" });
       qc.invalidateQueries({ queryKey: ["bank-details"] });
     },
     onError: (err: any) => {
