@@ -101,6 +101,21 @@ export default function BankDetails() {
                   />
                 </div>
               ))}
+              <div>
+                <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Account Type</label>
+                <div className="mt-1.5 grid grid-cols-2 gap-2">
+                  {(["SAVINGS", "CURRENT"] as const).map((type) => (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={() => setForm({ ...form, accountType: type })}
+                      className={`px-3 py-3 rounded-xl border text-sm font-semibold transition-all ${form.accountType === type ? "border-accent bg-accent/10 text-accent" : "border-input bg-background text-muted-foreground hover:border-accent/50"}`}
+                    >
+                      {type === "SAVINGS" ? "Savings" : "Current"}
+                    </button>
+                  ))}
+                </div>
+              </div>
               <button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending}
                 className="w-full bg-gradient-accent text-accent-foreground text-sm font-semibold py-3.5 rounded-xl disabled:opacity-50 active:scale-[0.98] transition-transform shadow-glow mt-1">
                 {saveMutation.isPending ? "Saving..." : "Save Account Details"}
