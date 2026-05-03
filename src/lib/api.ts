@@ -180,13 +180,14 @@ export interface BankDetails {
   bankName: string;
   accountNumber: string;
   ifscCode: string;
+  accountType?: "SAVINGS" | "CURRENT";
   createdAt: string;
   updatedAt: string;
 }
 
 export const bankDetails = {
   get: () => request<BankDetails | null>("/user/bank-details"),
-  save: (data: { accountHolderName: string; bankName: string; accountNumber: string; ifscCode: string }) =>
+  save: (data: { accountHolderName: string; bankName: string; accountNumber: string; ifscCode: string; accountType: "SAVINGS" | "CURRENT" }) =>
     request<BankDetails>("/user/bank-details", { method: "POST", body: JSON.stringify(data) }),
 };
 
