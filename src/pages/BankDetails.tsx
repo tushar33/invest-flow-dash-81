@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 
 export default function BankDetails() {
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ accountHolderName: "", bankName: "", accountNumber: "", confirmAccount: "", ifscCode: "" });
+  const [form, setForm] = useState<{ accountHolderName: string; bankName: string; accountNumber: string; confirmAccount: string; ifscCode: string; accountType: "SAVINGS" | "CURRENT" }>({ accountHolderName: "", bankName: "", accountNumber: "", confirmAccount: "", ifscCode: "", accountType: "SAVINGS" });
   const { toast } = useToast();
   const qc = useQueryClient();
 
