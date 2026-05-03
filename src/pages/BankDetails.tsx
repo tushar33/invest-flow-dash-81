@@ -63,7 +63,7 @@ export default function BankDetails() {
           subtitle="Required for redemptions"
           actions={
             <button
-              onClick={() => { setShowForm(!showForm); if (!showForm && bank) { setForm({ accountHolderName: bank.accountHolderName, bankName: bank.bankName, accountNumber: bank.accountNumber, confirmAccount: bank.accountNumber, ifscCode: bank.ifscCode }); } }}
+              onClick={() => { setShowForm(!showForm); if (!showForm && bank) { setForm({ accountHolderName: bank.accountHolderName, bankName: bank.bankName, accountNumber: bank.accountNumber, confirmAccount: bank.accountNumber, ifscCode: bank.ifscCode, accountType: bank.accountType ?? "SAVINGS" }); } }}
               className="bg-gradient-accent text-accent-foreground text-xs font-semibold px-4 py-2.5 rounded-xl flex items-center gap-1.5 active:scale-[0.98] transition-transform shadow-glow"
             >
               {showForm ? <X className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
