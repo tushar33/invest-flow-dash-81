@@ -152,6 +152,10 @@ export default function BankDetails() {
                 <span className="text-muted-foreground">IFSC</span>
                 <span className="font-semibold tabular-nums">{bank.ifscCode}</span>
               </div>
+              <div className="flex items-center justify-between text-[11px]">
+                <span className="text-muted-foreground">Account Type</span>
+                <span className="font-semibold">{(bank.accountType ?? "SAVINGS") === "SAVINGS" ? "Savings" : "Current"}</span>
+              </div>
             </div>
           </div>
         )}
