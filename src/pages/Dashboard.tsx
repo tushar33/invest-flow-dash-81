@@ -111,13 +111,15 @@ export default function Dashboard() {
           )}
         </div>
 
-        <div className="animate-slide-up-fade">
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center justify-between">
             <h2 className="text-sm font-bold tracking-tight">Recent Activity</h2>
             <Link to="/wallet" className="text-[11px] text-accent font-semibold flex items-center gap-0.5 hover:gap-1 transition-all">
               View all <ChevronRight className="h-3 w-3" />
             </Link>
           </div>
+        </div>
+
+        <div className="animate-slide-up-fade">
           <div className="bg-card rounded-2xl border border-border overflow-hidden shadow-card">
             {recentTx.length === 0 ? (
               <EmptyState icon={Activity} title="No activity yet" description="Your reward credits and redemptions will appear here." />
