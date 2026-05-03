@@ -22,6 +22,7 @@ export default function BankDetails() {
         bankName: form.bankName,
         accountNumber: form.accountNumber,
         ifscCode: form.ifscCode,
+        accountType: form.accountType,
       });
     },
     onSuccess: () => {
