@@ -2,8 +2,7 @@ import { UserLayout } from "@/components/UserLayout";
 import { GradientCard } from "@/components/ui/gradient-card";
 import { StatTile } from "@/components/ui/stat-tile";
 import { EmptyState } from "@/components/ui/empty-state";
-import { AutoPayModeBadge } from "@/components/AutoPayModeBadge";
-import { Wallet, Gift, TrendingUp, Clock, ArrowDownLeft, ArrowUpRight, ChevronRight, CheckCircle2, AlertCircle, Zap, Package, Activity } from "lucide-react";
+import { Wallet, Gift, TrendingUp, Clock, ArrowDownLeft, ArrowUpRight, ChevronRight, CheckCircle2, AlertCircle, Package, Activity } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
@@ -70,21 +69,6 @@ export default function Dashboard() {
           <StatTile label="Total Rewards" value={formatCredits(totalRewards)} icon={Gift} accent="success" />
           <StatTile label="Pending Redemption" value={formatCredits(pendingRedemption)} icon={Clock} accent="warning" />
           <StatTile label="Active Plans" value={formatCredits(activePlansAmount)} icon={TrendingUp} accent="info" />
-        </div>
-
-        <div className="rounded-2xl border border-border bg-card p-4 shadow-card hover:shadow-elevated transition-shadow animate-slide-up-fade">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="h-7 w-7 rounded-lg bg-accent/10 flex items-center justify-center">
-              <Zap className="h-3.5 w-3.5 text-accent" />
-            </div>
-            <span className="text-[11px] uppercase tracking-widest text-muted-foreground font-semibold">Auto Redemption Mode</span>
-          </div>
-          <div className="flex flex-wrap items-center gap-2 mt-1">
-            <AutoPayModeBadge mode={user?.autoPayMode ?? "NONE"} className="text-xs" />
-          </div>
-          <p className="text-[11px] text-muted-foreground mt-2">
-            If enabled, reward credits will automatically generate redemption requests.
-          </p>
         </div>
 
         <div className={`rounded-2xl p-4 flex items-center gap-3 border animate-slide-up-fade ${redemptionReady ? "bg-success/10 border-success/20" : "bg-warning/10 border-warning/20"}`}>
