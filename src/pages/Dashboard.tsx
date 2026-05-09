@@ -31,7 +31,8 @@ export default function Dashboard() {
           .reduce((s, t) => s + Number(t.amount), 0) ?? 0);
   const pendingRedemption = payoutsList?.filter(p => p.status === "PENDING")
     .reduce((s, p) => s + Number(p.amount), 0) ?? 0;
-  const activePlans = pkgs?.filter(p => p.status === "ACTIVE").length ?? 0;
+  const activePlansAmount = pkgs?.filter(p => p.status === "ACTIVE")
+    .reduce((s, p) => s + Number(p.principalAmount), 0) ?? 0;
   const redemptionReady = !!bank;
   const recentTx = walletData?.transactions?.slice(0, 4) ?? [];
 
