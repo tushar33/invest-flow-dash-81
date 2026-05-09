@@ -69,7 +69,7 @@ export default function Dashboard() {
           <StatTile label="Total Contribution" value={formatCredits(totalContribution)} icon={Package} accent="primary" />
           <StatTile label="Total Rewards" value={formatCredits(totalRewards)} icon={Gift} accent="success" />
           <StatTile label="Pending Redemption" value={formatCredits(pendingRedemption)} icon={Clock} accent="warning" />
-          <StatTile label="Active Plans" value={String(activePlans)} icon={TrendingUp} accent="info" />
+          <StatTile label="Active Plans" value={formatCredits(activePlansAmount)} icon={TrendingUp} accent="info" />
         </div>
 
         <div className="rounded-2xl border border-border bg-card p-4 shadow-card hover:shadow-elevated transition-shadow animate-slide-up-fade">
