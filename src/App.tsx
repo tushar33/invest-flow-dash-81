@@ -7,6 +7,11 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import Home from "./pages/public/Home";
+import About from "./pages/public/About";
+import Products from "./pages/public/Products";
+import Services from "./pages/public/Services";
+import Contact from "./pages/public/Contact";
 import Dashboard from "./pages/Dashboard";
 import Packages from "./pages/Packages";
 import WalletPage from "./pages/WalletPage";
@@ -32,7 +37,11 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <Routes>
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/" element={<Home />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/products" element={<Products />} />
+            <Route path="/services" element={<Services />} />
+            <Route path="/contact" element={<Contact />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
