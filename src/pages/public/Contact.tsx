@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Mail, Phone, MapPin } from "lucide-react";
+import { Mail, MapPin } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 export default function Contact() {
@@ -38,7 +38,6 @@ export default function Contact() {
             <div className="space-y-4 lg:col-span-1">
               {[
                 { icon: Mail, label: "Email", value: "info@trinityarrows.com" },
-                { icon: Phone, label: "Phone", value: "+91 98765 43210" },
                 { icon: MapPin, label: "Office", value: "123 Trade Avenue, Mumbai, India" },
               ].map((c, i) => (
                 <Reveal key={c.label} delay={i * 80}>
