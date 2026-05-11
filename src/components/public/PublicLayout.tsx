@@ -1,7 +1,7 @@
 import { ReactNode, useEffect, useState } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Mail, Phone, MapPin, Facebook, Twitter, Instagram, Linkedin } from "lucide-react";
+import { Menu, X, Mail, MapPin, Facebook, Twitter, Instagram, Linkedin } from "lucide-react";
 import logo from "@/assets/trinity-arrows-logo.png";
 
 const nav = [
@@ -194,9 +194,6 @@ export default function PublicLayout({ children, transparentTop = false }: Props
             <ul className="space-y-3 text-sm text-neutral-400">
               <li className="flex items-start gap-2.5">
                 <Mail className="w-4 h-4 mt-0.5 text-emerald-400 shrink-0" /> info@trinityarrows.com
-              </li>
-              <li className="flex items-start gap-2.5">
-                <Phone className="w-4 h-4 mt-0.5 text-emerald-400 shrink-0" /> +91 98765 43210
               </li>
               <li className="flex items-start gap-2.5">
                 <MapPin className="w-4 h-4 mt-0.5 text-emerald-400 shrink-0" />
