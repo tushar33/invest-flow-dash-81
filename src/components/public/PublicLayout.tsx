@@ -48,8 +48,8 @@ export default function PublicLayout({ children, transparentTop = false }: Props
         }`}
       >
         <div className="container flex items-center justify-between h-20">
-          <Link to="/" className="flex items-center gap-3">
-            <img src={logo} alt="Trinity Arrows" className="w-16 h-16 object-contain" />
+          <Link to="/" className="flex items-center gap-1.5">
+            <img src={logo} alt="Trinity Arrows" className="w-20 h-20 object-contain" />
             <div className="leading-tight">
               <div className={`font-bold text-xl ${isTransparent ? "text-white" : "text-neutral-900"}`}>
                 Trinity Arrows
@@ -136,8 +136,8 @@ export default function PublicLayout({ children, transparentTop = false }: Props
       <footer className="bg-neutral-950 text-neutral-300 mt-24">
         <div className="container py-16 grid md:grid-cols-2 lg:grid-cols-4 gap-10">
           <div className="lg:col-span-1">
-            <div className="flex items-center gap-3 mb-5">
-              <img src={logo} alt="Trinity Arrows" className="w-14 h-14 object-contain" />
+            <div className="flex items-center gap-1.5 mb-5">
+              <img src={logo} alt="Trinity Arrows" className="w-18 h-18 object-contain" />
               <div className="leading-tight">
                 <div className="font-bold text-lg text-white">Trinity Arrows</div>
                 <div className="text-[10px] uppercase tracking-[0.2em] text-emerald-400">Global Exports</div>
