@@ -46,13 +46,13 @@ export default function Register() {
         <div aria-hidden className="absolute bottom-10 -left-20 h-72 w-72 rounded-full bg-primary-glow/40 blur-3xl" />
 
         <div className="relative z-10 flex flex-col justify-between p-12 w-full">
-          <div className="flex items-center gap-3">
-            <div className="h-12 w-12 flex items-center justify-center">
+          <div className="flex items-center gap-1.5">
+            <div className="h-20 w-20 flex items-center justify-center">
               <img src={trinityLogo} alt="Trinity Arrows" className="h-full w-full object-contain drop-shadow-[0_0_16px_hsl(var(--accent)/0.5)]" />
             </div>
             <div className="leading-tight">
               <span className="block text-xl font-bold tracking-tight">Trinity Arrows</span>
-              <span className="block text-[10px] uppercase tracking-[0.2em] text-primary-foreground/60">Premium Credits</span>
+              <span className="block text-[10px] uppercase tracking-[0.2em] text-primary-foreground/60">Global Exports</span>
             </div>
           </div>
 
