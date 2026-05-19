@@ -137,9 +137,7 @@ export default function PublicLayout({ children, transparentTop = false }: Props
         <div className="container py-16 grid md:grid-cols-2 lg:grid-cols-4 gap-10">
           <div className="lg:col-span-1">
             <div className="flex items-center gap-3 mb-5">
-              <div className="w-11 h-11 rounded-xl bg-white p-1.5">
-                <img src={logo} alt="Trinity Arrows" className="w-full h-full object-contain" />
-              </div>
+              <img src={logo} alt="Trinity Arrows" className="w-14 h-14 object-contain" />
               <div className="leading-tight">
                 <div className="font-bold text-lg text-white">Trinity Arrows</div>
                 <div className="text-[10px] uppercase tracking-[0.2em] text-emerald-400">Global Exports</div>
