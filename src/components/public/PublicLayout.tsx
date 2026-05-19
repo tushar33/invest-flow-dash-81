@@ -48,8 +48,8 @@ export default function PublicLayout({ children, transparentTop = false }: Props
         }`}
       >
         <div className="container flex items-center justify-between h-20">
-          <Link to="/" className="flex items-center gap-3">
-            <img src={logo} alt="Trinity Arrows" className="w-16 h-16 object-contain" />
+          <Link to="/" className="flex items-center gap-1.5">
+            <img src={logo} alt="Trinity Arrows" className="w-20 h-20 object-contain" />
             <div className="leading-tight">
               <div className={`font-bold text-xl ${isTransparent ? "text-white" : "text-neutral-900"}`}>
                 Trinity Arrows
