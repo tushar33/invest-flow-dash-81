@@ -49,11 +49,9 @@ export default function PublicLayout({ children, transparentTop = false }: Props
       >
         <div className="container flex items-center justify-between h-20">
           <Link to="/" className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-xl bg-white shadow-md flex items-center justify-center p-1.5 ring-1 ring-neutral-200">
-              <img src={logo} alt="Trinity Arrows" className="w-full h-full object-contain" />
-            </div>
+            <img src={logo} alt="Trinity Arrows" className="w-16 h-16 object-contain" />
             <div className="leading-tight">
-              <div className={`font-bold text-lg ${isTransparent ? "text-white" : "text-neutral-900"}`}>
+              <div className={`font-bold text-xl ${isTransparent ? "text-white" : "text-neutral-900"}`}>
                 Trinity Arrows
               </div>
               <div className={`text-[10px] uppercase tracking-[0.2em] ${isTransparent ? "text-white/70" : "text-emerald-700"}`}>
