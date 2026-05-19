@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 
 export default function BankDetails() {
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState<{ accountHolderName: string; bankName: string; accountNumber: string; confirmAccount: string; ifscCode: string; accountType: "SAVINGS" | "CURRENT" }>({ accountHolderName: "", bankName: "", accountNumber: "", confirmAccount: "", ifscCode: "", accountType: "SAVINGS" });
+  const [form, setForm] = useState<{ accountHolderName: string; bankName: string; accountNumber: string; confirmAccount: string; ifscCode: string; accountType: "saving" | "current" }>({ accountHolderName: "", bankName: "", accountNumber: "", confirmAccount: "", ifscCode: "", accountType: "saving" });
   const { toast } = useToast();
   const qc = useQueryClient();
 
@@ -28,7 +28,7 @@ export default function BankDetails() {
     onSuccess: () => {
       toast({ title: "Account details saved" });
       setShowForm(false);
-      setForm({ accountHolderName: "", bankName: "", accountNumber: "", confirmAccount: "", ifscCode: "", accountType: "SAVINGS" });
+      setForm({ accountHolderName: "", bankName: "", accountNumber: "", confirmAccount: "", ifscCode: "", accountType: "saving" });
       qc.invalidateQueries({ queryKey: ["bank-details"] });
     },
     onError: (err: any) => {
@@ -63,7 +63,7 @@ export default function BankDetails() {
           subtitle="Required for redemptions"
           actions={
             <button
-              onClick={() => { setShowForm(!showForm); if (!showForm && bank) { setForm({ accountHolderName: bank.accountHolderName, bankName: bank.bankName, accountNumber: bank.accountNumber, confirmAccount: bank.accountNumber, ifscCode: bank.ifscCode, accountType: bank.accountType ?? "SAVINGS" }); } }}
+              onClick={() => { setShowForm(!showForm); if (!showForm && bank) { setForm({ accountHolderName: bank.accountHolderName, bankName: bank.bankName, accountNumber: bank.accountNumber, confirmAccount: bank.accountNumber, ifscCode: bank.ifscCode, accountType: bank.accountType === "current" ? "current" : "saving" }); } }}
               className="bg-gradient-accent text-accent-foreground text-xs font-semibold px-4 py-2.5 rounded-xl flex items-center gap-1.5 active:scale-[0.98] transition-transform shadow-glow"
             >
               {showForm ? <X className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
@@ -104,14 +104,14 @@ export default function BankDetails() {
               <div>
                 <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Account Type</label>
                 <div className="mt-1.5 grid grid-cols-2 gap-2">
-                  {(["SAVINGS", "CURRENT"] as const).map((type) => (
+                  {(["saving", "current"] as const).map((type) => (
                     <button
                       key={type}
                       type="button"
                       onClick={() => setForm({ ...form, accountType: type })}
                       className={`px-3 py-3 rounded-xl border text-sm font-semibold transition-all ${form.accountType === type ? "border-accent bg-accent/10 text-accent" : "border-input bg-background text-muted-foreground hover:border-accent/50"}`}
                     >
-                      {type === "SAVINGS" ? "Savings" : "Current"}
+                      {type === "saving" ? "Savings" : "Current"}
                     </button>
                   ))}
                 </div>
@@ -154,7 +154,7 @@ export default function BankDetails() {
               </div>
               <div className="flex items-center justify-between text-[11px]">
                 <span className="text-muted-foreground">Account Type</span>
-                <span className="font-semibold">{(bank.accountType ?? "SAVINGS") === "SAVINGS" ? "Savings" : "Current"}</span>
+                <span className="font-semibold">{bank.accountType === "current" ? "Current" : "Savings"}</span>
               </div>
             </div>
           </div>
