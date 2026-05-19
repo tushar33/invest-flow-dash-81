@@ -329,6 +329,18 @@ export interface AdminWalletFilters {
   limit?: number;
 }
 
+export type SystemSettingType = "STRING" | "BOOLEAN" | "NUMBER" | "JSON";
+
+export interface SystemSetting {
+  key: string;
+  value: string;
+  type: SystemSettingType;
+  category: string | null;
+  description: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export const admin = {
   summary: () => request<AdminSummary>("/admin/summary"),
   financialSummary: () => request<AdminFinancialSummary>("/admin/financial-summary"),
@@ -361,4 +373,10 @@ export const admin = {
     request<any>(`/admin/packages/${id}/assignment-date`, { method: "PATCH", body: JSON.stringify(data) }),
   cancelPackage: (id: string) =>
     request<any>(`/packages/${id}/cancel`, { method: "PATCH" }),
+  settings: () => request<SystemSetting[]>("/admin/settings"),
+  updateSetting: (key: string, value: string) =>
+    request<SystemSetting>(`/admin/settings/${encodeURIComponent(key)}`, {
+      method: "PATCH",
+      body: JSON.stringify({ value }),
+    }),
 };
