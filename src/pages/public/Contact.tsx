@@ -38,7 +38,6 @@ export default function Contact() {
             <div className="space-y-4 lg:col-span-1">
               {[
                 { icon: Mail, label: "Email", value: "info@trinityarrows.com" },
-                { icon: MapPin, label: "Office", value: "123 Trade Avenue, Mumbai, India" },
               ].map((c, i) => (
                 <Reveal key={c.label} delay={i * 80}>
                   <Card className="p-5 border-0 shadow-md flex items-start gap-4 rounded-2xl hover:shadow-lg transition-shadow">

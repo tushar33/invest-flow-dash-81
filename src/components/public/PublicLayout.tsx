@@ -191,10 +191,6 @@ export default function PublicLayout({ children, transparentTop = false }: Props
               <li className="flex items-start gap-2.5">
                 <Mail className="w-4 h-4 mt-0.5 text-emerald-400 shrink-0" /> info@trinityarrows.com
               </li>
-              <li className="flex items-start gap-2.5">
-                <MapPin className="w-4 h-4 mt-0.5 text-emerald-400 shrink-0" />
-                123 Trade Avenue, Mumbai, India
-              </li>
             </ul>
           </div>
         </div>
