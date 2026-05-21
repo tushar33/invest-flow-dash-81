@@ -5,14 +5,18 @@ import mango from "@/assets/fruit-mango.jpg";
 import apple from "@/assets/fruit-apple.jpg";
 import grapes from "@/assets/fruit-grapes.jpg";
 import citrus from "@/assets/fruit-citrus.jpg";
+import pomegranate from "@/assets/fruit-pomegranate.jpg";
 import seasonal from "@/assets/fruit-seasonal.jpg";
+import dryfruits from "@/assets/fruit-dryfruits.jpg";
 
 const products = [
   { name: "Mangoes", img: mango, desc: "Premium Alphonso, Kesar, and Banganapalli varieties — sweet, aromatic, and export-grade." },
   { name: "Apples", img: apple, desc: "Crisp red and green apples sourced from premium orchards across Europe and Asia." },
   { name: "Grapes", img: grapes, desc: "Seedless green, red, and black grape varieties, vine-ripened to perfection." },
+  { name: "Pomegranate", img: pomegranate, desc: "Ruby-red, antioxidant-rich pomegranates with sweet, juicy arils — export-grade Bhagwa variety." },
   { name: "Citrus Fruits", img: citrus, desc: "Vitamin-rich oranges, lemons, and mandarins from the finest groves worldwide." },
-  { name: "Seasonal Produce", img: seasonal, desc: "Berries, stone fruits, melons, pomegranates, and more — fresh in every season." },
+  { name: "Seasonal Produce", img: seasonal, desc: "Berries, stone fruits, melons, and more — fresh in every season." },
+  { name: "Dry Fruits", img: dryfruits, desc: "Premium almonds, cashews, pistachios, walnuts, raisins, and dates — sourced and packed for global markets." },
 ];
 
 export default function Products() {

@@ -21,14 +21,18 @@ import mango from "@/assets/fruit-mango.jpg";
 import apple from "@/assets/fruit-apple.jpg";
 import grapes from "@/assets/fruit-grapes.jpg";
 import citrus from "@/assets/fruit-citrus.jpg";
+import pomegranate from "@/assets/fruit-pomegranate.jpg";
 import seasonal from "@/assets/fruit-seasonal.jpg";
+import dryfruits from "@/assets/fruit-dryfruits.jpg";
 
 const products = [
   { name: "Mangoes", img: mango, tag: "Premium • Alphonso, Kesar" },
   { name: "Apples", img: apple, tag: "Crisp • Red & Green" },
   { name: "Grapes", img: grapes, tag: "Seedless • Vine-ripened" },
+  { name: "Pomegranate", img: pomegranate, tag: "Ruby-red • Juicy Arils" },
   { name: "Citrus Fruits", img: citrus, tag: "Vitamin-rich • Oranges" },
   { name: "Seasonal Produce", img: seasonal, tag: "Berries & More" },
+  { name: "Dry Fruits", img: dryfruits, tag: "Almonds • Cashews • Dates" },
 ];
 
 const services = [
