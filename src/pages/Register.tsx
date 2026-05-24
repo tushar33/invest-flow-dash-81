@@ -54,7 +54,7 @@ export default function Register() {
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">{LANG.brand.name}</h1>
           <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground mt-1">{LANG.brand.tagline}</p>
-          <p className="text-sm text-muted-foreground mt-3">{LANG.auth.registerSubtitle}</p>
+          
         </div>
 
         <div className="bg-card border border-border rounded-2xl shadow-elevated p-5 animate-scale-in-bounce">
