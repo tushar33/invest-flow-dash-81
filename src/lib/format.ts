@@ -6,17 +6,24 @@
  * are now rendered as "Credits".
  */
 
-export function formatCredits(value: number | string | null | undefined): string {
+import { LANG, transactionTypeLabel } from "@/lib/language";
+
+/** Ledger amounts may carry fractional sub-units; display as whole credits (round up). */
+function toDisplayCredits(value: number | string | null | undefined): number {
   const n = typeof value === "string" ? Number(value) : (value ?? 0);
   const safe = Number.isFinite(n) ? n : 0;
-  return `${safe.toLocaleString("en-IN")} Credits`;
+  return Math.ceil(safe);
+}
+
+export function formatCredits(value: number | string | null | undefined): string {
+  const rounded = toDisplayCredits(value);
+  return `${rounded.toLocaleString("en-IN", { maximumFractionDigits: 0 })} ${LANG.transaction.credits}`;
 }
 
 /** Compact form: "50,000 CR" — useful for tight layouts. */
 export function formatCreditsCompact(value: number | string | null | undefined): string {
-  const n = typeof value === "string" ? Number(value) : (value ?? 0);
-  const safe = Number.isFinite(n) ? n : 0;
-  return `${safe.toLocaleString("en-IN")} CR`;
+  const rounded = toDisplayCredits(value);
+  return `${rounded.toLocaleString("en-IN", { maximumFractionDigits: 0 })} ${LANG.transaction.creditsCompact}`;
 }
 
 /** Signed credit amount, e.g. "+50,000 Credits" / "-2,500 Credits". */
@@ -30,16 +37,5 @@ export function formatCreditsSigned(
 
 /** Map raw transaction types from the API to user-facing reward labels. */
 export function formatTransactionLabel(type: string): string {
-  switch (type) {
-    case "ROI_CREDIT":
-    case "ROI":
-      return "Reward Credit";
-    case "PAYOUT_DEBIT":
-      return "Redemption";
-    case "PRINCIPAL_DEBIT":
-    case "PRINCIPAL":
-      return "Balance Adjustment";
-    default:
-      return type.replace(/_/g, " ");
-  }
+  return transactionTypeLabel(type);
 }

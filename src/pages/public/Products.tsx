@@ -8,16 +8,10 @@ import citrus from "@/assets/fruit-citrus.jpg";
 import pomegranate from "@/assets/fruit-pomegranate.jpg";
 import seasonal from "@/assets/fruit-seasonal.jpg";
 import dryfruits from "@/assets/fruit-dryfruits.jpg";
+import { LANG } from "@/lib/language";
 
-const products = [
-  { name: "Mangoes", img: mango, desc: "Premium Alphonso, Kesar, and Banganapalli varieties — sweet, aromatic, and export-grade." },
-  { name: "Apples", img: apple, desc: "Crisp red and green apples sourced from premium orchards across Europe and Asia." },
-  { name: "Grapes", img: grapes, desc: "Seedless green, red, and black grape varieties, vine-ripened to perfection." },
-  { name: "Pomegranate", img: pomegranate, desc: "Ruby-red, antioxidant-rich pomegranates with sweet, juicy arils — export-grade Bhagwa variety." },
-  { name: "Citrus Fruits", img: citrus, desc: "Vitamin-rich oranges, lemons, and mandarins from the finest groves worldwide." },
-  { name: "Seasonal Produce", img: seasonal, desc: "Berries, stone fruits, melons, and more — fresh in every season." },
-  { name: "Dry Fruits", img: dryfruits, desc: "Premium almonds, cashews, pistachios, walnuts, raisins, and dates — sourced and packed for global markets." },
-];
+const productImages = [mango, apple, grapes, pomegranate, citrus, seasonal, dryfruits];
+const products = LANG.public.catalogProducts.map((p, i) => ({ ...p, img: productImages[i] }));
 
 export default function Products() {
   return (
@@ -27,11 +21,11 @@ export default function Products() {
           <Reveal>
             <div className="text-center max-w-2xl mx-auto mb-14">
               <div className="text-emerald-700 text-xs uppercase tracking-[0.3em] font-semibold mb-3">
-                Our Catalog
+                {LANG.public.ourCatalog}
               </div>
-              <h1 className="text-4xl md:text-6xl font-bold text-neutral-900 mb-4">Premium Produce</h1>
+              <h1 className="text-4xl md:text-6xl font-bold text-neutral-900 mb-4">{LANG.public.premiumProduce}</h1>
               <p className="text-neutral-600 text-lg">
-                Hand-picked, quality-assured fruits sourced from the world's best growers.
+                {LANG.public.premiumProduceDescription}
               </p>
             </div>
           </Reveal>

@@ -3,6 +3,13 @@ import { Reveal } from "@/components/public/Reveal";
 import { Card } from "@/components/ui/card";
 import { Globe, ShieldCheck, Award, Users, Leaf, Target } from "lucide-react";
 import heroImg from "@/assets/hero-fruits.jpg";
+import { LANG } from "@/lib/language";
+
+const valueIcons = [Leaf, Target, ShieldCheck];
+const aboutValues = LANG.public.aboutValues.map((v, i) => ({ ...v, icon: valueIcons[i] }));
+
+const statIcons = [Globe, Users, Award, ShieldCheck];
+const aboutStats = LANG.public.aboutStats.map((s, i) => ({ ...s, icon: statIcons[i] }));
 
 export default function About() {
   return (
@@ -14,17 +21,16 @@ export default function About() {
           <Reveal>
             <div className="max-w-3xl">
               <div className="text-orange-300 text-xs uppercase tracking-[0.3em] font-semibold mb-3">
-                About Us
+                {LANG.public.aboutUs}
               </div>
               <h1 className="text-4xl md:text-6xl font-bold leading-tight mb-6">
-                Trinity Arrows — your trusted{" "}
+                {LANG.public.aboutHeroPrefix}{" "}
                 <span className="bg-gradient-to-r from-orange-400 to-yellow-300 bg-clip-text text-transparent">
-                  global export partner
+                  {LANG.public.aboutHeroHighlight}
                 </span>
               </h1>
               <p className="text-lg text-white/80 leading-relaxed">
-                For over two decades, Trinity Arrows has connected growers, distributors, and
-                retailers across continents — built on trust, quality, and reliability.
+                {LANG.public.aboutHeroDescription}
               </p>
             </div>
           </Reveal>
@@ -36,19 +42,16 @@ export default function About() {
           <Reveal>
             <div>
               <div className="text-emerald-700 text-xs uppercase tracking-[0.3em] font-semibold mb-3">
-                Our Story
+                {LANG.public.ourStory}
               </div>
               <h2 className="text-3xl md:text-4xl font-bold mb-5 text-neutral-900">
-                Two decades of global excellence
+                {LANG.public.ourStoryTitle}
               </h2>
               <p className="text-neutral-600 mb-4 leading-relaxed">
-                From sun-ripened mangoes in India to crisp apples from Europe, Trinity Arrows
-                ensures every shipment arrives fresh, on time, and to specification.
+                {LANG.public.ourStoryP1}
               </p>
               <p className="text-neutral-600 leading-relaxed">
-                Our extensive network spans 50+ countries, with cold-chain integrity maintained from
-                farm to destination — single containers or year-round programs, we deliver
-                consistency.
+                {LANG.public.ourStoryP2}
               </p>
             </div>
           </Reveal>
@@ -65,16 +68,12 @@ export default function About() {
           <Reveal>
             <div className="text-center max-w-2xl mx-auto mb-12">
               <h2 className="text-3xl md:text-4xl font-bold mb-3 text-neutral-900">
-                Our values drive everything
+                {LANG.public.ourValues}
               </h2>
             </div>
           </Reveal>
           <div className="grid md:grid-cols-3 gap-6">
-            {[
-              { icon: Leaf, title: "Sustainability", desc: "Eco-conscious sourcing and packaging at every step." },
-              { icon: Target, title: "Precision", desc: "Detail-oriented operations from origin to destination." },
-              { icon: ShieldCheck, title: "Integrity", desc: "Transparent dealings and consistent quality." },
-            ].map((v, i) => (
+            {aboutValues.map((v, i) => (
               <Reveal key={v.title} delay={i * 80}>
                 <Card className="p-8 border-0 shadow-md hover:shadow-xl transition-shadow rounded-2xl bg-white">
                   <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-600 to-emerald-800 text-white flex items-center justify-center mb-5">
@@ -91,12 +90,7 @@ export default function About() {
 
       <section className="container py-24">
         <div className="grid md:grid-cols-4 gap-6">
-          {[
-            { icon: Globe, label: "50+ Countries" },
-            { icon: Users, label: "200+ Partners" },
-            { icon: Award, label: "ISO Certified" },
-            { icon: ShieldCheck, label: "Quality Guaranteed" },
-          ].map((s, i) => (
+          {aboutStats.map((s, i) => (
             <Reveal key={s.label} delay={i * 80}>
               <Card className="p-8 text-center border-0 shadow-md rounded-2xl">
                 <s.icon className="w-9 h-9 text-emerald-700 mx-auto mb-3" />

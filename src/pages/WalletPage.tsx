@@ -10,19 +10,17 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { wallet as walletApi } from "@/lib/api";
 import { formatCredits, formatCreditsSigned, formatTransactionLabel } from "@/lib/format";
+import { LANG, FILTER_OPTIONS } from "@/lib/language";
 
 const filterDefaults = { type: "", from: "", to: "" };
 
 const filterFields: FilterField[] = [
   {
-    key: "type", label: "Type", type: "select", placeholder: "All",
-    options: [
-      { label: "Reward Credit", value: "ROI" },
-      { label: "Redemption", value: "PAYOUT_DEBIT" },
-    ],
+    key: "type", label: LANG.common.type, type: "select", placeholder: LANG.common.all,
+    options: [...FILTER_OPTIONS.transactionType],
   },
-  { key: "from", label: "From Date", type: "date", placeholder: "Start date" },
-  { key: "to", label: "To Date", type: "date", placeholder: "End date" },
+  { key: "from", label: LANG.filter.fromDate, type: "date", placeholder: LANG.filter.startDate },
+  { key: "to", label: LANG.filter.toDate, type: "date", placeholder: LANG.filter.endDate },
 ];
 
 export default function WalletPage() {
@@ -60,8 +58,8 @@ export default function WalletPage() {
         <div className="sticky top-0 z-30 -mx-4 px-4 pb-4 bg-background/85 backdrop-blur-xl border-b border-border/60 space-y-4">
           <PageHeader
             icon={<Activity className="h-5 w-5" />}
-            title="Activity"
-            subtitle="Reward credits & redemption activity"
+            title={LANG.wallet.activityTitle}
+            subtitle={LANG.wallet.activitySubtitle}
             className="sticky-none static border-b-0 -mx-0 px-0 py-3 bg-transparent backdrop-blur-none"
           />
 
@@ -70,19 +68,19 @@ export default function WalletPage() {
             <div className="h-7 w-7 rounded-lg bg-white/10 backdrop-blur flex items-center justify-center">
               <WalletIcon className="h-3.5 w-3.5 text-accent" />
             </div>
-            <span className="text-[11px] uppercase tracking-widest opacity-80 font-semibold">Available Balance</span>
+            <span className="text-[11px] uppercase tracking-widest opacity-80 font-semibold">{LANG.wallet.availableBalance}</span>
             <button onClick={() => setShowBalance(!showBalance)} className="ml-auto opacity-70 hover:opacity-100 transition-opacity">
               {showBalance ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
             </button>
           </div>
           <p className="text-[36px] font-bold leading-tight tabular-nums">
-            {showBalance ? formatCredits(balance) : "••••••"}
+            {showBalance ? formatCredits(balance) : LANG.common.hiddenBalance}
           </p>
         </GradientCard>
 
         <div className="grid grid-cols-2 gap-3">
-          <StatTile label="Total Credited" value={`+${formatCredits(totalCredited)}`} icon={TrendingUp} accent="success" />
-          <StatTile label="Total Redeemed" value={`-${formatCredits(totalDebited)}`} icon={TrendingDown} accent="warning" />
+          <StatTile label={LANG.wallet.totalCredited} value={`+${formatCredits(totalCredited)}`} icon={TrendingUp} accent="success" />
+          <StatTile label={LANG.wallet.totalRedeemed} value={`-${formatCredits(totalDebited)}`} icon={TrendingDown} accent="warning" />
         </div>
 
           <FilterBar
@@ -93,7 +91,7 @@ export default function WalletPage() {
             hasActive={hasActiveFilters}
           />
 
-          <h2 className="text-sm font-bold tracking-tight">Ledger</h2>
+          <h2 className="text-sm font-bold tracking-tight">{LANG.wallet.ledgerTitle}</h2>
         </div>
 
 
@@ -106,7 +104,7 @@ export default function WalletPage() {
           ) : (
             <div className="bg-card rounded-2xl border border-border overflow-hidden shadow-card">
               {filtered.length === 0 ? (
-                <EmptyState icon={Activity} title="No activity found" description="Try adjusting your filters or check back later." />
+                <EmptyState icon={Activity} title={LANG.wallet.noActivity} description={LANG.wallet.noActivityFilters} />
               ) : filtered.map((tx, i) => {
                 const isCredit = tx.direction === "CREDIT";
                 return (

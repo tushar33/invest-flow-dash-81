@@ -1,12 +1,11 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { auth as authApi, AuthUser, setToken, clearToken } from "@/lib/api";
+import { auth as authApi, AuthUser, buildLoginPayload, setToken, clearToken } from "@/lib/api";
 
 interface AuthContextType {
   user: AuthUser | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<AuthUser>;
-  loginWithPhone: (phone: string, password: string) => Promise<AuthUser>;
-  register: (data: { fullName: string; email?: string; phone?: string; password: string }) => Promise<AuthUser>;
+  login: (identifier: string, password: string) => Promise<AuthUser>;
+  register: (data: { fullName: string; email: string; phone: string; city: string; password: string }) => Promise<AuthUser>;
   logout: () => void;
   refreshUser: () => Promise<void>;
 }
@@ -29,21 +28,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const login = async (email: string, password: string): Promise<AuthUser> => {
-    const res = await authApi.login({ email, password });
+  const login = async (identifier: string, password: string): Promise<AuthUser> => {
+    const res = await authApi.login(buildLoginPayload(identifier, password));
     setToken(res.accessToken);
     setUser(res.user);
     return res.user;
   };
 
-  const loginWithPhone = async (phone: string, password: string): Promise<AuthUser> => {
-    const res = await authApi.login({ phone, password });
-    setToken(res.accessToken);
-    setUser(res.user);
-    return res.user;
-  };
-
-  const register = async (data: { fullName: string; email?: string; phone?: string; password: string }): Promise<AuthUser> => {
+  const register = async (data: { fullName: string; email: string; phone: string; city: string; password: string }): Promise<AuthUser> => {
     const res = await authApi.register(data);
     setToken(res.accessToken);
     setUser(res.user);
@@ -61,7 +53,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, loginWithPhone, register, logout, refreshUser }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

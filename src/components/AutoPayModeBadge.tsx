@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { autoPayModeLabel } from "@/lib/language";
 
 export type AutoPayMode = "NONE" | "HALF" | "FULL";
 
@@ -33,7 +34,7 @@ export function AutoPayModeBadge({ mode, className }: AutoPayModeBadgeProps) {
       )}
     >
       <span className={cn("h-1.5 w-1.5 rounded-full", dot)} />
-      {normalized}
+      {autoPayModeLabel(normalized)}
     </span>
   );
 }

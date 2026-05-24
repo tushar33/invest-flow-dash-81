@@ -7,13 +7,14 @@ import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
+import { LANG } from "@/lib/language";
 
 const adminMobileNav = [
-  { to: "/admin", icon: LayoutDashboard, label: "Home" },
-  { to: "/admin/users", icon: Users, label: "Users" },
-  { to: "/admin/packages", icon: Package, label: "Packages" },
-  { to: "/admin/payouts", icon: CreditCard, label: "Payouts" },
-  { to: "/admin/settings", icon: Settings, label: "Settings" },
+  { to: "/admin", icon: LayoutDashboard, label: LANG.nav.home },
+  { to: "/admin/users", icon: Users, label: LANG.nav.users },
+  { to: "/admin/packages", icon: Package, label: LANG.nav.packages },
+  { to: "/admin/payouts", icon: CreditCard, label: LANG.nav.payouts },
+  { to: "/admin/settings", icon: Settings, label: LANG.nav.settings },
 ];
 
 export function AdminLayout({ children }: { children: ReactNode }) {
@@ -55,12 +56,12 @@ export function AdminLayout({ children }: { children: ReactNode }) {
             <SheetTrigger asChild>
               <button className="flex flex-col items-center justify-center gap-0.5 flex-1">
                 <User className="h-5 w-5 text-muted-foreground" />
-                <span className="text-[10px] font-medium text-muted-foreground">Profile</span>
+                <span className="text-[10px] font-medium text-muted-foreground">{LANG.common.profile}</span>
               </button>
             </SheetTrigger>
             <SheetContent side="bottom" className="rounded-t-3xl">
               <SheetHeader className="text-left">
-                <SheetTitle>Admin Profile</SheetTitle>
+                <SheetTitle>{LANG.common.adminProfile}</SheetTitle>
               </SheetHeader>
               <div className="mt-4 space-y-3">
                 <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
@@ -79,7 +80,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
                   className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10"
                 >
                   <LogOut className="h-4 w-4" />
-                  Sign Out
+                  {LANG.common.signOut}
                 </Button>
               </div>
             </SheetContent>

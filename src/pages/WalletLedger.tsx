@@ -21,18 +21,15 @@ import {
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { formatCredits, formatCreditsSigned, formatTransactionLabel } from "@/lib/format";
+import { LANG, FILTER_OPTIONS, directionLabel } from "@/lib/language";
 
 const filterFields: FilterField[] = [
   {
-    key: "type", label: "Activity Type", type: "select", placeholder: "All Types",
-    options: [
-      { label: "Reward Credit", value: "ROI" },
-      { label: "Redemption", value: "PAYOUT_DEBIT" },
-      { label: "Balance Adjustment", value: "PRINCIPAL" },
-    ],
+    key: "type", label: LANG.filter.activityType, type: "select", placeholder: LANG.filter.allTypes,
+    options: [...FILTER_OPTIONS.ledgerType],
   },
-  { key: "from", label: "From Date", type: "date", placeholder: "Start date" },
-  { key: "to", label: "To Date", type: "date", placeholder: "End date" },
+  { key: "from", label: LANG.filter.fromDate, type: "date", placeholder: LANG.filter.startDate },
+  { key: "to", label: LANG.filter.toDate, type: "date", placeholder: LANG.filter.endDate },
 ];
 
 export default function WalletLedger() {
@@ -119,20 +116,20 @@ export default function WalletLedger() {
       <div className="space-y-6">
         <PageHeader
           icon={<Wallet className="h-5 w-5" />}
-          title="Activity / Ledger"
-          subtitle={packageIdFilter ? `Activity for plan ${packageIdFilter}` : "Complete activity history and balance summary."}
+          title={LANG.wallet.activityLedgerTitle}
+          subtitle={packageIdFilter ? LANG.wallet.activityForPlan(packageIdFilter) : LANG.wallet.ledgerSubtitle}
         />
 
         {isAdmin && !userIdFromUrl && (
           <Card className="shadow-card">
-            <CardHeader className="pb-3"><CardTitle className="text-base">Select User</CardTitle></CardHeader>
+            <CardHeader className="pb-3"><CardTitle className="text-base">{LANG.common.selectUser}</CardTitle></CardHeader>
             <CardContent>
               <div className="flex gap-2">
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input placeholder="Search by user ID..." value={userSearch} onChange={(e) => setUserSearch(e.target.value)} className="pl-9" />
+                  <Input placeholder={LANG.filter.searchByUserIdPlaceholder} value={userSearch} onChange={(e) => setUserSearch(e.target.value)} className="pl-9" />
                 </div>
-                <Button onClick={() => setSelectedUserId(userSearch)} disabled={!userSearch.trim()} className="bg-gradient-accent text-accent-foreground shadow-glow">Load Activity</Button>
+                <Button onClick={() => setSelectedUserId(userSearch)} disabled={!userSearch.trim()} className="bg-gradient-accent text-accent-foreground shadow-glow">{LANG.common.loadActivity}</Button>
               </div>
             </CardContent>
           </Card>
@@ -140,9 +137,9 @@ export default function WalletLedger() {
 
         {walletData && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <StatTile label="Balance" value={formatCredits(walletData.availableBalance)} icon={Coins} accent="primary" />
-            <StatTile label="Total Credits" value={formatCredits(totalCredits)} icon={TrendingUp} accent="success" />
-            <StatTile label="Total Debits" value={formatCredits(totalDebits)} icon={TrendingDown} accent="warning" />
+            <StatTile label={LANG.common.balance} value={formatCredits(walletData.availableBalance)} icon={Coins} accent="primary" />
+            <StatTile label={LANG.wallet.totalCredits} value={formatCredits(totalCredits)} icon={TrendingUp} accent="success" />
+            <StatTile label={LANG.wallet.totalDebits} value={formatCredits(totalDebits)} icon={TrendingDown} accent="warning" />
           </div>
         )}
 
@@ -156,8 +153,8 @@ export default function WalletLedger() {
 
         <Card className="shadow-card">
           <CardHeader>
-            <CardTitle className="text-lg">Activity History</CardTitle>
-            <p className="text-sm text-muted-foreground">Showing {filteredTransactions.length} entr{filteredTransactions.length !== 1 ? 'ies' : 'y'}</p>
+            <CardTitle className="text-lg">{LANG.wallet.activityHistory}</CardTitle>
+            <p className="text-sm text-muted-foreground">{LANG.common.showingEntries(filteredTransactions.length)}</p>
           </CardHeader>
           <CardContent>
             {isLoading ? (
@@ -171,7 +168,7 @@ export default function WalletLedger() {
                 ))}
               </div>
             ) : filteredTransactions.length === 0 ? (
-              <EmptyState icon={Wallet} title="No activity found" description="No entries match your current filters." />
+              <EmptyState icon={Wallet} title={LANG.wallet.noActivity} description={LANG.wallet.noEntriesFilters} />
             ) : (
               <div className="space-y-3">
                 {filteredTransactions.map((txn) => (
@@ -180,11 +177,11 @@ export default function WalletLedger() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <p className="font-medium text-sm">{formatTransactionLabel(txn.type)}</p>
-                        <Badge variant={txn.direction === "CREDIT" ? "default" : "destructive"} className="text-xs">{txn.direction}</Badge>
+                        <Badge variant={txn.direction === "CREDIT" ? "default" : "destructive"} className="text-xs">{directionLabel(txn.direction)}</Badge>
                       </div>
                       <p className="text-xs text-muted-foreground">{format(new Date(txn.createdAt), "MMM d, yyyy 'at' h:mm a")}</p>
                       {txn.description && <p className="text-xs text-muted-foreground mt-1 truncate">{txn.description}</p>}
-                      {txn.referenceId && <p className="text-xs text-muted-foreground mt-1">Ref: {txn.referenceId}</p>}
+                      {txn.referenceId && <p className="text-xs text-muted-foreground mt-1">{LANG.common.ref} {txn.referenceId}</p>}
                     </div>
                     <div className="text-right">
                       <p className={cn("font-bold text-sm", getTransactionColor(txn.direction))}>

@@ -2,9 +2,9 @@ import { AdminLayout } from "@/components/AdminLayout";
 import { AutoPayModeBadge } from "@/components/AutoPayModeBadge";
 import { FilterBar, type FilterField } from "@/components/FilterBar";
 import { useUrlFilters } from "@/hooks/useUrlFilters";
-import { Eye, Plus, BookOpen } from "lucide-react";
+import { Eye, Plus, BookOpen, Landmark, Check, X, ExternalLink, FileText } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { admin as adminApi } from "@/lib/api";
+import { admin as adminApi, bankVerificationStatusLabel, normalizeBankVerificationStatus, resolveUploadUrl } from "@/lib/api";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -13,8 +13,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { StatusBadge } from "@/components/StatusBadge";
 import { toast } from "@/hooks/use-toast";
 import { formatCredits } from "@/lib/format";
+import { LANG, FILTER_OPTIONS, autoPayModeLabel, roleLabel, accountTypeDisplay } from "@/lib/language";
 
 const AUTO_PAY_MODES = ["NONE", "HALF", "FULL"] as const;
 type AutoPayModeValue = (typeof AUTO_PAY_MODES)[number];
@@ -22,16 +25,241 @@ type AutoPayModeValue = (typeof AUTO_PAY_MODES)[number];
 const filterDefaults = { search: "", role: "", autoPayMode: "" };
 
 const filterFields: FilterField[] = [
-  { key: "search", label: "Search", type: "search", placeholder: "Name or email..." },
+  { key: "search", label: LANG.common.search, type: "search", placeholder: LANG.filter.nameOrEmailPlaceholder },
   {
-    key: "role", label: "Role", type: "select", placeholder: "All Roles",
-    options: [{ label: "User", value: "USER" }, { label: "Admin", value: "ADMIN" }],
+    key: "role", label: LANG.common.role, type: "select", placeholder: LANG.filter.allRoles,
+    options: [...FILTER_OPTIONS.userRole],
   },
   {
-    key: "autoPayMode", label: "Auto Redemption", type: "select", placeholder: "All Modes",
-    options: [{ label: "None", value: "NONE" }, { label: "Half", value: "HALF" }, { label: "Full", value: "FULL" }],
+    key: "autoPayMode", label: LANG.filter.autoRedemption, type: "select", placeholder: LANG.filter.allModes,
+    options: [...FILTER_OPTIONS.autoPayMode],
   },
 ];
+
+function isPdfSource(nameOrUrl: string): boolean {
+  return nameOrUrl.toLowerCase().endsWith(".pdf");
+}
+
+function BankDocumentPreview({ label, url }: { label: string; url: string }) {
+  const isPdf = isPdfSource(url);
+
+  return (
+    <div className="rounded-xl border border-border/60 bg-muted/30 overflow-hidden">
+      <div className="px-3 py-2 flex items-center justify-between gap-2 border-b border-border/40">
+        <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">{label}</p>
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-[10px] font-semibold text-accent inline-flex items-center gap-1 hover:underline"
+        >
+          {LANG.common.view} <ExternalLink className="h-3 w-3" />
+        </a>
+      </div>
+      {isPdf ? (
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex flex-col items-center justify-center gap-2 p-6 hover:bg-muted/50 transition-colors"
+        >
+          <FileText className="h-10 w-10 text-accent" />
+          <span className="text-xs font-medium text-muted-foreground">{LANG.common.openPdf}</span>
+        </a>
+      ) : (
+        <a href={url} target="_blank" rel="noopener noreferrer" className="block">
+          <img src={url} alt={LANG.common.documentAlt(label)} className="w-full max-h-48 object-contain bg-background" />
+        </a>
+      )}
+    </div>
+  );
+}
+
+function VerifyBankDetailsModal({
+  open,
+  onOpenChange,
+  userId,
+  userName,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  userId: string;
+  userName: string;
+}) {
+  const queryClient = useQueryClient();
+  const [rejectReason, setRejectReason] = useState("");
+  const [showRejectForm, setShowRejectForm] = useState(false);
+
+  const { data: bankDetails, isLoading, isError } = useQuery({
+    queryKey: ["admin-user-bank-details", userId],
+    queryFn: () => adminApi.userBankDetails(userId),
+    enabled: open && Boolean(userId),
+  });
+
+  const verifyMutation = useMutation({
+    mutationFn: (payload: { status: "VERIFIED" | "REJECTED"; rejectionReason?: string }) =>
+      adminApi.verifyUserBankDetails(userId, payload),
+    onSuccess: (_, variables) => {
+      toast({
+        title: variables.status === "VERIFIED" ? LANG.toast.bankVerified : LANG.toast.bankRejected,
+      });
+      queryClient.invalidateQueries({ queryKey: ["admin-user-bank-details", userId] });
+      setShowRejectForm(false);
+      setRejectReason("");
+    },
+    onError: (err: Error) => {
+      toast({ title: LANG.toast.actionFailed, description: err.message, variant: "destructive" });
+    },
+  });
+
+  const handleOpenChange = (next: boolean) => {
+    if (!next) {
+      setShowRejectForm(false);
+      setRejectReason("");
+    }
+    onOpenChange(next);
+  };
+
+  const status = normalizeBankVerificationStatus(bankDetails?.verificationStatus);
+  const statusVariant =
+    status === "verified" ? "approved" : status === "rejected" ? "rejected" : "pending";
+
+  const aadharUrl = resolveUploadUrl(bankDetails?.aadharDocumentUrl);
+  const panUrl = resolveUploadUrl(bankDetails?.panDocumentUrl);
+
+  return (
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>{LANG.admin.verifyBankDetails}</DialogTitle>
+          <DialogDescription>{LANG.admin.verifyBankFor(userName)}</DialogDescription>
+        </DialogHeader>
+
+        {isLoading ? (
+          <div className="flex justify-center py-10">
+            <div className="h-8 w-8 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : isError ? (
+          <p className="text-sm text-destructive py-6 text-center">{LANG.admin.bankLoadFailed}</p>
+        ) : !bankDetails ? (
+          <p className="text-sm text-muted-foreground py-6 text-center">{LANG.admin.noBankSubmitted}</p>
+        ) : (
+          <div className="space-y-4 py-1">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{LANG.admin.verificationStatus}</p>
+              <StatusBadge status={statusVariant}>{bankVerificationStatusLabel(status)}</StatusBadge>
+            </div>
+
+            {status === "rejected" && bankDetails.rejectionReason && (
+              <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3">
+                <p className="text-[11px] font-medium uppercase tracking-wide text-destructive">{LANG.bank.rejectionReason}</p>
+                <p className="text-sm mt-1">{bankDetails.rejectionReason}</p>
+              </div>
+            )}
+
+            <div className="grid gap-3 sm:grid-cols-2 rounded-lg border border-border/70 bg-muted/30 p-3">
+              <div>
+                <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{LANG.admin.accountHolder}</p>
+                <p className="text-sm font-medium mt-1">{bankDetails.accountHolderName}</p>
+              </div>
+              <div>
+                <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{LANG.admin.bankName}</p>
+                <p className="text-sm font-medium mt-1">{bankDetails.bankName}</p>
+              </div>
+              <div>
+                <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{LANG.admin.accountNumber}</p>
+                <p className="text-sm font-medium mt-1 font-mono">{bankDetails.accountNumber}</p>
+              </div>
+              <div>
+                <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{LANG.admin.ifscCode}</p>
+                <p className="text-sm font-medium mt-1 font-mono">{bankDetails.ifscCode}</p>
+              </div>
+              <div>
+                <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{LANG.admin.accountType}</p>
+                <p className="text-sm font-medium mt-1 capitalize">{accountTypeDisplay(bankDetails.accountType ?? "saving")}</p>
+              </div>
+              <div>
+                <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{LANG.admin.aadharNumber}</p>
+                <p className="text-sm font-medium mt-1">{bankDetails.aadharNumber || LANG.common.noData}</p>
+              </div>
+              <div className="sm:col-span-2">
+                <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{LANG.admin.panNumber}</p>
+                <p className="text-sm font-medium mt-1">{bankDetails.panNumber || LANG.common.noData}</p>
+              </div>
+            </div>
+
+            {(aadharUrl || panUrl) && (
+              <div className="grid gap-3 sm:grid-cols-2">
+                {aadharUrl && <BankDocumentPreview label={LANG.admin.aadharDocument} url={aadharUrl} />}
+                {panUrl && <BankDocumentPreview label={LANG.admin.panDocument} url={panUrl} />}
+              </div>
+            )}
+
+            {showRejectForm && (
+              <div className="space-y-2">
+                <Label htmlFor="reject-reason">{LANG.bank.rejectionReason}</Label>
+                <Textarea
+                  id="reject-reason"
+                  placeholder={LANG.admin.rejectReasonPlaceholder}
+                  value={rejectReason}
+                  onChange={(e) => setRejectReason(e.target.value)}
+                  rows={3}
+                />
+              </div>
+            )}
+          </div>
+        )}
+
+        {bankDetails && status === "pending" && (
+          <DialogFooter className="gap-2 sm:gap-0">
+            {showRejectForm ? (
+              <>
+                <Button variant="outline" onClick={() => setShowRejectForm(false)} disabled={verifyMutation.isPending}>
+                  {LANG.common.cancel}
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={() =>
+                    verifyMutation.mutate({ status: "REJECTED", rejectionReason: rejectReason.trim() })
+                  }
+                  disabled={!rejectReason.trim() || verifyMutation.isPending}
+                >
+                  {verifyMutation.isPending ? LANG.common.rejecting : LANG.common.confirmReject}
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="outline" onClick={() => handleOpenChange(false)}>
+                  {LANG.common.close}
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={() => setShowRejectForm(true)}
+                  disabled={verifyMutation.isPending}
+                >
+                  <X className="h-3.5 w-3.5 mr-1" /> {LANG.common.reject}
+                </Button>
+                <Button
+                  onClick={() => verifyMutation.mutate({ status: "VERIFIED" })}
+                  disabled={verifyMutation.isPending}
+                >
+                  <Check className="h-3.5 w-3.5 mr-1" />
+                  {verifyMutation.isPending ? LANG.common.verifying : LANG.common.verify}
+                </Button>
+              </>
+            )}
+          </DialogFooter>
+        )}
+
+        {bankDetails && status !== "pending" && (
+          <DialogFooter>
+            <Button variant="outline" onClick={() => handleOpenChange(false)}>{LANG.common.close}</Button>
+          </DialogFooter>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 export default function AdminUsers() {
   const queryClient = useQueryClient();
@@ -50,6 +278,7 @@ export default function AdminUsers() {
 
   const [autopayUpdatingUserId, setAutopayUpdatingUserId] = useState<string | null>(null);
   const [assignOpen, setAssignOpen] = useState(false);
+  const [bankVerifyOpen, setBankVerifyOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState("");
   const [selectedUserName, setSelectedUserName] = useState("");
   const [pkgAmount, setPkgAmount] = useState("");
@@ -63,7 +292,7 @@ export default function AdminUsers() {
         roiPercentage: Number(roiPct),
       }),
     onSuccess: () => {
-      toast({ title: "Plan assigned successfully" });
+      toast({ title: LANG.toast.planAssigned });
       queryClient.invalidateQueries({ queryKey: ["admin-users"] });
       queryClient.invalidateQueries({ queryKey: ["admin-packages"] });
       setAssignOpen(false);
@@ -71,7 +300,7 @@ export default function AdminUsers() {
       setRoiPct("");
     },
     onError: (err: Error) => {
-      toast({ title: "Failed to assign plan", description: err.message, variant: "destructive" });
+      toast({ title: LANG.toast.planAssignFailed, description: err.message, variant: "destructive" });
     },
   });
 
@@ -81,11 +310,11 @@ export default function AdminUsers() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-users"] });
       setAutopayUpdatingUserId(null);
-      toast({ title: "Auto Redemption mode updated" });
+      toast({ title: LANG.toast.autoRedemptionUpdated });
     },
     onError: (err: Error) => {
       setAutopayUpdatingUserId(null);
-      toast({ title: "Failed to update Auto Redemption", description: err.message, variant: "destructive" });
+      toast({ title: LANG.toast.autoRedemptionFailed, description: err.message, variant: "destructive" });
     },
   });
 
@@ -102,6 +331,12 @@ export default function AdminUsers() {
     setAssignOpen(true);
   };
 
+  const openBankVerifyModal = (userId: string, userName: string) => {
+    setSelectedUserId(userId);
+    setSelectedUserName(userName);
+    setBankVerifyOpen(true);
+  };
+
   const filtered = (users ?? []).filter(u => {
     if (filters.search && !u.name.toLowerCase().includes(filters.search.toLowerCase()) && !(u.email ?? "").toLowerCase().includes(filters.search.toLowerCase())) return false;
     if (filters.role && u.role !== filters.role) return false;
@@ -113,8 +348,8 @@ export default function AdminUsers() {
     <AdminLayout>
       <div className="space-y-6">
         <div className="sticky top-0 z-30 -mx-4 px-4 py-3 bg-background/85 backdrop-blur-xl border-b border-border/60">
-          <h1 className="text-2xl font-bold">Users</h1>
-          <p className="text-sm text-muted-foreground mt-1">Manage platform users</p>
+          <h1 className="text-2xl font-bold">{LANG.admin.usersTitle}</h1>
+          <p className="text-sm text-muted-foreground mt-1">{LANG.admin.usersSubtitle}</p>
         </div>
 
         <FilterBar
@@ -138,20 +373,20 @@ export default function AdminUsers() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="font-semibold text-sm">{u.name}</p>
-                      <p className="text-xs text-muted-foreground">{u.email || "—"}</p>
+                      <p className="text-xs text-muted-foreground">{u.email || LANG.common.noData}</p>
                     </div>
-                    <span className="text-[10px] font-bold bg-accent/15 text-accent px-2 py-0.5 rounded-full">{u.role}</span>
+                    <span className="text-[10px] font-bold bg-accent/15 text-accent px-2 py-0.5 rounded-full">{roleLabel(u.role)}</span>
                   </div>
                   <div className="flex items-center justify-between mt-3 pt-3 border-t border-border">
-                    <span className="text-xs text-muted-foreground">Balance</span>
+                    <span className="text-xs text-muted-foreground">{LANG.common.balance}</span>
                     <span className="text-sm font-semibold">{formatCredits(u.currentBalance)}</span>
                   </div>
                   <div className="flex items-center justify-between mt-1">
-                    <span className="text-xs text-muted-foreground">Plans</span>
+                    <span className="text-xs text-muted-foreground">{LANG.nav.plans}</span>
                     <span className="text-sm font-semibold">{u.totalPackages}</span>
                   </div>
                   <div className="mt-2 pt-2 border-t border-border">
-                    <p className="text-xs text-muted-foreground mb-1.5">Auto Redemption Mode</p>
+                    <p className="text-xs text-muted-foreground mb-1.5">{LANG.admin.autoRedemptionMode}</p>
                     {currentUser?.id === u.id ? (
                       <AutoPayModeBadge mode={u.autoPayMode ?? "NONE"} />
                     ) : (
@@ -165,7 +400,7 @@ export default function AdminUsers() {
                         </SelectTrigger>
                         <SelectContent>
                           {AUTO_PAY_MODES.map((m) => (
-                            <SelectItem key={m} value={m}>{m}</SelectItem>
+                            <SelectItem key={m} value={m}>{autoPayModeLabel(m)}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
@@ -173,19 +408,22 @@ export default function AdminUsers() {
                   </div>
                   <div className="flex flex-col gap-2 mt-3 pt-3 border-t border-border">
                     <Button size="sm" variant="outline" className="w-full justify-start text-xs" onClick={() => openAssignModal(u.id, u.name)}>
-                      <Plus className="h-3.5 w-3.5 mr-1" /> Assign Plan
+                      <Plus className="h-3.5 w-3.5 mr-1" /> {LANG.admin.assignPlanAction}
                     </Button>
                     <Button size="sm" variant="outline" className="w-full justify-start text-xs" onClick={() => navigate(`/admin/packages?userId=${u.id}`)}>
-                      <Eye className="h-3.5 w-3.5 mr-1" /> View Plans
+                      <Eye className="h-3.5 w-3.5 mr-1" /> {LANG.admin.viewPlans}
                     </Button>
                     <Button size="sm" variant="outline" className="w-full justify-start text-xs" onClick={() => navigate(`/wallet/ledger?userId=${u.id}`)}>
-                      <BookOpen className="h-3.5 w-3.5 mr-1" /> View Ledger
+                      <BookOpen className="h-3.5 w-3.5 mr-1" /> {LANG.plans.viewLedger}
+                    </Button>
+                    <Button size="sm" variant="outline" className="w-full justify-start text-xs" onClick={() => openBankVerifyModal(u.id, u.name)}>
+                      <Landmark className="h-3.5 w-3.5 mr-1" /> {LANG.admin.verifyBankDetails}
                     </Button>
                   </div>
                 </div>
               ))}
               {filtered.length === 0 && (
-                <p className="text-center text-muted-foreground py-12">No users found</p>
+                <p className="text-center text-muted-foreground py-12">{LANG.admin.noUsers}</p>
               )}
             </div>
 
@@ -194,20 +432,20 @@ export default function AdminUsers() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-border">
-                    <th className="text-left text-xs font-medium text-muted-foreground p-4">Name</th>
-                    <th className="text-left text-xs font-medium text-muted-foreground p-4">Email</th>
-                    <th className="text-left text-xs font-medium text-muted-foreground p-4">Auto Redemption</th>
-                    <th className="text-left text-xs font-medium text-muted-foreground p-4">Plans</th>
-                    <th className="text-left text-xs font-medium text-muted-foreground p-4">Balance</th>
-                    <th className="text-left text-xs font-medium text-muted-foreground p-4">Role</th>
-                    <th className="text-right text-xs font-medium text-muted-foreground p-4">Actions</th>
+                    <th className="text-left text-xs font-medium text-muted-foreground p-4">{LANG.common.name}</th>
+                    <th className="text-left text-xs font-medium text-muted-foreground p-4">{LANG.common.email}</th>
+                    <th className="text-left text-xs font-medium text-muted-foreground p-4">{LANG.filter.autoRedemption}</th>
+                    <th className="text-left text-xs font-medium text-muted-foreground p-4">{LANG.nav.plans}</th>
+                    <th className="text-left text-xs font-medium text-muted-foreground p-4">{LANG.common.balance}</th>
+                    <th className="text-left text-xs font-medium text-muted-foreground p-4">{LANG.common.role}</th>
+                    <th className="text-right text-xs font-medium text-muted-foreground p-4">{LANG.common.actions}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
                   {filtered.map((u) => (
                     <tr key={u.id} className="hover:bg-muted/50 transition-colors">
                       <td className="p-4 text-sm font-medium">{u.name}</td>
-                      <td className="p-4 text-sm text-muted-foreground">{u.email || "—"}</td>
+                      <td className="p-4 text-sm text-muted-foreground">{u.email || LANG.common.noData}</td>
                       <td className="p-4">
                         {currentUser?.id === u.id ? (
                           <AutoPayModeBadge mode={u.autoPayMode ?? "NONE"} />
@@ -222,7 +460,7 @@ export default function AdminUsers() {
                             </SelectTrigger>
                             <SelectContent>
                               {AUTO_PAY_MODES.map((m) => (
-                                <SelectItem key={m} value={m}>{m}</SelectItem>
+                                <SelectItem key={m} value={m}>{autoPayModeLabel(m)}</SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
@@ -230,24 +468,27 @@ export default function AdminUsers() {
                       </td>
                       <td className="p-4 text-sm font-semibold">{u.totalPackages}</td>
                       <td className="p-4 text-sm font-semibold">{formatCredits(u.currentBalance)}</td>
-                      <td className="p-4"><span className="text-[10px] font-bold bg-accent/15 text-accent px-2 py-0.5 rounded-full">{u.role}</span></td>
+                      <td className="p-4"><span className="text-[10px] font-bold bg-accent/15 text-accent px-2 py-0.5 rounded-full">{roleLabel(u.role)}</span></td>
                       <td className="p-4 text-right">
                         <div className="flex flex-col gap-2 w-[160px] ml-auto">
                           <Button size="sm" variant="outline" className="text-xs justify-center w-full" onClick={() => openAssignModal(u.id, u.name)}>
-                            <Plus className="h-3.5 w-3.5 mr-1" /> Assign Plan
+                            <Plus className="h-3.5 w-3.5 mr-1" /> {LANG.admin.assignPlanAction}
                           </Button>
                           <Button size="sm" variant="outline" className="text-xs justify-center w-full" onClick={() => navigate(`/admin/packages?userId=${u.id}`)}>
-                            <Eye className="h-3.5 w-3.5 mr-1" /> View Plans
+                            <Eye className="h-3.5 w-3.5 mr-1" /> {LANG.admin.viewPlans}
                           </Button>
                           <Button size="sm" variant="outline" className="text-xs justify-center w-full" onClick={() => navigate(`/wallet/ledger?userId=${u.id}`)}>
-                            <BookOpen className="h-3.5 w-3.5 mr-1" /> View Ledger
+                            <BookOpen className="h-3.5 w-3.5 mr-1" /> {LANG.plans.viewLedger}
+                          </Button>
+                          <Button size="sm" variant="outline" className="text-xs justify-center w-full" onClick={() => openBankVerifyModal(u.id, u.name)}>
+                            <Landmark className="h-3.5 w-3.5 mr-1" /> {LANG.admin.verifyBankDetails}
                           </Button>
                         </div>
                       </td>
                     </tr>
                   ))}
                   {filtered.length === 0 && (
-                    <tr><td colSpan={7} className="text-center text-muted-foreground py-12">No users found</td></tr>
+                    <tr><td colSpan={7} className="text-center text-muted-foreground py-12">{LANG.admin.noUsers}</td></tr>
                   )}
                 </tbody>
               </table>
@@ -260,18 +501,18 @@ export default function AdminUsers() {
       <Dialog open={assignOpen} onOpenChange={setAssignOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Assign Plan</DialogTitle>
-            <DialogDescription>Assign a new plan to <span className="font-semibold text-foreground">{selectedUserName}</span>.</DialogDescription>
+            <DialogTitle>{LANG.admin.assignPlanAction}</DialogTitle>
+            <DialogDescription>{LANG.plans.assignPlanTo(selectedUserName)}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label>Contribution Amount (Credits)</Label>
-              <Input type="number" placeholder="e.g. 100000" value={pkgAmount} onChange={(e) => setPkgAmount(e.target.value)} />
+              <Label>{LANG.plans.contributionAmount}</Label>
+              <Input type="number" placeholder={LANG.plans.contributionPlaceholder} value={pkgAmount} onChange={(e) => setPkgAmount(e.target.value)} />
             </div>
             <div className="space-y-2">
-              <Label>Reward Percentage</Label>
+              <Label>{LANG.plans.rewardPercentage}</Label>
               <Select value={roiPct} onValueChange={setRoiPct}>
-                <SelectTrigger><SelectValue placeholder="Select Reward %" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder={LANG.plans.selectRewardPercent} /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="5">5%</SelectItem>
                   <SelectItem value="7">7%</SelectItem>
@@ -281,16 +522,23 @@ export default function AdminUsers() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setAssignOpen(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setAssignOpen(false)}>{LANG.common.cancel}</Button>
             <Button
               onClick={() => assignMutation.mutate()}
               disabled={!pkgAmount || !roiPct || assignMutation.isPending}
             >
-              {assignMutation.isPending ? "Assigning..." : "Assign Plan"}
+              {assignMutation.isPending ? LANG.common.assigning : LANG.plans.assignPlan}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <VerifyBankDetailsModal
+        open={bankVerifyOpen}
+        onOpenChange={setBankVerifyOpen}
+        userId={selectedUserId}
+        userName={selectedUserName}
+      />
     </AdminLayout>
   );
 }

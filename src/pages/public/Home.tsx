@@ -24,55 +24,16 @@ import citrus from "@/assets/fruit-citrus.jpg";
 import pomegranate from "@/assets/fruit-pomegranate.jpg";
 import seasonal from "@/assets/fruit-seasonal.jpg";
 import dryfruits from "@/assets/fruit-dryfruits.jpg";
+import { LANG } from "@/lib/language";
 
-const products = [
-  { name: "Mangoes", img: mango, tag: "Premium • Alphonso, Kesar" },
-  { name: "Apples", img: apple, tag: "Crisp • Red & Green" },
-  { name: "Grapes", img: grapes, tag: "Seedless • Vine-ripened" },
-  { name: "Pomegranate", img: pomegranate, tag: "Ruby-red • Juicy Arils" },
-  { name: "Citrus Fruits", img: citrus, tag: "Vitamin-rich • Oranges" },
-  { name: "Seasonal Produce", img: seasonal, tag: "Berries & More" },
-  { name: "Dry Fruits", img: dryfruits, tag: "Almonds • Cashews • Dates" },
-];
+const productImages = [mango, apple, grapes, pomegranate, citrus, seasonal, dryfruits];
+const products = LANG.public.featuredProducts.map((p, i) => ({ ...p, img: productImages[i] }));
 
-const services = [
-  { icon: Globe2, title: "Import & Export", desc: "End-to-end international trade with seamless customs handling." },
-  { icon: Package, title: "Packaging", desc: "Custom packaging that preserves freshness and brand identity." },
-  { icon: Snowflake, title: "Cold Storage", desc: "Temperature-controlled warehouses across key locations." },
-  { icon: Truck, title: "Logistics", desc: "Reliable cold-chain transport via sea, air, and road." },
-  { icon: Network, title: "Distribution", desc: "Wide retail, wholesale, and HoReCa distribution network." },
-];
+const serviceIcons = [Globe2, Package, Snowflake, Truck, Network];
+const services = LANG.public.serviceItemsShort.map((s, i) => ({ ...s, icon: serviceIcons[i] }));
 
-const stats = [
-  { value: "50+", label: "Countries Served" },
-  { value: "200+", label: "Global Partners" },
-  { value: "10K+", label: "Tonnes Shipped" },
-  { value: "25+", label: "Years of Trust" },
-];
-
-const regions = [
-  "United States", "Canada", "United Kingdom", "Germany",
-  "France", "Netherlands", "UAE", "Saudi Arabia",
-  "Singapore", "Japan", "Australia", "South Korea",
-];
-
-const testimonials = [
-  {
-    quote: "Trinity Arrows has been our trusted partner for over five years. Quality and consistency are unmatched.",
-    name: "Sarah Mitchell",
-    role: "Procurement Director, FreshMart UK",
-  },
-  {
-    quote: "Their cold-chain logistics are world-class. Every shipment arrives in perfect condition, on time.",
-    name: "Ahmed Al-Rashid",
-    role: "CEO, Gulf Produce Trading",
-  },
-  {
-    quote: "From sourcing to delivery, they handle everything seamlessly. A true global export partner.",
-    name: "Hiroshi Tanaka",
-    role: "Import Manager, Tokyo Fruits Co.",
-  },
-];
+const featureIcons = [ShieldCheck, Globe2, Award, Truck];
+const whyChooseFeatures = LANG.public.whyChooseFeatures.map((f, i) => ({ ...f, icon: featureIcons[i] }));
 
 export default function Home() {
   return (
@@ -81,7 +42,7 @@ export default function Home() {
       <section className="relative min-h-[100vh] flex items-center overflow-hidden">
         <img
           src={heroImg}
-          alt="Fresh fruits at export warehouse"
+          alt={LANG.brand.heroImageAlt}
           className="absolute inset-0 w-full h-full object-cover"
           width={1920}
           height={1080}
@@ -94,22 +55,21 @@ export default function Home() {
             <Reveal>
               <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white text-xs font-medium mb-6">
                 <Leaf className="w-3.5 h-3.5 text-orange-300" />
-                Trusted by 200+ global partners since 1998
+                {LANG.public.heroBadge}
               </div>
             </Reveal>
             <Reveal delay={100}>
               <h1 className="text-5xl md:text-7xl font-bold text-white leading-[1.05] tracking-tight mb-6">
-                Global Fruit{" "}
+                {LANG.public.heroTitlePrefix}{" "}
                 <span className="bg-gradient-to-r from-orange-400 to-yellow-300 bg-clip-text text-transparent">
-                  Import & Export
+                  {LANG.public.heroTitleHighlight}
                 </span>{" "}
-                Solutions
+                {LANG.public.heroTitleSuffix}
               </h1>
             </Reveal>
             <Reveal delay={200}>
               <p className="text-lg md:text-xl text-white/85 max-w-2xl mb-10 leading-relaxed">
-                Delivering premium quality produce across international markets — sourced from the
-                world's finest orchards, shipped with precision.
+                {LANG.public.heroDescription}
               </p>
             </Reveal>
             <Reveal delay={300}>
@@ -119,7 +79,7 @@ export default function Home() {
                     size="lg"
                     className="bg-orange-500 hover:bg-orange-600 text-white rounded-full px-8 h-14 text-base font-semibold shadow-2xl shadow-orange-500/40 hover:scale-105 transition-transform"
                   >
-                    Join Us <ArrowRight className="ml-1 w-5 h-5" />
+                    {LANG.common.joinUs} <ArrowRight className="ml-1 w-5 h-5" />
                   </Button>
                 </Link>
                 <Link to="/products">
@@ -128,7 +88,7 @@ export default function Home() {
                     variant="outline"
                     className="rounded-full px-8 h-14 text-base font-semibold border-white/40 bg-white/10 backdrop-blur-md text-white hover:bg-white hover:text-emerald-900 transition-all"
                   >
-                    Explore Products
+                    {LANG.common.exploreProducts}
                   </Button>
                 </Link>
               </div>
@@ -147,7 +107,7 @@ export default function Home() {
       {/* STATS */}
       <section className="bg-emerald-950 text-white py-16">
         <div className="container grid grid-cols-2 md:grid-cols-4 gap-8">
-          {stats.map((s, i) => (
+          {LANG.public.stats.map((s, i) => (
             <Reveal key={s.label} delay={i * 80}>
               <div className="text-center">
                 <div className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-orange-400 to-yellow-300 bg-clip-text text-transparent mb-2">
@@ -166,11 +126,11 @@ export default function Home() {
           <Reveal>
             <div className="text-center max-w-2xl mx-auto mb-14">
               <div className="text-emerald-700 text-xs uppercase tracking-[0.3em] font-semibold mb-3">
-                Our Produce
+                {LANG.public.ourProduce}
               </div>
-              <h2 className="text-4xl md:text-5xl font-bold text-neutral-900 mb-4">Featured Fruits</h2>
+              <h2 className="text-4xl md:text-5xl font-bold text-neutral-900 mb-4">{LANG.public.featuredFruits}</h2>
               <p className="text-neutral-600 text-lg">
-                Hand-picked, quality-assured fruits from the world's best growers.
+                {LANG.public.featuredFruitsDescription}
               </p>
             </div>
           </Reveal>
@@ -207,11 +167,11 @@ export default function Home() {
           <Reveal>
             <div className="text-center max-w-2xl mx-auto mb-14">
               <div className="text-emerald-700 text-xs uppercase tracking-[0.3em] font-semibold mb-3">
-                What We Do
+                {LANG.public.whatWeDo}
               </div>
-              <h2 className="text-4xl md:text-5xl font-bold text-neutral-900 mb-4">Export Services</h2>
+              <h2 className="text-4xl md:text-5xl font-bold text-neutral-900 mb-4">{LANG.public.exportServices}</h2>
               <p className="text-neutral-600 text-lg">
-                Complete supply-chain solutions tailored for the fresh produce industry.
+                {LANG.public.exportServicesDescription}
               </p>
             </div>
           </Reveal>
@@ -239,19 +199,19 @@ export default function Home() {
           <Reveal>
             <div>
               <div className="text-orange-300 text-xs uppercase tracking-[0.3em] font-semibold mb-3">
-                Why Choose Trinity Arrows
+                {LANG.public.whyChoose}
               </div>
               <h2 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">
-                The trusted name in <span className="text-orange-400">global fruit trade</span>
+                {LANG.public.whyChooseTitle}{" "}
+                <span className="text-orange-400">{LANG.public.whyChooseHighlight}</span>
               </h2>
               <p className="text-white/75 text-lg mb-8 leading-relaxed">
-                With over two decades of expertise, we combine deep agricultural knowledge with
-                world-class logistics to deliver excellence.
+                {LANG.public.whyChooseDescription}
               </p>
               <div className="flex flex-wrap gap-3">
                 <Link to="/about">
                   <Button className="bg-orange-500 hover:bg-orange-600 text-white rounded-full px-7 h-12">
-                    Learn More <ArrowRight className="ml-1 w-4 h-4" />
+                    {LANG.common.learnMore} <ArrowRight className="ml-1 w-4 h-4" />
                   </Button>
                 </Link>
               </div>
@@ -259,12 +219,7 @@ export default function Home() {
           </Reveal>
 
           <div className="grid sm:grid-cols-2 gap-5">
-            {[
-              { icon: ShieldCheck, title: "Quality Assured", desc: "Rigorous QC at every step." },
-              { icon: Globe2, title: "Global Network", desc: "50+ countries of operation." },
-              { icon: Award, title: "ISO Certified", desc: "International standards met." },
-              { icon: Truck, title: "On-time Delivery", desc: "99.5% reliability rate." },
-            ].map((f, i) => (
+            {whyChooseFeatures.map((f, i) => (
               <Reveal key={f.title} delay={i * 80}>
                 <div className="p-6 rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 transition-colors">
                   <div className="w-12 h-12 rounded-xl bg-orange-500/20 text-orange-300 flex items-center justify-center mb-4">
@@ -285,13 +240,13 @@ export default function Home() {
           <Reveal>
             <div className="text-center max-w-2xl mx-auto mb-14">
               <div className="text-emerald-700 text-xs uppercase tracking-[0.3em] font-semibold mb-3">
-                Global Reach
+                {LANG.public.globalReach}
               </div>
               <h2 className="text-4xl md:text-5xl font-bold text-neutral-900 mb-4">
-                Serving 50+ countries worldwide
+                {LANG.public.globalReachTitle}
               </h2>
               <p className="text-neutral-600 text-lg">
-                Our export network spans every major market — from North America to Asia-Pacific.
+                {LANG.public.globalReachDescription}
               </p>
             </div>
           </Reveal>
@@ -326,7 +281,7 @@ export default function Home() {
               </svg>
 
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mt-8">
-                {regions.map((r, i) => (
+                {LANG.public.regions.map((r, i) => (
                   <Reveal key={r} delay={i * 30}>
                     <div className="px-4 py-3 rounded-xl bg-white shadow-sm border border-emerald-100 text-sm font-medium text-neutral-800 hover:border-orange-300 hover:shadow-md transition-all">
                       <span className="inline-block w-1.5 h-1.5 rounded-full bg-orange-500 mr-2" />
@@ -346,16 +301,16 @@ export default function Home() {
           <Reveal>
             <div className="text-center max-w-2xl mx-auto mb-14">
               <div className="text-emerald-700 text-xs uppercase tracking-[0.3em] font-semibold mb-3">
-                Testimonials
+                {LANG.public.testimonialsSection}
               </div>
               <h2 className="text-4xl md:text-5xl font-bold text-neutral-900 mb-4">
-                Trusted by leading partners
+                {LANG.public.testimonialsTitle}
               </h2>
             </div>
           </Reveal>
 
           <div className="grid md:grid-cols-3 gap-6">
-            {testimonials.map((t, i) => (
+            {LANG.public.testimonials.map((t, i) => (
               <Reveal key={t.name} delay={i * 100}>
                 <Card className="p-8 border-0 shadow-md hover:shadow-xl transition-shadow rounded-2xl bg-white h-full flex flex-col">
                   <Quote className="w-8 h-8 text-orange-400 mb-4" />
@@ -383,11 +338,10 @@ export default function Home() {
             <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_30%_30%,#fb923c,transparent_50%),radial-gradient(circle_at_70%_70%,#fbbf24,transparent_50%)]" />
             <div className="relative">
               <h2 className="text-4xl md:text-5xl font-bold mb-5 leading-tight">
-                Ready to grow your export business?
+                {LANG.public.ctaTitle}
               </h2>
               <p className="text-white/80 max-w-2xl mx-auto mb-10 text-lg">
-                Join Trinity Arrows and access fresh produce from around the world. Premium quality,
-                guaranteed.
+                {LANG.public.ctaDescription}
               </p>
               <div className="flex flex-wrap gap-4 justify-center">
                 <Link to="/login">
@@ -395,7 +349,7 @@ export default function Home() {
                     size="lg"
                     className="bg-orange-500 hover:bg-orange-600 text-white rounded-full px-8 h-14 text-base font-semibold shadow-2xl shadow-orange-500/40"
                   >
-                    Join Us <ArrowRight className="ml-1 w-5 h-5" />
+                    {LANG.common.joinUs} <ArrowRight className="ml-1 w-5 h-5" />
                   </Button>
                 </Link>
                 <Link to="/contact">
@@ -404,7 +358,7 @@ export default function Home() {
                     variant="outline"
                     className="rounded-full px-8 h-14 text-base font-semibold border-white/40 bg-transparent text-white hover:bg-white hover:text-emerald-900"
                   >
-                    Contact Sales
+                    {LANG.common.contactSales}
                   </Button>
                 </Link>
               </div>

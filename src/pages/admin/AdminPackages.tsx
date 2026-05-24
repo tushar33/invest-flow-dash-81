@@ -19,6 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { formatCredits } from "@/lib/format";
+import { LANG, FILTER_OPTIONS, planStatusLabel } from "@/lib/language";
 
 /* ── Edit Assignment Date Modal ───────────────────────────────────────── */
 interface EditDateModalProps { pkg: AdminPackage; onClose: () => void; onSuccess: () => void; }
@@ -39,24 +40,24 @@ function EditDateModal({ pkg, onClose, onSuccess }: EditDateModalProps) {
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-md">
-        <DialogHeader><h3 className="text-lg font-semibold">Edit Assignment Date</h3></DialogHeader>
+        <DialogHeader><h3 className="text-lg font-semibold">{LANG.plans.editAssignmentDate}</h3></DialogHeader>
         <div className="space-y-4 py-2">
           <div className="space-y-1 text-sm text-muted-foreground">
-            <p><span className="font-medium text-foreground">User:</span> {pkg.userName}</p>
-            <p><span className="font-medium text-foreground">Contribution:</span> {formatCredits(Number(pkg.principalAmount))}</p>
-            <p><span className="font-medium text-foreground">Cycles completed:</span> {pkg.cyclesCompleted}/{pkg.totalCycles ?? pkg.durationMonths ?? 1}</p>
+            <p><span className="font-medium text-foreground">{LANG.plans.userLabel}</span> {pkg.userName}</p>
+            <p><span className="font-medium text-foreground">{LANG.plans.contributionLabel}</span> {formatCredits(Number(pkg.principalAmount))}</p>
+            <p><span className="font-medium text-foreground">{LANG.plans.cyclesCompletedLabel}</span> {pkg.cyclesCompleted}/{pkg.totalCycles ?? pkg.durationMonths ?? 1}</p>
           </div>
           {error && <p className="text-sm text-destructive">{error}</p>}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="assignedDate">New Assignment Date</Label>
+              <Label htmlFor="assignedDate">{LANG.plans.newAssignmentDate}</Label>
               <Input id="assignedDate" type="date" required value={date} onChange={(e) => setDate(e.target.value)} />
-              <p className="text-xs text-muted-foreground">Only allowed when no reward cycles have been processed.</p>
+              <p className="text-xs text-muted-foreground">{LANG.plans.editDateHint}</p>
             </div>
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
+              <Button type="button" variant="outline" onClick={onClose}>{LANG.common.cancel}</Button>
               <Button type="submit" disabled={mutation.isPending || date === currentDate}>
-                {mutation.isPending ? "Updating…" : "Update Date"}
+                {mutation.isPending ? LANG.common.updating : LANG.plans.updateDate}
               </Button>
             </DialogFooter>
           </form>
@@ -76,11 +77,11 @@ function CancelPackageModal({ pkg, onClose }: CancelModalProps) {
     mutationFn: () => adminApi.cancelPackage(pkg.packageId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-packages"] });
-      toast({ title: "Plan cancelled successfully" });
+      toast({ title: LANG.toast.planCancelled });
       onClose();
     },
     onError: (err: Error) => {
-      toast({ title: "Cannot cancel plan after rewards started", description: err.message, variant: "destructive" });
+      toast({ title: LANG.toast.planCancelBlocked, description: err.message, variant: "destructive" });
       onClose();
     },
   });
@@ -89,22 +90,22 @@ function CancelPackageModal({ pkg, onClose }: CancelModalProps) {
     <AlertDialog open onOpenChange={(open) => !open && onClose()}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Cancel Plan</AlertDialogTitle>
+          <AlertDialogTitle>{LANG.plans.cancelConfirmTitle}</AlertDialogTitle>
           <AlertDialogDescription>
-            Are you sure you want to cancel this plan?
+            {LANG.plans.cancelConfirmDescription}
             <span className="block mt-2 text-foreground font-medium">
               {pkg.userName} — {formatCredits(Number(pkg.principalAmount))}
             </span>
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={mutation.isPending}>No, keep it</AlertDialogCancel>
+          <AlertDialogCancel disabled={mutation.isPending}>{LANG.plans.keepPlan}</AlertDialogCancel>
           <AlertDialogAction
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             disabled={mutation.isPending}
             onClick={(e) => { e.preventDefault(); mutation.mutate(); }}
           >
-            {mutation.isPending ? "Cancelling…" : "Yes, cancel plan"}
+            {mutation.isPending ? LANG.common.cancelling : LANG.plans.yesCancelPlan}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
@@ -116,17 +117,17 @@ function CancelPackageModal({ pkg, onClose }: CancelModalProps) {
 const filterDefaults = { userId: "", status: "", roiPercentage: "", from: "", to: "" };
 
 const filterFields: FilterField[] = [
-  { key: "userId", label: "User Search", type: "search", placeholder: "User ID..." },
+  { key: "userId", label: LANG.filter.userSearch, type: "search", placeholder: LANG.filter.userSearchPlaceholder },
   {
-    key: "status", label: "Status", type: "select", placeholder: "All",
-    options: [{ label: "Active", value: "ACTIVE" }, { label: "Completed", value: "MATURED" }, { label: "Closed", value: "CLOSED" }],
+    key: "status", label: LANG.common.status, type: "select", placeholder: LANG.common.all,
+    options: [...FILTER_OPTIONS.planStatusWithClosed],
   },
   {
-    key: "roiPercentage", label: "Reward %", type: "select", placeholder: "All",
-    options: [{ label: "5%", value: "5" }, { label: "7%", value: "7" }, { label: "10%", value: "10" }],
+    key: "roiPercentage", label: LANG.filter.rewardPercent, type: "select", placeholder: LANG.common.all,
+    options: [...FILTER_OPTIONS.rewardPercent],
   },
-  { key: "from", label: "From Date", type: "date", placeholder: "Start date" },
-  { key: "to", label: "To Date", type: "date", placeholder: "End date" },
+  { key: "from", label: LANG.filter.fromDate, type: "date", placeholder: LANG.filter.startDate },
+  { key: "to", label: LANG.filter.toDate, type: "date", placeholder: LANG.filter.endDate },
 ];
 
 export default function AdminPackages() {
@@ -164,14 +165,14 @@ export default function AdminPackages() {
       <div className="space-y-6">
         <div className="sticky top-0 z-30 -mx-4 px-4 py-3 bg-background/85 backdrop-blur-xl border-b border-border/60 flex items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold">Plans</h1>
+            <h1 className="text-2xl font-bold">{LANG.plans.adminTitle}</h1>
             <p className="text-sm text-muted-foreground mt-1">
-              {filters.userId ? `Filtered by user` : "All assigned plans"}
+              {filters.userId ? LANG.plans.filteredByUser : LANG.plans.allAssigned}
             </p>
           </div>
           {filters.userId && (
             <Button variant="outline" size="sm" onClick={() => setFilters({ userId: "" })}>
-              Show All
+              {LANG.common.showAll}
             </Button>
           )}
         </div>
@@ -189,7 +190,7 @@ export default function AdminPackages() {
             <div className="h-8 w-8 border-2 border-accent border-t-transparent rounded-full animate-spin" />
           </div>
         ) : !filtered.length ? (
-          <p className="text-center text-muted-foreground py-12">No plans found</p>
+          <p className="text-center text-muted-foreground py-12">{LANG.plans.noneFound}</p>
         ) : (
           <div className="space-y-3">
             {filtered.map((pkg) => {
@@ -206,31 +207,31 @@ export default function AdminPackages() {
                       <p className="text-lg font-bold">{formatCredits(Number(pkg.principalAmount))}</p>
                     </div>
                   </div>
-                  <StatusBadge status={statusMap[pkg.status] || "inactive"}>{pkg.status}</StatusBadge>
+                  <StatusBadge status={statusMap[pkg.status] || "inactive"}>{planStatusLabel(pkg.status)}</StatusBadge>
                 </div>
                 <div className="flex items-center gap-4 mt-3 pt-3 border-t border-border text-xs text-muted-foreground flex-wrap">
-                  <span>Reward: {pkg.roiPercentage}%</span>
-                  <span>Cycles: {pkg.cyclesCompleted}/{planCycles}</span>
-                  <span>Next Reward: {new Date(pkg.nextRoiDate).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" })}</span>
-                  <span>Assigned: {new Date(pkg.assignedDate).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" })}</span>
+                  <span>{LANG.plans.rewardLabel} {pkg.roiPercentage}%</span>
+                  <span>{LANG.plans.cyclesLabel} {pkg.cyclesCompleted}/{planCycles}</span>
+                  <span>{LANG.plans.nextRewardLabel} {new Date(pkg.nextRoiDate).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" })}</span>
+                  <span>{LANG.plans.assignedLabel} {new Date(pkg.assignedDate).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" })}</span>
                 </div>
                 <div className="mt-3 pt-3 border-t border-border flex flex-wrap gap-2">
                   <Button size="sm" variant="outline" className="text-xs" onClick={() => navigate(`/wallet/ledger?userId=${pkg.userId}`)}>
-                    <BookOpen className="h-3.5 w-3.5 mr-1" /> View Ledger
+                    <BookOpen className="h-3.5 w-3.5 mr-1" /> {LANG.plans.viewLedger}
                   </Button>
                   <Button size="sm" variant="outline" className="text-xs"
                     disabled={pkg.cyclesCompleted > 0}
-                    title={pkg.cyclesCompleted > 0 ? "Cannot edit after reward cycles are processed" : "Edit assignment date"}
+                    title={pkg.cyclesCompleted > 0 ? LANG.plans.cannotEditTooltip : LANG.plans.editDateTooltip}
                     onClick={() => setEditTarget(pkg)}
                   >
-                    <Calendar className="h-3.5 w-3.5 mr-1" /> Edit Date
+                    <Calendar className="h-3.5 w-3.5 mr-1" /> {LANG.plans.editDate}
                   </Button>
                   <Button size="sm" variant="outline" className="text-xs text-destructive hover:bg-destructive hover:text-destructive-foreground"
                     disabled={pkg.status !== "ACTIVE"}
-                    title={pkg.status !== "ACTIVE" ? "Only active plans can be cancelled" : "Cancel this plan"}
+                    title={pkg.status !== "ACTIVE" ? LANG.plans.onlyActiveCancelTooltip : LANG.plans.cancelPlanTooltip}
                     onClick={() => setCancelTarget(pkg)}
                   >
-                    <XCircle className="h-3.5 w-3.5 mr-1" /> Cancel Plan
+                    <XCircle className="h-3.5 w-3.5 mr-1" /> {LANG.plans.cancelPlan}
                   </Button>
                 </div>
               </div>

@@ -9,6 +9,7 @@ import { Search, Filter, X, Calendar as CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { LANG } from "@/lib/language";
 
 export interface FilterField {
   key: string;
@@ -74,7 +75,7 @@ function FilterFields({ fields, values, onChange }: Pick<FilterBarProps, "fields
               <Input
                 value={values[f.key] || ""}
                 onChange={(e) => onChange(f.key, e.target.value)}
-                placeholder={f.placeholder || "Search..."}
+                placeholder={f.placeholder || LANG.filter.searchPlaceholder}
                 className="pl-8 h-9 text-sm"
               />
             </div>
@@ -82,10 +83,10 @@ function FilterFields({ fields, values, onChange }: Pick<FilterBarProps, "fields
           {f.type === "select" && (
             <Select value={values[f.key] || ""} onValueChange={(v) => onChange(f.key, v === "__all__" ? "" : v)}>
               <SelectTrigger className="h-9 text-sm">
-                <SelectValue placeholder={f.placeholder || "All"} />
+                <SelectValue placeholder={f.placeholder || LANG.common.all} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="__all__">All</SelectItem>
+                <SelectItem value="__all__">{LANG.common.all}</SelectItem>
                 {f.options?.map((o) => (
                   <SelectItem key={o.value} value={o.value}>
                     {o.label}
@@ -98,7 +99,7 @@ function FilterFields({ fields, values, onChange }: Pick<FilterBarProps, "fields
             <DatePickerField
               value={values[f.key] || ""}
               onChange={(v) => onChange(f.key, v)}
-              placeholder={f.placeholder || "Select date"}
+              placeholder={f.placeholder || LANG.filter.selectDate}
             />
           )}
         </div>
@@ -118,7 +119,7 @@ export function FilterBar({ fields, values, onChange, onReset, hasActive }: Filt
           <SheetTrigger asChild>
             <Button variant="outline" size="sm" className="gap-1.5">
               <Filter className="h-3.5 w-3.5" />
-              Filters
+              {LANG.filter.title}
               {hasActive && (
                 <span className="h-2 w-2 rounded-full bg-accent" />
               )}
@@ -126,18 +127,18 @@ export function FilterBar({ fields, values, onChange, onReset, hasActive }: Filt
           </SheetTrigger>
           <SheetContent side="bottom" className="max-h-[80vh] overflow-y-auto">
             <SheetHeader>
-              <SheetTitle>Filters</SheetTitle>
+              <SheetTitle>{LANG.filter.title}</SheetTitle>
             </SheetHeader>
             <div className="space-y-4 mt-4">
               <FilterFields fields={fields} values={values} onChange={onChange} />
               <div className="flex gap-2 pt-2">
                 {hasActive && (
                   <Button variant="outline" size="sm" onClick={() => { onReset(); setOpen(false); }} className="gap-1">
-                    <X className="h-3.5 w-3.5" /> Reset
+                    <X className="h-3.5 w-3.5" /> {LANG.filter.reset}
                   </Button>
                 )}
                 <Button size="sm" onClick={() => setOpen(false)} className="flex-1">
-                  Apply
+                  {LANG.filter.apply}
                 </Button>
               </div>
             </div>
@@ -145,7 +146,7 @@ export function FilterBar({ fields, values, onChange, onReset, hasActive }: Filt
         </Sheet>
         {hasActive && (
           <Button variant="ghost" size="sm" onClick={onReset} className="text-xs text-muted-foreground gap-1">
-            <X className="h-3 w-3" /> Clear
+            <X className="h-3 w-3" /> {LANG.filter.clear}
           </Button>
         )}
       </div>
@@ -156,10 +157,10 @@ export function FilterBar({ fields, values, onChange, onReset, hasActive }: Filt
     <div className="sticky top-[72px] z-20 bg-card/95 backdrop-blur-xl rounded-xl border border-border p-4 shadow-card">
       <div className="flex items-center gap-2 mb-3">
         <Filter className="h-4 w-4 text-accent" />
-        <span className="text-sm font-medium">Filters</span>
+        <span className="text-sm font-medium">{LANG.filter.title}</span>
         {hasActive && (
           <Button variant="ghost" size="sm" onClick={onReset} className="ml-auto text-xs text-muted-foreground gap-1 h-7">
-            <X className="h-3 w-3" /> Reset Filters
+            <X className="h-3 w-3" /> {LANG.filter.resetFilters}
           </Button>
         )}
       </div>

@@ -1,3 +1,5 @@
+import { LANG } from "@/lib/language";
+
 // Base URL for the backend API.
 const DEFAULT_LOCAL_API_BASE = "http://localhost:3000";
 const DEFAULT_PROD_API_BASE = "https://roi-backend-fiyp.onrender.com";
@@ -6,6 +8,13 @@ const isLocalHost =
   (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
 
 const API_BASE = import.meta.env.VITE_API_BASE ?? (isLocalHost ? DEFAULT_LOCAL_API_BASE : DEFAULT_PROD_API_BASE);
+
+/** Turn a backend upload path (e.g. /uploads/kyc-docs/…) into a full URL. */
+export function resolveUploadUrl(path?: string | null): string | null {
+  if (!path) return null;
+  if (path.startsWith("http://") || path.startsWith("https://")) return path;
+  return `${API_BASE}${path.startsWith("/") ? path : `/${path}`}`;
+}
 
 function getToken(): string | null {
   return localStorage.getItem("auth_token");
@@ -48,7 +57,26 @@ async function request<T>(
   if (!res.ok) {
     const body = await res.json().catch(() => ({ message: res.statusText }));
     const msg = Array.isArray(body.message) ? body.message.join(", ") : body.message;
-    throw new Error(msg || `Request failed (${res.status})`);
+    throw new Error(msg || LANG.auth.requestFailed(res.status));
+  }
+
+  if (res.status === 204) return null as T;
+  return res.json();
+}
+
+async function uploadRequest<T>(path: string, formData: FormData, method = "POST"): Promise<T> {
+  const token = getToken();
+  const headers: Record<string, string> = {};
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  const res = await fetch(`${API_BASE}${path}`, { method, body: formData, headers });
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({ message: res.statusText }));
+    const msg = Array.isArray(body.message) ? body.message.join(", ") : body.message;
+    throw new Error(msg || LANG.auth.requestFailed(res.status));
   }
 
   if (res.status === 204) return null as T;
@@ -61,6 +89,7 @@ export interface AuthUser {
   fullName: string;
   email: string | null;
   phone: string | null;
+  city?: string | null;
   role: "USER" | "ADMIN";
   autoPayMode: string;
   status: string;
@@ -73,10 +102,37 @@ interface AuthResponse {
   accessToken: string;
 }
 
+export type LoginPayload = {
+  email?: string;
+  phone?: string;
+  username?: string;
+  password: string;
+};
+
+/** Map a single login field to the API's exactly-one-identifier body. */
+export function buildLoginPayload(identifier: string, password: string): LoginPayload {
+  const t = identifier.trim();
+  if (!t) {
+    throw new Error(LANG.auth.enterIdentifier);
+  }
+  // Email — must be checked before username (emails can contain dots, etc.)
+  if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(t) || t.includes("@")) {
+    return { email: t, password };
+  }
+  if (/^\d{10}$/.test(t)) {
+    return { phone: t, password };
+  }
+  const taMatch = t.match(/^ta-(\d+)$/i);
+  if (taMatch) {
+    return { username: `TA-${taMatch[1]}`, password };
+  }
+  return { username: t.toLowerCase(), password };
+}
+
 export const auth = {
-  register: (data: { fullName: string; email?: string; phone?: string; password: string }) =>
+  register: (data: { fullName: string; email: string; phone: string; city: string; password: string }) =>
     request<AuthResponse>("/auth/register", { method: "POST", body: JSON.stringify(data) }),
-  login: (data: { email?: string; phone?: string; password: string }) =>
+  login: (data: LoginPayload) =>
     request<AuthResponse>("/auth/login", { method: "POST", body: JSON.stringify(data) }),
   me: () => request<AuthUser>("/auth/me"),
 };
@@ -181,17 +237,67 @@ export interface BankDetails {
   accountNumber: string;
   ifscCode: string;
   accountType?: "saving" | "current";
+  aadharNumber?: string;
+  panNumber?: string;
+  aadharDocumentUrl?: string;
+  panDocumentUrl?: string;
+  verificationStatus?: "pending" | "verified" | "rejected";
+  verifiedAt?: string | null;
+  rejectionReason?: string | null;
   createdAt: string;
   updatedAt: string;
 }
 
+export type BankVerificationStatus = "pending" | "verified" | "rejected";
+
+export function normalizeBankVerificationStatus(
+  status?: string | null,
+): BankVerificationStatus {
+  const value = (status ?? "pending").toLowerCase();
+  if (value === "verified" || value === "rejected") return value;
+  return "pending";
+}
+
+export { bankVerificationStatusLabel } from "@/lib/language";
+
+export interface BankDetailsSavePayload {
+  accountHolderName: string;
+  bankName: string;
+  accountNumber: string;
+  ifscCode: string;
+  accountType: "saving" | "current";
+  aadharNumber: string;
+  panNumber: string;
+  aadharDocument?: File;
+  panDocument?: File;
+}
+
 export const bankDetails = {
   get: () => request<BankDetails | null>("/user/bank-details"),
-  save: (data: { accountHolderName: string; bankName: string; accountNumber: string; ifscCode: string; accountType: "saving" | "current" }) =>
-    request<BankDetails>("/user/bank-details", { method: "POST", body: JSON.stringify(data) }),
+  save: (data: BankDetailsSavePayload) => {
+    const formData = new FormData();
+    formData.append("accountHolderName", data.accountHolderName);
+    formData.append("bankName", data.bankName);
+    formData.append("accountNumber", data.accountNumber);
+    formData.append("ifscCode", data.ifscCode);
+    formData.append("accountType", data.accountType);
+    formData.append("aadharNumber", data.aadharNumber);
+    formData.append("panNumber", data.panNumber);
+    if (data.aadharDocument) formData.append("aadharDocument", data.aadharDocument);
+    if (data.panDocument) formData.append("panDocument", data.panDocument);
+    return uploadRequest<BankDetails>("/user/bank-details", formData);
+  },
 };
 
 // ── Payouts ──
+export interface PayoutBankAccount {
+  holderName: string;
+  bankName: string;
+  accountNo: string;
+  ifscCode: string;
+  accountType?: "SAVING" | "CURRENT" | string;
+}
+
 export interface PayoutRequest {
   id: string;
   userId: string;
@@ -205,6 +311,13 @@ export interface PayoutRequest {
   processedBy: string | null;
   rejectionReason: string | null;
   package?: any;
+  user?: {
+    id: string;
+    fullName: string;
+    email: string | null;
+    phone: string | null;
+    bankAccounts?: PayoutBankAccount[];
+  };
 }
 
 interface PaginatedResponse<T> {
@@ -236,10 +349,39 @@ export const payouts = {
 // ── Profile ──
 export const profile = {
   get: () => request<AuthUser>("/user/profile"),
-  update: (data: { name: string; phone?: string }) =>
+  update: (data: { name: string; phone?: string; city?: string }) =>
     request<AuthUser>("/user/profile", { method: "PATCH", body: JSON.stringify(data) }),
   changePassword: (data: { currentPassword: string; newPassword: string }) =>
     request<{ message: string }>("/user/change-password", { method: "PATCH", body: JSON.stringify(data) }),
+};
+
+// ── KYC (address, nominee, date of birth) ──
+export interface KycDetails {
+  id?: string;
+  userId?: string;
+  nomineeName?: string | null;
+  nomineeRelation?: string | null;
+  address?: string | null;
+  state?: string | null;
+  district?: string | null;
+  pincode?: string | null;
+  dateOfBirth?: string | null;
+}
+
+export interface KycAddressUpdatePayload {
+  dateOfBirth?: string;
+  address?: string;
+  state?: string;
+  district?: string;
+  pincode?: string;
+  nomineeName?: string;
+  nomineeRelation?: string;
+}
+
+export const kyc = {
+  get: () => request<KycDetails>("/kyc"),
+  update: (data: KycAddressUpdatePayload) =>
+    request<KycDetails>("/kyc", { method: "PUT", body: JSON.stringify(data) }),
 };
 
 // ── Admin ──
@@ -369,6 +511,16 @@ export const admin = {
     request<WalletData>(`/admin/users/${userId}/wallet${buildQs(filters as any)}`),
   configureAutopay: (userId: string, data: { autoPayMode: string }) =>
     request<AuthUser>(`/admin/users/${userId}/autopay`, { method: "PATCH", body: JSON.stringify(data) }),
+  userBankDetails: (userId: string) =>
+    request<BankDetails | null>(`/admin/users/${userId}/bank-details`),
+  verifyUserBankDetails: (
+    userId: string,
+    data: { status: "VERIFIED" | "REJECTED"; rejectionReason?: string },
+  ) =>
+    request<BankDetails>(`/admin/users/${userId}/bank-details/verify`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }),
   updateAssignmentDate: (id: string, data: { assignedDate: string }) =>
     request<any>(`/admin/packages/${id}/assignment-date`, { method: "PATCH", body: JSON.stringify(data) }),
   cancelPackage: (id: string) =>

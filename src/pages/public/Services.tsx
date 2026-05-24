@@ -2,14 +2,10 @@ import PublicLayout from "@/components/public/PublicLayout";
 import { Reveal } from "@/components/public/Reveal";
 import { Card } from "@/components/ui/card";
 import { Globe2, Package, Snowflake, Truck, Network } from "lucide-react";
+import { LANG } from "@/lib/language";
 
-const services = [
-  { icon: Globe2, title: "Import & Export", desc: "End-to-end international trade services with seamless customs handling and documentation." },
-  { icon: Package, title: "Packaging", desc: "Custom packaging solutions designed to preserve freshness and showcase brand identity." },
-  { icon: Snowflake, title: "Cold Storage", desc: "State-of-the-art temperature-controlled warehouses across key strategic locations." },
-  { icon: Truck, title: "Logistics", desc: "Reliable cold-chain transport via sea, air, and road networks globally." },
-  { icon: Network, title: "Distribution", desc: "Wide distribution network reaching retailers, wholesalers, and HoReCa channels." },
-];
+const serviceIcons = [Globe2, Package, Snowflake, Truck, Network];
+const services = LANG.public.serviceItems.map((s, i) => ({ ...s, icon: serviceIcons[i] }));
 
 export default function Services() {
   return (
@@ -19,11 +15,11 @@ export default function Services() {
           <Reveal>
             <div className="text-center max-w-2xl mx-auto mb-14">
               <div className="text-emerald-700 text-xs uppercase tracking-[0.3em] font-semibold mb-3">
-                What We Do
+                {LANG.public.whatWeDo}
               </div>
-              <h1 className="text-4xl md:text-6xl font-bold text-neutral-900 mb-4">Export Services</h1>
+              <h1 className="text-4xl md:text-6xl font-bold text-neutral-900 mb-4">{LANG.public.exportServices}</h1>
               <p className="text-neutral-600 text-lg">
-                Complete supply-chain solutions tailored for the fresh produce industry.
+                {LANG.public.exportServicesDescription}
               </p>
             </div>
           </Reveal>

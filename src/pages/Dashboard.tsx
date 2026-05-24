@@ -6,15 +6,21 @@ import { Wallet, Gift, TrendingUp, Clock, ArrowDownLeft, ArrowUpRight, ChevronRi
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
-import { wallet as walletApi, packages as packagesApi, payouts as payoutsApi, bankDetails as bankApi } from "@/lib/api";
+import { wallet as walletApi, packages as packagesApi, payouts as payoutsApi, bankDetails as bankApi, normalizeBankVerificationStatus } from "@/lib/api";
 import { formatCredits, formatCreditsSigned, formatTransactionLabel } from "@/lib/format";
+import { LANG, greeting } from "@/lib/language";
 
 export default function Dashboard() {
   const { user } = useAuth();
   const { data: walletData } = useQuery({ queryKey: ["wallet"], queryFn: () => walletApi.get() });
   const { data: pkgs } = useQuery({ queryKey: ["packages"], queryFn: () => packagesApi.list() });
   const { data: payoutsList } = useQuery({ queryKey: ["payouts"], queryFn: () => payoutsApi.list() });
-  const { data: bank } = useQuery({ queryKey: ["bank-details"], queryFn: bankApi.get });
+  const { data: bank } = useQuery({
+    queryKey: ["bank-details", user?.id],
+    queryFn: bankApi.get,
+    enabled: Boolean(user?.id),
+    refetchOnMount: "always",
+  });
 
   const balance = walletData?.availableBalance ?? 0;
   const totalContribution = pkgs?.reduce((s, p) => s + Number(p.principalAmount), 0) ?? 0;
@@ -32,23 +38,17 @@ export default function Dashboard() {
     .reduce((s, p) => s + Number(p.amount), 0) ?? 0;
   const activePlansAmount = pkgs?.filter(p => p.status === "ACTIVE")
     .reduce((s, p) => s + Number(p.principalAmount), 0) ?? 0;
-  const redemptionReady = !!bank;
+  const bankVerificationStatus = normalizeBankVerificationStatus(bank?.verificationStatus);
+  const redemptionReady = bankVerificationStatus === "verified";
   const recentTx = walletData?.transactions?.slice(0, 4) ?? [];
-
-  const greeting = (() => {
-    const h = new Date().getHours();
-    if (h < 12) return "Good morning";
-    if (h < 17) return "Good afternoon";
-    return "Good evening";
-  })();
 
   return (
     <UserLayout>
       <div className="space-y-4">
         <div className="sticky top-0 z-30 -mx-4 px-4 pb-4 bg-background/85 backdrop-blur-xl border-b border-border/60 space-y-4">
           <div className="pt-3 animate-slide-up-fade">
-            <p className="text-sm text-muted-foreground">{greeting}</p>
-            <h1 className="text-2xl font-bold tracking-tight mt-0.5">{user?.fullName ?? "User"} <span className="inline-block">👋</span></h1>
+            <p className="text-sm text-muted-foreground">{greeting()}</p>
+            <h1 className="text-2xl font-bold tracking-tight mt-0.5">{user?.fullName ?? LANG.dashboard.fallbackName} <span className="inline-block">👋</span></h1>
           </div>
 
           <GradientCard variant="hero" glow className="animate-slide-up-fade">
@@ -56,19 +56,19 @@ export default function Dashboard() {
             <div className="h-7 w-7 rounded-lg bg-white/10 backdrop-blur flex items-center justify-center">
               <Wallet className="h-3.5 w-3.5 text-accent" />
             </div>
-            <span className="text-[11px] uppercase tracking-widest opacity-80 font-semibold">Available Balance</span>
+            <span className="text-[11px] uppercase tracking-widest opacity-80 font-semibold">{LANG.dashboard.availableBalance}</span>
           </div>
           <p className="text-[36px] font-bold leading-tight tabular-nums">{formatCredits(balance)}</p>
           <Link to="/payouts" className="inline-flex items-center gap-1 mt-3 text-[12px] text-accent-foreground font-semibold bg-accent/90 hover:bg-accent rounded-full px-3 py-1.5 transition-colors shadow-glow">
-            Request Redemption <ChevronRight className="h-3.5 w-3.5" />
+            {LANG.dashboard.requestRedemption} <ChevronRight className="h-3.5 w-3.5" />
           </Link>
         </GradientCard>
 
         <div className="grid grid-cols-2 gap-3">
-          <StatTile label="Total Contribution" value={formatCredits(totalContribution)} icon={Package} accent="primary" />
-          <StatTile label="Total Rewards" value={formatCredits(totalRewards)} icon={Gift} accent="success" />
-          <StatTile label="Pending Redemption" value={formatCredits(pendingRedemption)} icon={Clock} accent="warning" />
-          <StatTile label="Active Plans" value={formatCredits(activePlansAmount)} icon={TrendingUp} accent="info" />
+          <StatTile label={LANG.dashboard.totalContribution} value={formatCredits(totalContribution)} icon={Package} accent="primary" />
+          <StatTile label={LANG.dashboard.totalRewards} value={formatCredits(totalRewards)} icon={Gift} accent="success" />
+          <StatTile label={LANG.dashboard.pendingRedemption} value={formatCredits(pendingRedemption)} icon={Clock} accent="warning" />
+          <StatTile label={LANG.dashboard.activePlans} value={formatCredits(activePlansAmount)} icon={TrendingUp} accent="info" />
         </div>
 
         <div className={`rounded-2xl p-4 flex items-center gap-3 border animate-slide-up-fade ${redemptionReady ? "bg-success/10 border-success/20" : "bg-warning/10 border-warning/20"}`}>
@@ -78,8 +78,8 @@ export default function Dashboard() {
                 <CheckCircle2 className="h-4 w-4 text-success" />
               </div>
               <div>
-                <p className="text-[13px] font-semibold text-success">Redemption Ready</p>
-                <p className="text-[11px] text-muted-foreground">Account details verified. You can request redemptions.</p>
+                <p className="text-[13px] font-semibold text-success">{LANG.status.redemptionReady}</p>
+                <p className="text-[11px] text-muted-foreground">{LANG.dashboard.redemptionReadyDescription}</p>
               </div>
             </>
           ) : (
@@ -88,18 +88,32 @@ export default function Dashboard() {
                 <AlertCircle className="h-4 w-4 text-warning" />
               </div>
               <div className="flex-1">
-                <p className="text-[13px] font-semibold text-warning">Setup Required</p>
-                <p className="text-[11px] text-muted-foreground">Add account details to enable redemptions.</p>
+                <p className="text-[13px] font-semibold text-warning">
+                  {bank
+                    ? bankVerificationStatus === "rejected"
+                      ? LANG.status.verificationRejected
+                      : LANG.status.verificationPending
+                    : LANG.status.setupRequired}
+                </p>
+                <p className="text-[11px] text-muted-foreground">
+                  {bank
+                    ? bankVerificationStatus === "rejected"
+                      ? LANG.dashboard.updateDetailsPrompt
+                      : LANG.dashboard.underReviewPrompt
+                    : LANG.dashboard.addDetailsPrompt}
+                </p>
               </div>
-              <Link to="/bank-details" className="text-[11px] font-semibold text-accent bg-accent/10 px-3 py-1.5 rounded-full hover:bg-accent/20 transition-colors">Add Now</Link>
+              <Link to="/bank-details" className="text-[11px] font-semibold text-accent bg-accent/10 px-3 py-1.5 rounded-full hover:bg-accent/20 transition-colors">
+                {bank ? LANG.dashboard.viewDetails : LANG.dashboard.addNow}
+              </Link>
             </>
           )}
         </div>
 
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-bold tracking-tight">Recent Activity</h2>
+            <h2 className="text-sm font-bold tracking-tight">{LANG.dashboard.recentActivity}</h2>
             <Link to="/wallet" className="text-[11px] text-accent font-semibold flex items-center gap-0.5 hover:gap-1 transition-all">
-              View all <ChevronRight className="h-3 w-3" />
+              {LANG.common.viewAll} <ChevronRight className="h-3 w-3" />
             </Link>
           </div>
         </div>
@@ -107,7 +121,7 @@ export default function Dashboard() {
         <div className="animate-slide-up-fade">
           <div className="bg-card rounded-2xl border border-border overflow-hidden shadow-card">
             {recentTx.length === 0 ? (
-              <EmptyState icon={Activity} title="No activity yet" description="Your reward credits and redemptions will appear here." />
+              <EmptyState icon={Activity} title={LANG.dashboard.noActivityYet} description={LANG.dashboard.noActivityDescription} />
             ) : recentTx.map((tx, i) => {
               const isCredit = tx.direction === "CREDIT";
               return (

@@ -6,24 +6,25 @@ import {
   Users, Settings, FileText, TrendingUp, Shield, LogOut
 } from "lucide-react";
 import trinityLogo from "@/assets/trinity-arrows-logo.png";
+import { LANG } from "@/lib/language";
 
 const userNav = [
-  { to: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
-  { to: "/packages", icon: Package, label: "Plans" },
-  { to: "/wallet", icon: Wallet, label: "Activity" },
-  { to: "/wallet/ledger", icon: FileText, label: "Ledger" },
-  { to: "/payouts", icon: CreditCard, label: "Redemptions" },
-  { to: "/bank-details", icon: Settings, label: "Account Details" },
-  { to: "/profile", icon: User, label: "Profile" },
+  { to: "/dashboard", icon: LayoutDashboard, label: LANG.nav.dashboard },
+  { to: "/packages", icon: Package, label: LANG.nav.plans },
+  { to: "/wallet", icon: Wallet, label: LANG.nav.activity },
+  { to: "/wallet/ledger", icon: FileText, label: LANG.nav.ledger },
+  { to: "/payouts", icon: CreditCard, label: LANG.nav.redemptions },
+  { to: "/bank-details", icon: Settings, label: LANG.nav.accountDetails },
+  { to: "/profile", icon: User, label: LANG.common.profile },
 ];
 
 const adminNav = [
-  { to: "/admin", icon: LayoutDashboard, label: "Dashboard" },
-  { to: "/admin/users", icon: Users, label: "Users" },
-  { to: "/admin/packages", icon: Package, label: "Plans" },
-  { to: "/admin/payouts", icon: CreditCard, label: "Redemptions" },
-  { to: "/admin/roi-logs", icon: TrendingUp, label: "Reward Logs" },
-  { to: "/admin/settings", icon: Settings, label: "Settings" },
+  { to: "/admin", icon: LayoutDashboard, label: LANG.nav.dashboard },
+  { to: "/admin/users", icon: Users, label: LANG.nav.users },
+  { to: "/admin/packages", icon: Package, label: LANG.nav.plans },
+  { to: "/admin/payouts", icon: CreditCard, label: LANG.nav.redemptions },
+  { to: "/admin/roi-logs", icon: TrendingUp, label: LANG.nav.rewardLogs },
+  { to: "/admin/settings", icon: Settings, label: LANG.nav.settings },
 ];
 
 interface DesktopSidebarProps {
@@ -54,11 +55,11 @@ export function DesktopSidebar({ role }: DesktopSidebarProps) {
       <div className="relative px-6 pt-6 pb-5">
         <div className="flex items-center gap-2.5">
           <div className="h-10 w-10 flex items-center justify-center">
-            <img src={trinityLogo} alt="Trinity Arrows" className="h-full w-full object-contain drop-shadow-[0_0_12px_hsl(var(--accent)/0.4)]" />
+            <img src={trinityLogo} alt={LANG.brand.name} className="h-full w-full object-contain drop-shadow-[0_0_12px_hsl(var(--accent)/0.4)]" />
           </div>
           <div>
-            <h1 className="text-base font-bold text-sidebar-foreground tracking-tight leading-none">Trinity Arrows</h1>
-            <p className="text-[10px] text-sidebar-foreground/50 mt-1 uppercase tracking-widest">{role === "admin" ? "Admin Console" : "Member"}</p>
+            <h1 className="text-base font-bold text-sidebar-foreground tracking-tight leading-none">{LANG.brand.name}</h1>
+            <p className="text-[10px] text-sidebar-foreground/50 mt-1 uppercase tracking-widest">{role === "admin" ? LANG.brand.adminConsole : LANG.brand.member}</p>
           </div>
         </div>
       </div>
@@ -93,13 +94,13 @@ export function DesktopSidebar({ role }: DesktopSidebarProps) {
         {role === "user" && user?.role === "ADMIN" && (
           <RouterNavLink to="/admin" className="flex items-center gap-2 px-3 py-2 rounded-lg text-[11px] text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/40 transition-colors">
             <Shield className="h-3 w-3" />
-            Switch to Admin
+            {LANG.common.switchToAdmin}
           </RouterNavLink>
         )}
         {role === "admin" && (
           <RouterNavLink to="/dashboard" className="flex items-center gap-2 px-3 py-2 rounded-lg text-[11px] text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/40 transition-colors">
             <User className="h-3 w-3" />
-            Member View
+            {LANG.common.memberView}
           </RouterNavLink>
         )}
 
@@ -118,7 +119,7 @@ export function DesktopSidebar({ role }: DesktopSidebarProps) {
           className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-semibold bg-destructive/10 text-destructive hover:bg-destructive hover:text-destructive-foreground transition-all duration-200 w-full group"
         >
           <LogOut className="h-3.5 w-3.5 transition-transform duration-200 group-hover:-translate-x-0.5" />
-          Sign Out
+          {LANG.common.signOut}
         </button>
       </div>
     </aside>

@@ -9,6 +9,7 @@ import { Settings, Clock, Cpu, Save, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import { admin as adminApi, type SystemSetting } from "@/lib/api";
+import { LANG } from "@/lib/language";
 
 const PAYOUT_KEYS = new Set([
   "payoutWindowStart",
@@ -18,10 +19,10 @@ const PAYOUT_KEYS = new Set([
 
 function settingLabel(s: SystemSetting): string {
   const labels: Record<string, string> = {
-    payoutWindowStart: "Window Start",
-    payoutWindowEnd: "Window End",
-    payoutTimeValidationEnabled: "Enable Redemption Time Validation",
-    roiCycleDays: "Days Between Reward Cycles",
+    payoutWindowStart: LANG.redemption.windowStart,
+    payoutWindowEnd: LANG.redemption.windowEnd,
+    payoutTimeValidationEnabled: LANG.redemption.enableTimeValidation,
+    roiCycleDays: LANG.reward.cycleDays,
   };
   return labels[s.key] ?? s.description ?? s.key;
 }
@@ -74,8 +75,8 @@ export default function AdminSettings() {
   const handleSave = async () => {
     if (payoutValidation && payoutStart >= payoutEnd) {
       toast({
-        title: "Validation Error",
-        description: "Start time must be before end time.",
+        title: LANG.common.validationError,
+        description: LANG.settings.startBeforeEnd,
         variant: "destructive",
       });
       return;
@@ -84,8 +85,8 @@ export default function AdminSettings() {
     const roiDays = values.roiCycleDays;
     if (roiDays !== undefined && (!roiDays || Number(roiDays) < 1)) {
       toast({
-        title: "Validation Error",
-        description: "Days between reward cycles must be at least 1.",
+        title: LANG.common.validationError,
+        description: LANG.settings.cycleDaysMin,
         variant: "destructive",
       });
       return;
@@ -100,13 +101,13 @@ export default function AdminSettings() {
       );
       await refetch();
       toast({
-        title: "Settings saved",
-        description: "Your configuration has been updated successfully.",
+        title: LANG.settings.saved,
+        description: LANG.settings.savedDescription,
       });
     } catch (err) {
       toast({
-        title: "Error",
-        description: err instanceof Error ? err.message : "Failed to save settings",
+        title: LANG.common.error,
+        description: err instanceof Error ? err.message : LANG.settings.saveFailed,
         variant: "destructive",
       });
     } finally {
@@ -129,10 +130,10 @@ export default function AdminSettings() {
       <AdminLayout>
         <div className="flex min-h-[40vh] flex-col items-center justify-center gap-3 text-center">
           <p className="text-sm text-destructive">
-            {error instanceof Error ? error.message : "Failed to load settings"}
+            {error instanceof Error ? error.message : LANG.settings.loadFailed}
           </p>
           <Button variant="outline" onClick={() => refetch()}>
-            Retry
+            {LANG.common.retry}
           </Button>
         </div>
       </AdminLayout>
@@ -143,9 +144,9 @@ export default function AdminSettings() {
     return (
       <AdminLayout>
         <div className="space-y-4">
-          <h1 className="text-2xl font-bold">Settings</h1>
+          <h1 className="text-2xl font-bold">{LANG.settings.title}</h1>
           <p className="text-sm text-muted-foreground">
-            No system settings found. Run the backend seed script to create defaults.
+            {LANG.settings.empty}
           </p>
         </div>
       </AdminLayout>
@@ -157,10 +158,10 @@ export default function AdminSettings() {
       <div className="sticky top-0 z-30 -mx-4 px-4 py-3 mb-6 bg-background/85 backdrop-blur-xl border-b border-border/60 space-y-1">
         <div className="flex items-center gap-2">
           <Settings className="h-6 w-6 text-accent" />
-          <h1 className="text-2xl font-bold text-foreground">Settings</h1>
+          <h1 className="text-2xl font-bold text-foreground">{LANG.settings.title}</h1>
         </div>
         <p className="text-muted-foreground text-sm">
-          Configure payout windows and reward cycle timing.
+          {LANG.settings.subtitle}
         </p>
       </div>
 
@@ -170,16 +171,16 @@ export default function AdminSettings() {
             <CardHeader className="pb-4">
               <div className="flex items-center gap-2">
                 <Clock className="h-5 w-5 text-accent" />
-                <CardTitle className="text-lg">Redemption Window Settings</CardTitle>
+                <CardTitle className="text-lg">{LANG.redemption.windowSettings}</CardTitle>
               </div>
-              <CardDescription>Control when users are allowed to request redemptions (IST).</CardDescription>
+              <CardDescription>{LANG.settings.windowDescription}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-5">
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label htmlFor="payout-validation">Enable Redemption Time Validation</Label>
+                  <Label htmlFor="payout-validation">{LANG.redemption.enableTimeValidation}</Label>
                   <p className="text-xs text-muted-foreground">
-                    Restrict redemptions to the configured time window.
+                    {LANG.settings.restrictWindow}
                   </p>
                 </div>
                 <Switch
@@ -197,7 +198,7 @@ export default function AdminSettings() {
               {payoutValidation && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
                   <div className="space-y-1.5">
-                    <Label htmlFor="payout-start">Window Start</Label>
+                    <Label htmlFor="payout-start">{LANG.redemption.windowStart}</Label>
                     <Input
                       id="payout-start"
                       type="time"
@@ -208,7 +209,7 @@ export default function AdminSettings() {
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label htmlFor="payout-end">Window End</Label>
+                    <Label htmlFor="payout-end">{LANG.redemption.windowEnd}</Label>
                     <Input
                       id="payout-end"
                       type="time"
@@ -222,7 +223,7 @@ export default function AdminSettings() {
               )}
 
               <p className="text-xs text-muted-foreground border-l-2 border-accent/40 pl-3">
-                Users can only request redemptions during this time window when validation is enabled.
+                {LANG.settings.windowHint}
               </p>
             </CardContent>
           </Card>
@@ -233,9 +234,9 @@ export default function AdminSettings() {
             <CardHeader className="pb-4">
               <div className="flex items-center gap-2">
                 <Cpu className="h-5 w-5 text-accent" />
-                <CardTitle className="text-lg">Reward Engine</CardTitle>
+                <CardTitle className="text-lg">{LANG.reward.engine}</CardTitle>
               </div>
-              <CardDescription>Timing used when scheduling reward cycles.</CardDescription>
+              <CardDescription>{LANG.reward.engineDescription}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-5">
               {otherSettings.map((s) => (
@@ -260,7 +261,7 @@ export default function AdminSettings() {
       <div className="sticky bottom-20 md:bottom-0 pt-4 pb-2 bg-background/80 backdrop-blur-sm mt-6">
         <Button onClick={handleSave} disabled={saving} className="w-full sm:w-auto">
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-          {saving ? "Saving…" : "Save Settings"}
+          {saving ? LANG.common.saving : LANG.settings.save}
         </Button>
       </div>
     </AdminLayout>

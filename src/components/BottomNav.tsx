@@ -5,6 +5,7 @@ import { LucideIcon, LayoutDashboard, Package, Wallet, CreditCard, User, LogOut,
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
+import { LANG } from "@/lib/language";
 
 interface NavItem {
   to: string;
@@ -13,11 +14,11 @@ interface NavItem {
 }
 
 const userNav: NavItem[] = [
-  { to: "/dashboard", icon: LayoutDashboard, label: "Home" },
-  { to: "/packages", icon: Package, label: "Plans" },
-  { to: "/wallet", icon: Wallet, label: "Activity" },
-  { to: "/wallet/ledger", icon: FileText, label: "Ledger" },
-  { to: "/payouts", icon: CreditCard, label: "Redeem" },
+  { to: "/dashboard", icon: LayoutDashboard, label: LANG.nav.home },
+  { to: "/packages", icon: Package, label: LANG.nav.plans },
+  { to: "/wallet", icon: Wallet, label: LANG.nav.activity },
+  { to: "/wallet/ledger", icon: FileText, label: LANG.nav.ledger },
+  { to: "/payouts", icon: CreditCard, label: LANG.nav.redeem },
 ];
 
 export function BottomNav() {
@@ -82,13 +83,13 @@ export function BottomNav() {
                   "text-[9px] font-semibold leading-none transition-colors",
                   profileActive ? "text-accent" : "text-muted-foreground"
                 )}>
-                  Profile
+                  {LANG.common.profile}
                 </span>
               </button>
             </SheetTrigger>
             <SheetContent side="bottom" className="rounded-t-3xl">
               <SheetHeader className="text-left">
-                <SheetTitle>Profile</SheetTitle>
+                <SheetTitle>{LANG.common.profile}</SheetTitle>
               </SheetHeader>
               <div className="mt-4 space-y-3">
                 <div className="flex items-center gap-3 p-3 rounded-2xl bg-gradient-subtle border border-border">
@@ -102,11 +103,11 @@ export function BottomNav() {
                 </div>
                 <Button variant="ghost" onClick={() => { setProfileOpen(false); navigate("/profile"); }} className="w-full justify-start">
                   <User className="h-4 w-4" />
-                  View Profile
+                  {LANG.common.viewProfile}
                 </Button>
                 <Button variant="ghost" onClick={handleLogout} className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10">
                   <LogOut className="h-4 w-4" />
-                  Sign Out
+                  {LANG.common.signOut}
                 </Button>
               </div>
             </SheetContent>
