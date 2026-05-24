@@ -200,6 +200,10 @@ export default function BankDetails() {
     queryKey: ["bank-details", user?.id],
     queryFn: bankApi.get,
     enabled: Boolean(user?.id),
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
+    staleTime: Infinity,
   });
 
   const resetForm = () => {
