@@ -276,6 +276,7 @@ export const LANG = {
     pan: "PAN",
     rejectionReason: "Rejection reason",
     underReviewRedemption: "Your account details are under review. Redemptions will be available once verified.",
+    refreshForStatus: "Refresh this page to check for updates.",
     rejectedResubmit: "Your account details were rejected. Please update and resubmit.",
     updateAndResubmit: "Please update your details and resubmit.",
     documentRequired: "Document upload is required",

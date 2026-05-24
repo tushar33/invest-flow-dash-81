@@ -200,11 +200,6 @@ export default function BankDetails() {
     queryKey: ["bank-details", user?.id],
     queryFn: bankApi.get,
     enabled: Boolean(user?.id),
-    refetchOnMount: "always",
-    refetchInterval: (query) =>
-      normalizeBankVerificationStatus(query.state.data?.verificationStatus) === "pending"
-        ? 15_000
-        : false,
   });
 
   const resetForm = () => {
@@ -501,6 +496,9 @@ export default function BankDetails() {
               <p className="text-[13px] font-semibold text-warning">{LANG.status.verificationPending}</p>
               <p className="text-[11px] text-muted-foreground mt-0.5">
                 {LANG.bank.underReviewRedemption}
+              </p>
+              <p className="text-[11px] text-muted-foreground mt-1">
+                {LANG.bank.refreshForStatus}
               </p>
             </div>
           </div>
