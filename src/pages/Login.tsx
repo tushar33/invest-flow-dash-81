@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { getPostAuthPath } from "@/lib/onboarding";
 import { User, Lock, Eye, EyeOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import trinityLogo from "@/assets/trinity-arrows-logo.png";
@@ -21,7 +22,7 @@ export default function Login() {
     try {
       const loggedInUser = await login(identifier, password);
       if (loggedInUser.role === "ADMIN") navigate("/admin", { replace: true });
-      else navigate("/dashboard", { replace: true });
+      else navigate(getPostAuthPath(loggedInUser), { replace: true });
     } catch (err: any) {
       toast.error(LANG.auth.loginFailed, err.message);
     } finally {

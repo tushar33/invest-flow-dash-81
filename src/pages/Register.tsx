@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { getPostAuthPath } from "@/lib/onboarding";
 import { User, Mail, Phone, Lock, Eye, EyeOff, MapPin } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import trinityLogo from "@/assets/trinity-arrows-logo.png";
@@ -26,14 +27,14 @@ export default function Register() {
     }
     setSubmitting(true);
     try {
-      await register({
+      const registeredUser = await register({
         fullName,
         email,
         phone: phone.trim(),
         city: city.trim(),
         password,
       });
-      navigate("/dashboard", { replace: true });
+      navigate(getPostAuthPath(registeredUser), { replace: true });
     } catch (err: any) {
       toast.error(LANG.auth.registrationFailed, err.message);
     } finally {

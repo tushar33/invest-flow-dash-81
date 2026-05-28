@@ -1,11 +1,12 @@
 import { NavLink as RouterNavLink, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
-import { LucideIcon, LayoutDashboard, Package, Wallet, CreditCard, User, LogOut, FileText } from "lucide-react";
+import { LucideIcon, LayoutDashboard, Package, Wallet, CreditCard, User, LogOut, FileText, Settings } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { LANG } from "@/lib/language";
+import { isOnboardingComplete } from "@/lib/onboarding";
 
 interface NavItem {
   to: string;
@@ -35,12 +36,18 @@ export function BottomNav() {
 
   const profileActive = location.pathname === "/profile" || location.pathname.startsWith("/profile/");
   const initials = user?.fullName?.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2) || "U";
+  const navItems = isOnboardingComplete(user)
+    ? userNav
+    : [
+        { to: "/bank-details", icon: Settings, label: LANG.nav.accountDetails },
+        { to: "/profile", icon: User, label: LANG.common.profile },
+      ];
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden px-3 pb-3 pointer-events-none">
       <div className="pointer-events-auto bg-card/85 backdrop-blur-2xl border border-border/60 rounded-2xl shadow-elevated">
         <div className="flex items-center justify-around h-[64px] px-1">
-          {userNav.map((item) => {
+          {navItems.map((item) => {
             const isActive = location.pathname === item.to || location.pathname.startsWith(item.to + "/");
             return (
               <RouterNavLink
@@ -67,6 +74,7 @@ export function BottomNav() {
             );
           })}
 
+          {isOnboardingComplete(user) && (
           <Sheet open={profileOpen} onOpenChange={setProfileOpen}>
             <SheetTrigger asChild>
               <button className="flex flex-col items-center justify-center gap-0.5 flex-1 relative py-1">
@@ -112,6 +120,7 @@ export function BottomNav() {
               </div>
             </SheetContent>
           </Sheet>
+          )}
         </div>
       </div>
     </nav>

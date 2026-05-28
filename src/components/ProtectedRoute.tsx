@@ -1,7 +1,16 @@
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { getPostAuthPath, isOnboardingComplete } from "@/lib/onboarding";
 
-export function ProtectedRoute({ children, adminOnly = false }: { children: React.ReactNode; adminOnly?: boolean }) {
+export function ProtectedRoute({
+  children,
+  adminOnly = false,
+  requiresApproved = false,
+}: {
+  children: React.ReactNode;
+  adminOnly?: boolean;
+  requiresApproved?: boolean;
+}) {
   const { user, loading } = useAuth();
 
   if (loading) {
@@ -14,6 +23,9 @@ export function ProtectedRoute({ children, adminOnly = false }: { children: Reac
 
   if (!user) return <Navigate to="/login" replace />;
   if (adminOnly && user.role !== "ADMIN") return <Navigate to="/dashboard" replace />;
+  if (requiresApproved && !isOnboardingComplete(user)) {
+    return <Navigate to={getPostAuthPath(user)} replace />;
+  }
 
   return <>{children}</>;
 }

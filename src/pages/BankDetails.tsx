@@ -193,8 +193,12 @@ export default function BankDetails() {
   const [panDocument, setPanDocument] = useState<File | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const qc = useQueryClient();
+
+  const onboardingStatus = user?.onboardingStatus ?? "BANK_PENDING";
+  const isUnderReview = onboardingStatus === "VERIFICATION_PENDING";
+  const needsOnboarding = onboardingStatus === "BANK_PENDING";
 
   const { data: bank, isLoading } = useQuery({
     queryKey: ["bank-details", user?.id],
@@ -275,11 +279,12 @@ export default function BankDetails() {
         ...(panDocument ? { panDocument } : {}),
       });
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       toast({ title: LANG.bank.saved });
       setShowForm(false);
       resetForm();
       qc.invalidateQueries({ queryKey: ["bank-details", user?.id] });
+      await refreshUser();
     },
     onError: (err: Error) => {
       if (err.message !== LANG.common.fixErrorsBelow) {
@@ -305,6 +310,7 @@ export default function BankDetails() {
   const verificationBadgeStatus =
     verificationStatus === "verified" ? "approved" : verificationStatus === "rejected" ? "rejected" : "pending";
   const verificationLabel = bankVerificationStatusLabel(verificationStatus);
+  const canEditBankDetails = !isUnderReview;
 
   if (isLoading) {
     return (
@@ -324,25 +330,41 @@ export default function BankDetails() {
           title={LANG.bank.title}
           subtitle={LANG.bank.subtitle}
           actions={
-            <button
-              onClick={() => {
-                if (!showForm) {
-                  if (bank) populateForm();
-                  else resetForm();
-                } else {
-                  resetForm();
-                }
-                setShowForm(!showForm);
-              }}
-              className="bg-gradient-accent text-accent-foreground text-xs font-semibold px-4 py-2.5 rounded-xl flex items-center gap-1.5 active:scale-[0.98] transition-transform shadow-glow"
-            >
-              {showForm ? <X className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
-              {showForm ? LANG.common.cancel : bank ? LANG.common.edit : LANG.bank.addAccount}
-            </button>
+            canEditBankDetails ? (
+              <button
+                onClick={() => {
+                  if (!showForm) {
+                    if (bank) populateForm();
+                    else resetForm();
+                  } else {
+                    resetForm();
+                  }
+                  setShowForm(!showForm);
+                }}
+                className="bg-gradient-accent text-accent-foreground text-xs font-semibold px-4 py-2.5 rounded-xl flex items-center gap-1.5 active:scale-[0.98] transition-transform shadow-glow"
+              >
+                {showForm ? <X className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
+                {showForm ? LANG.common.cancel : bank ? LANG.common.edit : LANG.bank.addAccount}
+              </button>
+            ) : undefined
           }
         />
 
-        {!bank && !showForm && (
+        {needsOnboarding && !bank && !showForm && (
+          <div className="bg-warning/10 border border-warning/20 rounded-2xl p-4 flex items-start gap-3 animate-slide-up-fade">
+            <div className="h-9 w-9 shrink-0 rounded-xl bg-warning/15 flex items-center justify-center">
+              <AlertCircle className="h-4 w-4 text-warning" />
+            </div>
+            <div>
+              <p className="text-[13px] font-semibold text-warning">Complete onboarding</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">
+                Add your bank details to continue. Your account will be reviewed by an admin before you can access the dashboard.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {!needsOnboarding && !bank && !showForm && (
           <div className="bg-warning/10 border border-warning/20 rounded-2xl p-4 flex items-start gap-3 animate-slide-up-fade">
             <div className="h-9 w-9 shrink-0 rounded-xl bg-warning/15 flex items-center justify-center">
               <AlertCircle className="h-4 w-4 text-warning" />
@@ -491,7 +513,21 @@ export default function BankDetails() {
           </div>
         )}
 
-        {bank && !showForm && verificationStatus === "pending" && (
+        {bank && !showForm && isUnderReview && (
+          <div className="bg-warning/10 border border-warning/20 rounded-2xl p-4 flex items-start gap-3 animate-slide-up-fade">
+            <div className="h-9 w-9 shrink-0 rounded-xl bg-warning/15 flex items-center justify-center">
+              <AlertCircle className="h-4 w-4 text-warning" />
+            </div>
+            <div>
+              <p className="text-[13px] font-semibold text-warning">Under admin review</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">
+                Your bank details are being verified. You will get full access once an admin approves your account.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {bank && !showForm && !isUnderReview && verificationStatus === "pending" && (
           <div className="bg-warning/10 border border-warning/20 rounded-2xl p-4 flex items-start gap-3 animate-slide-up-fade">
             <div className="h-9 w-9 shrink-0 rounded-xl bg-warning/15 flex items-center justify-center">
               <AlertCircle className="h-4 w-4 text-warning" />

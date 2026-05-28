@@ -44,11 +44,11 @@ const App = () => (
             <Route path="/contact" element={<Contact />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
-            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-            <Route path="/packages" element={<ProtectedRoute><Packages /></ProtectedRoute>} />
-            <Route path="/wallet" element={<ProtectedRoute><WalletPage /></ProtectedRoute>} />
-            <Route path="/wallet/ledger" element={<ProtectedRoute><WalletLedger /></ProtectedRoute>} />
-            <Route path="/payouts" element={<ProtectedRoute><Payouts /></ProtectedRoute>} />
+            <Route path="/dashboard" element={<ProtectedRoute requiresApproved><Dashboard /></ProtectedRoute>} />
+            <Route path="/packages" element={<ProtectedRoute requiresApproved><Packages /></ProtectedRoute>} />
+            <Route path="/wallet" element={<ProtectedRoute requiresApproved><WalletPage /></ProtectedRoute>} />
+            <Route path="/wallet/ledger" element={<ProtectedRoute requiresApproved><WalletLedger /></ProtectedRoute>} />
+            <Route path="/payouts" element={<ProtectedRoute requiresApproved><Payouts /></ProtectedRoute>} />
             <Route path="/bank-details" element={<ProtectedRoute><BankDetails /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute adminOnly><AdminDashboard /></ProtectedRoute>} />

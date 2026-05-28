@@ -3,10 +3,11 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   LayoutDashboard, Package, Wallet, CreditCard, User,
-  Users, Settings, FileText, TrendingUp, Shield, LogOut
+  Users, Settings, FileText, TrendingUp, Shield, LogOut, FlaskConical
 } from "lucide-react";
 import trinityLogo from "@/assets/trinity-arrows-logo.png";
 import { LANG } from "@/lib/language";
+import { isOnboardingComplete } from "@/lib/onboarding";
 
 const userNav = [
   { to: "/dashboard", icon: LayoutDashboard, label: LANG.nav.dashboard },
@@ -24,6 +25,7 @@ const adminNav = [
   { to: "/admin/packages", icon: Package, label: LANG.nav.plans },
   { to: "/admin/payouts", icon: CreditCard, label: LANG.nav.redemptions },
   { to: "/admin/roi-logs", icon: TrendingUp, label: LANG.nav.rewardLogs },
+  { to: "/admin/simulator", icon: FlaskConical, label: LANG.nav.simulator },
   { to: "/admin/settings", icon: Settings, label: LANG.nav.settings },
 ];
 
@@ -35,7 +37,10 @@ export function DesktopSidebar({ role }: DesktopSidebarProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
-  const nav = role === "admin" ? adminNav : userNav;
+  const nav = role === "admin" ? adminNav : userNav.filter((item) => {
+    if (isOnboardingComplete(user)) return true;
+    return item.to === "/bank-details" || item.to === "/profile";
+  });
 
   const handleLogout = () => {
     logout();

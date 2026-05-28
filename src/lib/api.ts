@@ -39,29 +39,39 @@ function buildQs(params?: Record<string, string | number | undefined | null>): s
   return s ? `?${s}` : "";
 }
 
+type RequestOptions = RequestInit & { nullOn404?: boolean };
+
+async function parseJsonBody<T>(res: Response): Promise<T> {
+  const text = await res.text();
+  if (!text.trim()) return null as T;
+  return JSON.parse(text) as T;
+}
+
 async function request<T>(
   path: string,
-  options: RequestInit = {}
+  options: RequestOptions = {}
 ): Promise<T> {
+  const { nullOn404, ...fetchOptions } = options;
   const token = getToken();
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
-    ...(options.headers as Record<string, string>),
+    ...(fetchOptions.headers as Record<string, string>),
   };
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;
   }
 
-  const res = await fetch(`${API_BASE}${path}`, { ...options, headers });
+  const res = await fetch(`${API_BASE}${path}`, { ...fetchOptions, headers });
 
   if (!res.ok) {
+    if (nullOn404 && res.status === 404) return null as T;
     const body = await res.json().catch(() => ({ message: res.statusText }));
     const msg = Array.isArray(body.message) ? body.message.join(", ") : body.message;
     throw new Error(msg || LANG.auth.requestFailed(res.status));
   }
 
   if (res.status === 204) return null as T;
-  return res.json();
+  return parseJsonBody<T>(res);
 }
 
 async function uploadRequest<T>(path: string, formData: FormData, method = "POST"): Promise<T> {
@@ -80,7 +90,7 @@ async function uploadRequest<T>(path: string, formData: FormData, method = "POST
   }
 
   if (res.status === 204) return null as T;
-  return res.json();
+  return parseJsonBody<T>(res);
 }
 
 // ── Auth ──
@@ -93,6 +103,7 @@ export interface AuthUser {
   role: "USER" | "ADMIN";
   autoPayMode: string;
   status: string;
+  onboardingStatus: "BANK_PENDING" | "VERIFICATION_PENDING" | "APPROVED";
   createdAt?: string;
   updatedAt?: string;
 }
@@ -273,7 +284,7 @@ export interface BankDetailsSavePayload {
 }
 
 export const bankDetails = {
-  get: () => request<BankDetails | null>("/user/bank-details"),
+  get: () => request<BankDetails | null>("/user/bank-details", { nullOn404: true }),
   save: (data: BankDetailsSavePayload) => {
     const formData = new FormData();
     formData.append("accountHolderName", data.accountHolderName);
