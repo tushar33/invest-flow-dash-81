@@ -24,6 +24,7 @@ import AdminUsers from "./pages/admin/AdminUsers";
 import AdminPackages from "./pages/admin/AdminPackages";
 import AdminPayouts from "./pages/admin/AdminPayouts";
 import AdminROILogs from "./pages/admin/AdminROILogs";
+import AdminSimulator from "./pages/admin/AdminSimulator";
 import AdminSettings from "./pages/admin/AdminSettings";
 import NotFound from "./pages/NotFound";
 
@@ -56,6 +57,7 @@ const App = () => (
             <Route path="/admin/packages" element={<ProtectedRoute adminOnly><AdminPackages /></ProtectedRoute>} />
             <Route path="/admin/payouts" element={<ProtectedRoute adminOnly><AdminPayouts /></ProtectedRoute>} />
             <Route path="/admin/roi-logs" element={<ProtectedRoute adminOnly><AdminROILogs /></ProtectedRoute>} />
+            <Route path="/admin/simulator" element={<ProtectedRoute adminOnly><AdminSimulator /></ProtectedRoute>} />
             <Route path="/admin/settings" element={<ProtectedRoute adminOnly><AdminSettings /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>

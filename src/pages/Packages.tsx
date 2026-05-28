@@ -5,11 +5,12 @@ import { useUrlFilters } from "@/hooks/useUrlFilters";
 import { PageHeader } from "@/components/ui/page-header";
 import { GradientCard } from "@/components/ui/gradient-card";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Gift, CalendarDays, RefreshCw, Package as PackageIcon } from "lucide-react";
+import { Gift, CalendarDays, Package as PackageIcon } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { packages as packagesApi } from "@/lib/api";
 import { formatCredits } from "@/lib/format";
 import { LANG, FILTER_OPTIONS, planStatusLabel } from "@/lib/language";
+import { PlanCycleDetails } from "@/components/PlanCycleDetails";
 
 const filterDefaults = { status: "", roiPercentage: "" };
 
@@ -136,17 +137,12 @@ export default function Packages() {
                       <CalendarDays className="h-3 w-3 shrink-0" />
                       <div>
                         <p className="text-[10px] opacity-70">{LANG.plans.assigned}</p>
-                        <p className="font-medium text-foreground">{new Date(pkg.startDate).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" })}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                      <RefreshCw className="h-3 w-3 shrink-0" />
-                      <div>
-                        <p className="text-[10px] opacity-70">{LANG.plans.nextReward}</p>
-                        <p className="font-medium text-foreground">{pkg.status === "ACTIVE" ? new Date(pkg.nextRoiDate).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" }) : LANG.common.noData}</p>
+                        <p className="font-medium text-foreground">{new Date(pkg.startDate).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</p>
                       </div>
                     </div>
                   </div>
+
+                  <PlanCycleDetails pkg={pkg} />
                 </div>
               );
             })}

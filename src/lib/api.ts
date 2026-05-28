@@ -176,6 +176,9 @@ export interface Package {
   cyclesCompleted: number;
   startDate: string;
   nextRoiDate: string;
+  nextCycleDate?: string;
+  lastCycleDate?: string | null;
+  cycleMode?: string;
   maturityDate: string;
   principalWithdrawnAmount: string;
   status: "ACTIVE" | "MATURED" | "CLOSED";
@@ -299,6 +302,16 @@ export const bankDetails = {
     return uploadRequest<BankDetails>("/user/bank-details", formData);
   },
 };
+
+/** Shared React Query options — one fetch per user, cached for 60s. */
+export function bankDetailsQueryOptions(userId: string | undefined) {
+  return {
+    queryKey: ["bank-details", userId] as const,
+    queryFn: () => bankDetails.get(),
+    enabled: Boolean(userId),
+    staleTime: 60_000,
+  };
+}
 
 // ── Payouts ──
 export interface PayoutBankAccount {
@@ -437,6 +450,9 @@ export interface AdminPackage {
   roiPercentage: number;
   assignedDate: string;
   nextRoiDate: string;
+  nextCycleDate?: string;
+  lastCycleDate?: string | null;
+  cycleMode?: string;
   maturityDate: string;
   cyclesCompleted: number;
   totalCycles: number;
@@ -494,6 +510,59 @@ export interface SystemSetting {
   updatedAt?: string;
 }
 
+export type CycleModeValue = "FIXED_DAYS" | "CALENDAR_MONTHLY";
+
+export interface SimulateInput {
+  principalAmount: number;
+  roiPercentage: number;
+  durationMonths?: number;
+  startDate?: string;
+  cycleMode?: CycleModeValue;
+  daysBetweenCycles?: number;
+  autoPayMode: "NONE" | "HALF" | "FULL";
+}
+
+export interface SimulatedCycleRow {
+  cycleNumber: number;
+  month: number;
+  cycleDate: string | null;
+  scheduledDate: string | null;
+  isLastCycle: boolean;
+  roiAmount: number;
+  reward: number;
+  principalDeduction: number;
+  adjustment: number;
+  principalBeforeCycle: number;
+  remainingPrincipal: number;
+  remainingBalance: number;
+  autoPay: {
+    mode: "NONE" | "HALF" | "FULL";
+    payoutAmount: number;
+  };
+  walletCreditNet: number;
+}
+
+export interface SimulationResult {
+  inputs: SimulateInput;
+  summary: {
+    isTenPercentPlan: boolean;
+    durationMonths: number;
+    totalCycles: number;
+    cycleMode: CycleModeValue;
+    daysBetweenCycles: number;
+    monthlyRoiAmount: number;
+    totalRoiPayout: number;
+    totalPrincipalReturn: number;
+    maturityDate: string | null;
+    initialNextRoiDate: string | null;
+  };
+  cycles: SimulatedCycleRow[];
+  validation: {
+    passed: boolean;
+    warnings: string[];
+  };
+}
+
 export const admin = {
   summary: () => request<AdminSummary>("/admin/summary"),
   financialSummary: () => request<AdminFinancialSummary>("/admin/financial-summary"),
@@ -541,5 +610,10 @@ export const admin = {
     request<SystemSetting>(`/admin/settings/${encodeURIComponent(key)}`, {
       method: "PATCH",
       body: JSON.stringify({ value }),
+    }),
+  simulate: (data: SimulateInput) =>
+    request<SimulationResult>("/admin/simulate", {
+      method: "POST",
+      body: JSON.stringify(data),
     }),
 };

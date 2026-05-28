@@ -6,7 +6,7 @@ import { Wallet, Gift, TrendingUp, Clock, ArrowDownLeft, ArrowUpRight, ChevronRi
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
-import { wallet as walletApi, packages as packagesApi, payouts as payoutsApi, bankDetails as bankApi, normalizeBankVerificationStatus } from "@/lib/api";
+import { wallet as walletApi, packages as packagesApi, payouts as payoutsApi, bankDetailsQueryOptions, normalizeBankVerificationStatus } from "@/lib/api";
 import { formatCredits, formatCreditsSigned, formatTransactionLabel } from "@/lib/format";
 import { LANG, greeting } from "@/lib/language";
 
@@ -15,12 +15,7 @@ export default function Dashboard() {
   const { data: walletData } = useQuery({ queryKey: ["wallet"], queryFn: () => walletApi.get() });
   const { data: pkgs } = useQuery({ queryKey: ["packages"], queryFn: () => packagesApi.list() });
   const { data: payoutsList } = useQuery({ queryKey: ["payouts"], queryFn: () => payoutsApi.list() });
-  const { data: bank } = useQuery({
-    queryKey: ["bank-details", user?.id],
-    queryFn: bankApi.get,
-    enabled: Boolean(user?.id),
-    refetchOnMount: "always",
-  });
+  const { data: bank } = useQuery(bankDetailsQueryOptions(user?.id));
 
   const balance = walletData?.availableBalance ?? 0;
   const totalContribution = pkgs?.reduce((s, p) => s + Number(p.principalAmount), 0) ?? 0;

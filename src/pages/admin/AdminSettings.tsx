@@ -1,15 +1,28 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AdminLayout } from "@/components/AdminLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Settings, Clock, Cpu, Save, Loader2 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Settings, Clock, Cpu, Save, Loader2, CalendarDays } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import { admin as adminApi, type SystemSetting } from "@/lib/api";
 import { LANG } from "@/lib/language";
+import {
+  DEFAULT_CYCLE_MODE,
+  DEFAULT_DAYS_BETWEEN_CYCLES,
+  parseCycleMode,
+  type CycleMode,
+} from "@/lib/cycle-schedule";
 
 const PAYOUT_KEYS = new Set([
   "payoutWindowStart",
@@ -17,15 +30,7 @@ const PAYOUT_KEYS = new Set([
   "payoutTimeValidationEnabled",
 ]);
 
-function settingLabel(s: SystemSetting): string {
-  const labels: Record<string, string> = {
-    payoutWindowStart: LANG.redemption.windowStart,
-    payoutWindowEnd: LANG.redemption.windowEnd,
-    payoutTimeValidationEnabled: LANG.redemption.enableTimeValidation,
-    roiCycleDays: LANG.reward.cycleDays,
-  };
-  return labels[s.key] ?? s.description ?? s.key;
-}
+const REWARD_ENGINE_KEYS = new Set(["cycleMode", "daysBetweenCycles", "roiCycleDays"]);
 
 function toTimeInputValue(value: string): string {
   return value.length >= 5 ? value.slice(0, 5) : value;
@@ -39,6 +44,12 @@ function valuesFromSettings(settings: SystemSetting[]): Record<string, string> {
     } else {
       map[s.key] = s.value ?? "";
     }
+  }
+  if (!map.cycleMode) {
+    map.cycleMode = DEFAULT_CYCLE_MODE;
+  }
+  if (!map.daysBetweenCycles) {
+    map.daysBetweenCycles = map.roiCycleDays || String(DEFAULT_DAYS_BETWEEN_CYCLES);
   }
   return map;
 }
@@ -66,11 +77,20 @@ export default function AdminSettings() {
   }, [settings]);
 
   const payoutSettings = settings.filter((s) => PAYOUT_KEYS.has(s.key));
-  const otherSettings = settings.filter((s) => !PAYOUT_KEYS.has(s.key));
+  const cycleMode = parseCycleMode(values.cycleMode);
+  const isFixedDays = cycleMode === "FIXED_DAYS";
 
   const payoutValidation = values.payoutTimeValidationEnabled === "true";
   const payoutStart = values.payoutWindowStart ?? "09:00";
   const payoutEnd = values.payoutWindowEnd ?? "12:00";
+
+  const settingsToSave = useMemo(
+    () =>
+      settings.filter(
+        (s) => PAYOUT_KEYS.has(s.key) || REWARD_ENGINE_KEYS.has(s.key),
+      ),
+    [settings],
+  );
 
   const handleSave = async () => {
     if (payoutValidation && payoutStart >= payoutEnd) {
@@ -82,23 +102,46 @@ export default function AdminSettings() {
       return;
     }
 
-    const roiDays = values.roiCycleDays;
-    if (roiDays !== undefined && (!roiDays || Number(roiDays) < 1)) {
-      toast({
-        title: LANG.common.validationError,
-        description: LANG.settings.cycleDaysMin,
-        variant: "destructive",
-      });
-      return;
+    if (isFixedDays) {
+      const days = Number(values.daysBetweenCycles);
+      if (!values.daysBetweenCycles || !Number.isFinite(days) || days < 1) {
+        toast({
+          title: LANG.common.validationError,
+          description: LANG.cycle.fixedDaysRequired,
+          variant: "destructive",
+        });
+        return;
+      }
     }
 
     setSaving(true);
     try {
-      await Promise.all(
-        settings.map((s) =>
+      const updates: Promise<SystemSetting>[] = [];
+
+      for (const s of settingsToSave) {
+        if (s.key === "roiCycleDays") continue;
+        if (s.key === "daysBetweenCycles" && !isFixedDays) continue;
+
+        if (s.key === "cycleMode") {
+          updates.push(adminApi.updateSetting("cycleMode", cycleMode));
+          continue;
+        }
+
+        updates.push(
           adminApi.updateSetting(s.key, values[s.key] ?? s.value),
-        ),
-      );
+        );
+      }
+
+      if (isFixedDays) {
+        updates.push(
+          adminApi.updateSetting(
+            "daysBetweenCycles",
+            values.daysBetweenCycles ?? String(DEFAULT_DAYS_BETWEEN_CYCLES),
+          ),
+        );
+      }
+
+      await Promise.all(updates);
       await refetch();
       toast({
         title: LANG.settings.saved,
@@ -145,9 +188,7 @@ export default function AdminSettings() {
       <AdminLayout>
         <div className="space-y-4">
           <h1 className="text-2xl font-bold">{LANG.settings.title}</h1>
-          <p className="text-sm text-muted-foreground">
-            {LANG.settings.empty}
-          </p>
+          <p className="text-sm text-muted-foreground">{LANG.settings.empty}</p>
         </div>
       </AdminLayout>
     );
@@ -160,9 +201,7 @@ export default function AdminSettings() {
           <Settings className="h-6 w-6 text-accent" />
           <h1 className="text-2xl font-bold text-foreground">{LANG.settings.title}</h1>
         </div>
-        <p className="text-muted-foreground text-sm">
-          {LANG.settings.subtitle}
-        </p>
+        <p className="text-muted-foreground text-sm">{LANG.settings.subtitle}</p>
       </div>
 
       <div className="grid gap-5">
@@ -176,12 +215,10 @@ export default function AdminSettings() {
               <CardDescription>{LANG.settings.windowDescription}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-5">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-4">
                 <div className="space-y-0.5">
                   <Label htmlFor="payout-validation">{LANG.redemption.enableTimeValidation}</Label>
-                  <p className="text-xs text-muted-foreground">
-                    {LANG.settings.restrictWindow}
-                  </p>
+                  <p className="text-xs text-muted-foreground">{LANG.settings.restrictWindow}</p>
                 </div>
                 <Switch
                   id="payout-validation"
@@ -229,33 +266,58 @@ export default function AdminSettings() {
           </Card>
         )}
 
-        {otherSettings.length > 0 && (
-          <Card>
-            <CardHeader className="pb-4">
-              <div className="flex items-center gap-2">
-                <Cpu className="h-5 w-5 text-accent" />
-                <CardTitle className="text-lg">{LANG.reward.engine}</CardTitle>
+        <Card>
+          <CardHeader className="pb-4">
+            <div className="flex items-center gap-2">
+              <Cpu className="h-5 w-5 text-accent" />
+              <CardTitle className="text-lg">{LANG.reward.engine}</CardTitle>
+            </div>
+            <CardDescription>{LANG.reward.engineDescription}</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="space-y-2 max-w-md">
+              <Label htmlFor="cycle-mode">{LANG.cycle.schedulingMode}</Label>
+              <Select
+                value={cycleMode}
+                onValueChange={(value: CycleMode) =>
+                  setValues((prev) => ({ ...prev, cycleMode: value }))
+                }
+              >
+                <SelectTrigger id="cycle-mode">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="CALENDAR_MONTHLY">{LANG.cycle.calendarMonthly}</SelectItem>
+                  <SelectItem value="FIXED_DAYS">{LANG.cycle.fixedDays}</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                {isFixedDays ? LANG.cycle.fixedDaysHelp : LANG.cycle.calendarMonthlyHelp}
+              </p>
+            </div>
+
+            {isFixedDays ? (
+              <div className="space-y-2 max-w-xs">
+                <Label htmlFor="days-between-cycles">{LANG.cycle.daysBetweenCycles}</Label>
+                <Input
+                  id="days-between-cycles"
+                  type="number"
+                  min={1}
+                  value={values.daysBetweenCycles ?? String(DEFAULT_DAYS_BETWEEN_CYCLES)}
+                  onChange={(e) =>
+                    setValues((prev) => ({ ...prev, daysBetweenCycles: e.target.value }))
+                  }
+                />
+                <p className="text-xs text-muted-foreground">{LANG.cycle.fixedDaysHelp}</p>
               </div>
-              <CardDescription>{LANG.reward.engineDescription}</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-5">
-              {otherSettings.map((s) => (
-                <div key={s.key} className="space-y-1.5 max-w-xs">
-                  <Label htmlFor={`setting-${s.key}`}>{settingLabel(s)}</Label>
-                  <Input
-                    id={`setting-${s.key}`}
-                    type="number"
-                    min={1}
-                    value={values[s.key] ?? s.value}
-                    onChange={(e) =>
-                      setValues((prev) => ({ ...prev, [s.key]: e.target.value }))
-                    }
-                  />
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        )}
+            ) : (
+              <div className="flex items-start gap-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4 max-w-xl">
+                <CalendarDays className="h-5 w-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                <p className="text-sm text-muted-foreground">{LANG.cycle.calendarMonthlyNotice}</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       <div className="sticky bottom-20 md:bottom-0 pt-4 pb-2 bg-background/80 backdrop-blur-sm mt-6">

@@ -9,7 +9,7 @@ import { CreditCard, Plus, X, Clock, Info, ArrowDownToLine } from "lucide-react"
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { payouts as payoutsApi, wallet as walletApi, bankDetails as bankApi, normalizeBankVerificationStatus } from "@/lib/api";
+import { payouts as payoutsApi, wallet as walletApi, bankDetailsQueryOptions, normalizeBankVerificationStatus } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { formatCredits } from "@/lib/format";
 import { useAuth } from "@/contexts/AuthContext";
@@ -50,12 +50,7 @@ export default function Payouts() {
     }),
   });
   const { data: walletData } = useQuery({ queryKey: ["wallet"], queryFn: () => walletApi.get() });
-  const { data: bank } = useQuery({
-    queryKey: ["bank-details", user?.id],
-    queryFn: bankApi.get,
-    enabled: Boolean(user?.id),
-    refetchOnMount: "always",
-  });
+  const { data: bank } = useQuery(bankDetailsQueryOptions(user?.id));
 
   const pendingAmount = payoutsList?.filter(p => p.status === "PENDING").reduce((s, p) => s + Number(p.amount), 0) ?? 0;
   const bankVerificationStatus = normalizeBankVerificationStatus(bank?.verificationStatus);

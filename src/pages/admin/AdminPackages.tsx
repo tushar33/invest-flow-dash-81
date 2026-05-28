@@ -20,6 +20,8 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { formatCredits } from "@/lib/format";
 import { LANG, FILTER_OPTIONS, planStatusLabel } from "@/lib/language";
+import { PlanCycleDetails } from "@/components/PlanCycleDetails";
+import { DEFAULT_DAYS_BETWEEN_CYCLES } from "@/lib/cycle-schedule";
 
 /* ── Edit Assignment Date Modal ───────────────────────────────────────── */
 interface EditDateModalProps { pkg: AdminPackage; onClose: () => void; onSuccess: () => void; }
@@ -136,7 +138,7 @@ export default function AdminPackages() {
   const [editTarget, setEditTarget] = useState<AdminPackage | null>(null);
   const [cancelTarget, setCancelTarget] = useState<AdminPackage | null>(null);
 
-  const { data: pkgs, isLoading } = useQuery({
+  const { data: pkgs, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["admin-packages", filters],
     queryFn: () => adminApi.packages({
       userId: filters.userId || undefined,
@@ -146,6 +148,17 @@ export default function AdminPackages() {
       to: filters.to || undefined,
     }),
   });
+
+  const { data: settings = [] } = useQuery({
+    queryKey: ["admin-settings"],
+    queryFn: adminApi.settings,
+  });
+
+  const daysBetweenCycles = Number(
+    settings.find((s) => s.key === "daysBetweenCycles")?.value
+      ?? settings.find((s) => s.key === "roiCycleDays")?.value
+      ?? DEFAULT_DAYS_BETWEEN_CYCLES,
+  );
 
   const filtered = (pkgs ?? []).filter(p => {
     if (filters.userId && p.userId !== filters.userId && !p.userName.toLowerCase().includes(filters.userId.toLowerCase())) return false;
@@ -189,6 +202,15 @@ export default function AdminPackages() {
           <div className="flex justify-center py-12">
             <div className="h-8 w-8 border-2 border-accent border-t-transparent rounded-full animate-spin" />
           </div>
+        ) : isError ? (
+          <div className="flex flex-col items-center justify-center gap-3 py-12 text-center">
+            <p className="text-sm text-destructive">
+              {error instanceof Error ? error.message : LANG.common.error}
+            </p>
+            <Button variant="outline" size="sm" onClick={() => refetch()}>
+              {LANG.common.retry}
+            </Button>
+          </div>
         ) : !filtered.length ? (
           <p className="text-center text-muted-foreground py-12">{LANG.plans.noneFound}</p>
         ) : (
@@ -212,8 +234,14 @@ export default function AdminPackages() {
                 <div className="flex items-center gap-4 mt-3 pt-3 border-t border-border text-xs text-muted-foreground flex-wrap">
                   <span>{LANG.plans.rewardLabel} {pkg.roiPercentage}%</span>
                   <span>{LANG.plans.cyclesLabel} {pkg.cyclesCompleted}/{planCycles}</span>
-                  <span>{LANG.plans.nextRewardLabel} {new Date(pkg.nextRoiDate).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" })}</span>
-                  <span>{LANG.plans.assignedLabel} {new Date(pkg.assignedDate).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" })}</span>
+                  <span>{LANG.plans.assignedLabel} {new Date(pkg.assignedDate).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</span>
+                </div>
+                <div className="mt-3">
+                  <PlanCycleDetails
+                    pkg={pkg}
+                    daysBetweenCycles={daysBetweenCycles}
+                    compact
+                  />
                 </div>
                 <div className="mt-3 pt-3 border-t border-border flex flex-wrap gap-2">
                   <Button size="sm" variant="outline" className="text-xs" onClick={() => navigate(`/wallet/ledger?userId=${pkg.userId}`)}>
