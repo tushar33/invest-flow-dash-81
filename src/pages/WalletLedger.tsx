@@ -22,8 +22,18 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { formatCredits, formatCreditsSigned, formatTransactionLabel } from "@/lib/format";
 import { LANG, FILTER_OPTIONS, directionLabel } from "@/lib/language";
+import { filterUserVisibleTransactions } from "@/lib/wallet-transactions";
 
-const filterFields: FilterField[] = [
+const userLedgerFilterFields: FilterField[] = [
+  {
+    key: "type", label: LANG.filter.activityType, type: "select", placeholder: LANG.filter.allTypes,
+    options: [...FILTER_OPTIONS.transactionType],
+  },
+  { key: "from", label: LANG.filter.fromDate, type: "date", placeholder: LANG.filter.startDate },
+  { key: "to", label: LANG.filter.toDate, type: "date", placeholder: LANG.filter.endDate },
+];
+
+const adminLedgerFilterFields: FilterField[] = [
   {
     key: "type", label: LANG.filter.activityType, type: "select", placeholder: LANG.filter.allTypes,
     options: [...FILTER_OPTIONS.ledgerType],
@@ -90,7 +100,10 @@ export default function WalletLedger() {
     return txnType === filter;
   };
 
-  const filteredTransactions = walletData?.transactions.filter((txn) => {
+  const filteredTransactions = (isAdmin
+    ? walletData?.transactions
+    : filterUserVisibleTransactions(walletData?.transactions ?? [])
+  )?.filter((txn) => {
     if (typeFilter && !matchesTypeFilter(txn.type, typeFilter)) return false;
     if (fromFilter && new Date(txn.createdAt) < new Date(fromFilter)) return false;
     if (toFilter && new Date(txn.createdAt) > new Date(toFilter)) return false;
@@ -144,7 +157,7 @@ export default function WalletLedger() {
         )}
 
         <FilterBar
-          fields={filterFields}
+          fields={isAdmin ? adminLedgerFilterFields : userLedgerFilterFields}
           values={filterValues}
           onChange={(k, v) => setFilter(k, v)}
           onReset={resetFilters}

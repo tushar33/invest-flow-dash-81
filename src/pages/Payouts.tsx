@@ -13,6 +13,7 @@ import { payouts as payoutsApi, wallet as walletApi, bankDetailsQueryOptions, no
 import { useToast } from "@/hooks/use-toast";
 import { formatCredits } from "@/lib/format";
 import { useAuth } from "@/contexts/AuthContext";
+import { NoCreditsToRedeem } from "@/components/NoCreditsToRedeem";
 import { LANG, FILTER_OPTIONS, normalizePayoutStatus, payoutStatusBadge, payoutStatusLabel } from "@/lib/language";
 
 function isPayoutWindow(): boolean {
@@ -52,6 +53,8 @@ export default function Payouts() {
   const { data: walletData } = useQuery({ queryKey: ["wallet"], queryFn: () => walletApi.get() });
   const { data: bank } = useQuery(bankDetailsQueryOptions(user?.id));
 
+  const availableBalance = walletData?.availableBalance ?? 0;
+  const canRequestRedemption = availableBalance > 0;
   const pendingAmount = payoutsList?.filter(p => p.status === "PENDING").reduce((s, p) => s + Number(p.amount), 0) ?? 0;
   const bankVerificationStatus = normalizeBankVerificationStatus(bank?.verificationStatus);
   const bankVerified = bankVerificationStatus === "verified";
@@ -76,6 +79,10 @@ export default function Payouts() {
       toast({ title: LANG.common.error, description: LANG.redemption.invalidAmount, variant: "destructive" });
       return;
     }
+    if (val > availableBalance) {
+      toast({ title: LANG.common.error, description: LANG.redemption.exceedsBalance, variant: "destructive" });
+      return;
+    }
     createMutation.mutate(val);
   };
 
@@ -95,8 +102,10 @@ export default function Payouts() {
           subtitle={LANG.redemption.pageSubtitle}
           actions={
             <button
-              onClick={() => setShowForm(!showForm)}
-              className="bg-gradient-accent text-accent-foreground text-xs font-semibold px-4 py-2.5 rounded-xl flex items-center gap-1.5 active:scale-[0.98] transition-transform shadow-glow"
+              onClick={() => canRequestRedemption && setShowForm(!showForm)}
+              disabled={!canRequestRedemption}
+              title={!canRequestRedemption ? LANG.dashboard.noCreditsToRedeem : undefined}
+              className="bg-gradient-accent text-accent-foreground text-xs font-semibold px-4 py-2.5 rounded-xl flex items-center gap-1.5 active:scale-[0.98] transition-transform shadow-glow disabled:opacity-50 disabled:pointer-events-none"
             >
               {showForm ? <X className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
               {showForm ? LANG.common.cancel : LANG.common.request}
@@ -122,7 +131,7 @@ export default function Payouts() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <p className="text-[11px] uppercase tracking-widest opacity-80 font-semibold">{LANG.common.balance}</p>
-              <p className="text-2xl font-bold mt-1 text-accent tabular-nums">{formatCredits(walletData?.availableBalance ?? 0)}</p>
+              <p className="text-2xl font-bold mt-1 text-accent tabular-nums">{formatCredits(availableBalance)}</p>
             </div>
             <div className="text-right">
               <p className="text-[11px] uppercase tracking-widest opacity-80 font-semibold">{LANG.dashboard.pendingRedemption}</p>
@@ -131,7 +140,9 @@ export default function Payouts() {
           </div>
         </GradientCard>
 
-        {showForm && (
+        {!canRequestRedemption && <NoCreditsToRedeem />}
+
+        {showForm && canRequestRedemption && (
           <div className="bg-card rounded-2xl border border-accent/30 p-4 shadow-elevated animate-slide-up-fade">
             <h3 className="font-bold text-sm mb-1">{LANG.redemption.newRequest}</h3>
             <p className="text-[11px] text-muted-foreground mb-4">{LANG.redemption.amountDeducted}</p>
@@ -172,7 +183,7 @@ export default function Payouts() {
                 <div>
                   <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">{LANG.redemption.amountCredits}</label>
                   <div className="relative mt-1.5">
-                    <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder={LANG.common.amountPlaceholder}
+                    <input type="number" min={1} max={availableBalance} value={amount} onChange={(e) => setAmount(e.target.value)} placeholder={LANG.common.amountPlaceholder}
                       className="w-full pl-4 pr-20 py-3 rounded-xl border border-input bg-background text-sm font-semibold tabular-nums focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all" />
                     <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-muted-foreground">{LANG.transaction.credits}</span>
                   </div>

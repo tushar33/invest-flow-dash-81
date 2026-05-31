@@ -58,6 +58,7 @@ export default function AdminPayouts() {
       sourceType: filters.sourceType || undefined,
       from: filters.from || undefined,
       to: filters.to || undefined,
+      limit: 100,
     }),
   });
 

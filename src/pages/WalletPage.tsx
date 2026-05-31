@@ -11,6 +11,7 @@ import { useQuery } from "@tanstack/react-query";
 import { wallet as walletApi } from "@/lib/api";
 import { formatCredits, formatCreditsSigned, formatTransactionLabel } from "@/lib/format";
 import { LANG, FILTER_OPTIONS } from "@/lib/language";
+import { filterUserVisibleTransactions } from "@/lib/wallet-transactions";
 
 const filterDefaults = { type: "", from: "", to: "" };
 
@@ -37,7 +38,7 @@ export default function WalletPage() {
   });
 
   const balance = walletData?.availableBalance ?? 0;
-  const transactions = walletData?.transactions ?? [];
+  const transactions = filterUserVisibleTransactions(walletData?.transactions ?? []);
 
   const filtered = transactions.filter(t => {
     if (filters.type) {

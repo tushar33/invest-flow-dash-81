@@ -236,6 +236,8 @@ export const LANG = {
     recentActivity: "Recent Activity",
     noActivityYet: "No activity yet",
     noActivityDescription: "Your reward credits and redemptions will appear here.",
+    noCreditsToRedeem: "No credits available to redeem",
+    noCreditsToRedeemHint: "Earn reward credits from your plans, then redeem them here.",
   },
 
   bank: {
@@ -323,6 +325,7 @@ export const LANG = {
     queuedMessage: "Request will be queued and processed in the next redemption window.",
     submitRequest: "Submit Redemption Request",
     invalidAmount: "Enter a valid amount",
+    exceedsBalance: "Amount cannot exceed your available balance",
     requestsTitle: "Redemption Requests",
     noRequests: "No redemption requests",
     noRequestsDescription: "Your redemption history will appear here.",

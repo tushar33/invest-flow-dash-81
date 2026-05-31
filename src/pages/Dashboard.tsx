@@ -9,6 +9,8 @@ import { useQuery } from "@tanstack/react-query";
 import { wallet as walletApi, packages as packagesApi, payouts as payoutsApi, bankDetailsQueryOptions, normalizeBankVerificationStatus } from "@/lib/api";
 import { formatCredits, formatCreditsSigned, formatTransactionLabel } from "@/lib/format";
 import { LANG, greeting } from "@/lib/language";
+import { NoCreditsToRedeem } from "@/components/NoCreditsToRedeem";
+import { filterUserVisibleTransactions } from "@/lib/wallet-transactions";
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -35,7 +37,8 @@ export default function Dashboard() {
     .reduce((s, p) => s + Number(p.principalAmount), 0) ?? 0;
   const bankVerificationStatus = normalizeBankVerificationStatus(bank?.verificationStatus);
   const redemptionReady = bankVerificationStatus === "verified";
-  const recentTx = walletData?.transactions?.slice(0, 4) ?? [];
+  const canRequestRedemption = balance > 0;
+  const recentTx = filterUserVisibleTransactions(walletData?.transactions ?? []).slice(0, 4);
 
   return (
     <UserLayout>
@@ -54,9 +57,13 @@ export default function Dashboard() {
             <span className="text-[11px] uppercase tracking-widest opacity-80 font-semibold">{LANG.dashboard.availableBalance}</span>
           </div>
           <p className="text-[36px] font-bold leading-tight tabular-nums">{formatCredits(balance)}</p>
-          <Link to="/payouts" className="inline-flex items-center gap-1 mt-3 text-[12px] text-accent-foreground font-semibold bg-accent/90 hover:bg-accent rounded-full px-3 py-1.5 transition-colors shadow-glow">
-            {LANG.dashboard.requestRedemption} <ChevronRight className="h-3.5 w-3.5" />
-          </Link>
+          {canRequestRedemption ? (
+            <Link to="/payouts" className="inline-flex items-center gap-1 mt-3 text-[12px] text-accent-foreground font-semibold bg-accent/90 hover:bg-accent rounded-full px-3 py-1.5 transition-colors shadow-glow">
+              {LANG.dashboard.requestRedemption} <ChevronRight className="h-3.5 w-3.5" />
+            </Link>
+          ) : (
+            <NoCreditsToRedeem variant="compact" />
+          )}
         </GradientCard>
 
         <div className="grid grid-cols-2 gap-3">
@@ -66,8 +73,8 @@ export default function Dashboard() {
           <StatTile label={LANG.dashboard.activePlans} value={formatCredits(activePlansAmount)} icon={TrendingUp} accent="info" />
         </div>
 
-        <div className={`rounded-2xl p-4 flex items-center gap-3 border animate-slide-up-fade ${redemptionReady ? "bg-success/10 border-success/20" : "bg-warning/10 border-warning/20"}`}>
-          {redemptionReady ? (
+        <div className={`rounded-2xl p-4 flex items-center gap-3 border animate-slide-up-fade ${redemptionReady && canRequestRedemption ? "bg-success/10 border-success/20" : !canRequestRedemption && redemptionReady ? "bg-muted/50 border-border" : "bg-warning/10 border-warning/20"}`}>
+          {redemptionReady && canRequestRedemption ? (
             <>
               <div className="h-9 w-9 shrink-0 rounded-xl bg-success/15 flex items-center justify-center">
                 <CheckCircle2 className="h-4 w-4 text-success" />
@@ -77,6 +84,11 @@ export default function Dashboard() {
                 <p className="text-[11px] text-muted-foreground">{LANG.dashboard.redemptionReadyDescription}</p>
               </div>
             </>
+          ) : redemptionReady && !canRequestRedemption ? (
+            <div className="flex-1 min-w-0">
+              <p className="text-[13px] font-semibold text-foreground">{LANG.dashboard.noCreditsToRedeem}</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">{LANG.dashboard.noCreditsToRedeemHint}</p>
+            </div>
           ) : (
             <>
               <div className="h-9 w-9 shrink-0 rounded-xl bg-warning/15 flex items-center justify-center">
