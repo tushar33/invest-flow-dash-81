@@ -280,9 +280,7 @@ export interface BankDetailsSavePayload {
   accountNumber: string;
   ifscCode: string;
   accountType: "saving" | "current";
-  aadharNumber: string;
   panNumber: string;
-  aadharDocument?: File;
   panDocument?: File;
 }
 
@@ -295,9 +293,7 @@ export const bankDetails = {
     formData.append("accountNumber", data.accountNumber);
     formData.append("ifscCode", data.ifscCode);
     formData.append("accountType", data.accountType);
-    formData.append("aadharNumber", data.aadharNumber);
     formData.append("panNumber", data.panNumber);
-    if (data.aadharDocument) formData.append("aadharDocument", data.aadharDocument);
     if (data.panDocument) formData.append("panDocument", data.panDocument);
     return uploadRequest<BankDetails>("/user/bank-details", formData);
   },

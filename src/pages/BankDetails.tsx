@@ -25,7 +25,6 @@ type BankForm = {
   confirmAccount: string;
   ifscCode: string;
   accountType: "saving" | "current";
-  aadharNumber: string;
   panNumber: string;
 };
 
@@ -36,12 +35,11 @@ const emptyForm: BankForm = {
   confirmAccount: "",
   ifscCode: "",
   accountType: "saving",
-  aadharNumber: "",
   panNumber: "",
 };
 
-function validateFile(file: File | null): string | null {
-  if (!file) return LANG.bank.documentRequired;
+function validateFile(file: File | null, required = false): string | null {
+  if (!file) return required ? LANG.bank.documentRequired : null;
   if (!ACCEPTED_FILE_TYPES.includes(file.type)) return LANG.bank.invalidFileType;
   if (file.size > MAX_FILE_SIZE) return LANG.bank.fileTooLarge;
   return null;
@@ -101,12 +99,14 @@ function DocumentUploadField({
   existingUrl,
   onChange,
   error,
+  required = false,
 }: {
   label: string;
   file: File | null;
   existingUrl?: string;
   onChange: (file: File | null) => void;
   error?: string;
+  required?: boolean;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [localPreviewUrl, setLocalPreviewUrl] = useState<string | null>(null);
@@ -132,7 +132,8 @@ function DocumentUploadField({
   return (
     <div>
       <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-        {label} <span className="text-destructive">*</span>
+        {label}
+        {required && <span className="text-destructive"> *</span>}
       </label>
       <input
         ref={inputRef}
@@ -189,7 +190,6 @@ function DocumentUploadField({
 export default function BankDetails() {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState<BankForm>(emptyForm);
-  const [aadharDocument, setAadharDocument] = useState<File | null>(null);
   const [panDocument, setPanDocument] = useState<File | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const { toast } = useToast();
@@ -212,7 +212,6 @@ export default function BankDetails() {
 
   const resetForm = () => {
     setForm(emptyForm);
-    setAadharDocument(null);
     setPanDocument(null);
     setFieldErrors({});
   };
@@ -226,10 +225,8 @@ export default function BankDetails() {
       confirmAccount: bank.accountNumber,
       ifscCode: bank.ifscCode,
       accountType: bank.accountType === "current" ? "current" : "saving",
-      aadharNumber: bank.aadharNumber ?? "",
       panNumber: bank.panNumber ?? "",
     });
-    setAadharDocument(null);
     setPanDocument(null);
     setFieldErrors({});
   };
@@ -243,21 +240,9 @@ export default function BankDetails() {
     if (!form.confirmAccount.trim()) errors.confirmAccount = LANG.common.required;
     if (form.accountNumber !== form.confirmAccount) errors.confirmAccount = LANG.bank.accountMismatch;
     if (!form.ifscCode.trim()) errors.ifscCode = LANG.common.required;
-    if (!/^\d{12}$/.test(form.aadharNumber.replace(/\s/g, ""))) errors.aadharNumber = LANG.bank.invalidAadhar;
     if (!PAN_PATTERN.test(form.panNumber.toUpperCase())) errors.panNumber = LANG.bank.invalidPan;
 
-    const aadharFileError = aadharDocument
-      ? validateFile(aadharDocument)
-      : bank?.aadharDocumentUrl
-        ? null
-        : LANG.bank.documentRequired;
-    if (aadharFileError) errors.aadharDocument = aadharFileError;
-
-    const panFileError = panDocument
-      ? validateFile(panDocument)
-      : bank?.panDocumentUrl
-        ? null
-        : LANG.bank.documentRequired;
+    const panFileError = panDocument ? validateFile(panDocument) : null;
     if (panFileError) errors.panDocument = panFileError;
 
     setFieldErrors(errors);
@@ -273,9 +258,7 @@ export default function BankDetails() {
         accountNumber: form.accountNumber.trim(),
         ifscCode: form.ifscCode.trim().toUpperCase(),
         accountType: form.accountType,
-        aadharNumber: form.aadharNumber.replace(/\s/g, ""),
         panNumber: form.panNumber.toUpperCase(),
-        ...(aadharDocument ? { aadharDocument } : {}),
         ...(panDocument ? { panDocument } : {}),
       });
     },
@@ -425,46 +408,6 @@ export default function BankDetails() {
 
               <div>
                 <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                  {LANG.bank.aadharNumber} <span className="text-destructive">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  inputMode="numeric"
-                  maxLength={12}
-                  placeholder={LANG.bank.aadharPlaceholder}
-                  value={form.aadharNumber}
-                  onChange={(e) => setForm({ ...form, aadharNumber: e.target.value.replace(/\D/g, "").slice(0, 12) })}
-                  className={`w-full mt-1.5 px-3 py-3 rounded-xl border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all tabular-nums ${
-                    fieldErrors.aadharNumber ? "border-destructive/50" : "border-input"
-                  }`}
-                />
-                {fieldErrors.aadharNumber && (
-                  <p className="text-[10px] text-destructive mt-1">{fieldErrors.aadharNumber}</p>
-                )}
-              </div>
-
-              <DocumentUploadField
-                label={LANG.bank.aadharDocument}
-                file={aadharDocument}
-                existingUrl={bank?.aadharDocumentUrl}
-                onChange={(file) => {
-                  setAadharDocument(file);
-                  if (file) {
-                    const err = validateFile(file);
-                    setFieldErrors((prev) => {
-                      const next = { ...prev };
-                      if (err) next.aadharDocument = err;
-                      else delete next.aadharDocument;
-                      return next;
-                    });
-                  }
-                }}
-                error={fieldErrors.aadharDocument}
-              />
-
-              <div>
-                <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
                   {LANG.bank.panNumber} <span className="text-destructive">*</span>
                 </label>
                 <input
@@ -487,17 +430,16 @@ export default function BankDetails() {
                 label={LANG.bank.panDocument}
                 file={panDocument}
                 existingUrl={bank?.panDocumentUrl}
+                required={false}
                 onChange={(file) => {
                   setPanDocument(file);
-                  if (file) {
-                    const err = validateFile(file);
-                    setFieldErrors((prev) => {
-                      const next = { ...prev };
-                      if (err) next.panDocument = err;
-                      else delete next.panDocument;
-                      return next;
-                    });
-                  }
+                  const err = file ? validateFile(file) : null;
+                  setFieldErrors((prev) => {
+                    const next = { ...prev };
+                    if (err) next.panDocument = err;
+                    else delete next.panDocument;
+                    return next;
+                  });
                 }}
                 error={fieldErrors.panDocument}
               />
@@ -598,12 +540,6 @@ export default function BankDetails() {
                 <span className="text-muted-foreground">{LANG.bank.accountType}</span>
                 <span className="font-semibold">{accountTypeDisplay(bank.accountType)}</span>
               </div>
-              {bank.aadharNumber && (
-                <div className="flex items-center justify-between text-[11px]">
-                  <span className="text-muted-foreground">{LANG.bank.aadhar}</span>
-                  <span className="font-semibold tabular-nums">{maskId(bank.aadharNumber)}</span>
-                </div>
-              )}
               {bank.panNumber && (
                 <div className="flex items-center justify-between text-[11px]">
                   <span className="text-muted-foreground">{LANG.bank.pan}</span>
@@ -618,17 +554,10 @@ export default function BankDetails() {
               )}
             </div>
 
-            {(bank.aadharDocumentUrl || bank.panDocumentUrl) && (
+            {bank.panDocumentUrl && (
               <div className="mt-4 pt-3 border-t border-border/50 space-y-2">
                 <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">{LANG.common.documents}</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {bank.aadharDocumentUrl && (
-                    <DocumentPreview label={LANG.bank.aadhar} url={resolveUploadUrl(bank.aadharDocumentUrl)!} />
-                  )}
-                  {bank.panDocumentUrl && (
-                    <DocumentPreview label={LANG.bank.pan} url={resolveUploadUrl(bank.panDocumentUrl)!} />
-                  )}
-                </div>
+                <DocumentPreview label={LANG.bank.pan} url={resolveUploadUrl(bank.panDocumentUrl)!} />
               </div>
             )}
           </div>

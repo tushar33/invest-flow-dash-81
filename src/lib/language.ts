@@ -251,7 +251,7 @@ export const LANG = {
     requiredBannerDescription: "You must add your account details before requesting a redemption.",
     addAccountTitle: "Add Account",
     updateAccountTitle: "Update Account",
-    formHint: "All fields are mandatory. Please enter details exactly as per your records.",
+    formHint: "Required fields are marked with *. PAN document upload is optional. Enter details exactly as per your records.",
     saveAccountDetails: "Save Account Details",
     accountHolderName: "Account Holder Name",
     accountHolderNamePlaceholder: "Full name as per bank records",
