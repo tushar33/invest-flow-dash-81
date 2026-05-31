@@ -443,6 +443,12 @@ export const LANG = {
     rewardPercentage: "Reward Percentage",
     assignPlan: "Assign Plan",
     assignPlanTo: (name: string) => `Assign a new plan to ${name}`,
+    formattedAs: "Formatted as",
+    amountInWords: "Amount In Words",
+    selectedPlan: "Selected Plan",
+    planSummary: "Plan Summary",
+    rewardPlanName: (pct: number) => `${pct}% Reward Plan`,
+    selectPlanToPreview: "Select a reward percentage to preview the plan",
   },
 
   wallet: {

@@ -5,7 +5,7 @@ import { useUrlFilters } from "@/hooks/useUrlFilters";
 import { Eye, Plus, BookOpen, Landmark, Check, X, ExternalLink, FileText, FlaskConical } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { admin as adminApi, bankVerificationStatusLabel, normalizeBankVerificationStatus, resolveUploadUrl } from "@/lib/api";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Textarea } from "@/components/ui/textarea";
 import { StatusBadge } from "@/components/StatusBadge";
 import { toast } from "@/hooks/use-toast";
-import { formatCredits } from "@/lib/format";
+import { formatCredits, formatIndianNumber, amountInIndianWords, parseAmountInput } from "@/lib/format";
 import { LANG, FILTER_OPTIONS, autoPayModeLabel, roleLabel, accountTypeDisplay } from "@/lib/language";
 
 const AUTO_PAY_MODES = ["NONE", "HALF", "FULL"] as const;
@@ -258,6 +258,94 @@ function VerifyBankDetailsModal({
         )}
       </DialogContent>
     </Dialog>
+  );
+}
+
+function AssignPlanForm({
+  pkgAmount,
+  onAmountChange,
+  roiPct,
+  onRoiChange,
+}: {
+  pkgAmount: string;
+  onAmountChange: (value: string) => void;
+  roiPct: string;
+  onRoiChange: (value: string) => void;
+}) {
+  const parsedAmount = useMemo(() => parseAmountInput(pkgAmount), [pkgAmount]);
+  const formattedAmount = parsedAmount != null ? formatIndianNumber(parsedAmount) : "";
+  const wordsAmount = parsedAmount != null ? amountInIndianWords(parsedAmount) : "";
+  const selectedPlanName = roiPct ? LANG.plans.rewardPlanName(Number(roiPct)) : null;
+  const showSummary = parsedAmount != null && parsedAmount > 0;
+
+  return (
+    <div className="space-y-4 py-2">
+      <div className="space-y-2">
+        <Label htmlFor="assign-amount">{LANG.plans.contributionAmount}</Label>
+        <Input
+          id="assign-amount"
+          type="number"
+          min={0}
+          placeholder={LANG.plans.contributionPlaceholder}
+          value={pkgAmount}
+          onChange={(e) => onAmountChange(e.target.value)}
+          className="tabular-nums"
+        />
+        {showSummary && (
+          <div className="space-y-0.5 pt-0.5">
+            <p className="text-xs text-muted-foreground">
+              {LANG.plans.formattedAs}:{" "}
+              <span className="font-semibold tabular-nums text-foreground">{formattedAmount}</span>
+            </p>
+            <p className="text-sm font-semibold text-accent">{wordsAmount}</p>
+          </div>
+        )}
+      </div>
+
+      <div className="space-y-2">
+        <Label>{LANG.plans.rewardPercentage}</Label>
+        <Select value={roiPct} onValueChange={onRoiChange}>
+          <SelectTrigger><SelectValue placeholder={LANG.plans.selectRewardPercent} /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="5">5%</SelectItem>
+            <SelectItem value="7">7%</SelectItem>
+            <SelectItem value="10">10%</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {showSummary && (
+        <div className="rounded-xl border border-border/70 bg-gradient-to-br from-muted/40 to-muted/20 p-4 shadow-sm space-y-3">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            {LANG.plans.planSummary}
+          </p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-1">
+              <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                {LANG.plans.contributionAmount}
+              </p>
+              <p className="text-lg font-bold tabular-nums">{formattedAmount}</p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                {LANG.plans.amountInWords}
+              </p>
+              <p className="text-base font-semibold text-accent leading-snug">{wordsAmount}</p>
+            </div>
+          </div>
+          <div className="pt-2 border-t border-border/50 space-y-1">
+            <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+              {LANG.plans.selectedPlan}
+            </p>
+            <p className="text-sm font-semibold">
+              {selectedPlanName ?? (
+                <span className="text-muted-foreground font-normal">{LANG.plans.selectPlanToPreview}</span>
+              )}
+            </p>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -515,28 +603,17 @@ export default function AdminUsers() {
 
       {/* Assign Plan Modal */}
       <Dialog open={assignOpen} onOpenChange={setAssignOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>{LANG.admin.assignPlanAction}</DialogTitle>
             <DialogDescription>{LANG.plans.assignPlanTo(selectedUserName)}</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-2">
-            <div className="space-y-2">
-              <Label>{LANG.plans.contributionAmount}</Label>
-              <Input type="number" placeholder={LANG.plans.contributionPlaceholder} value={pkgAmount} onChange={(e) => setPkgAmount(e.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label>{LANG.plans.rewardPercentage}</Label>
-              <Select value={roiPct} onValueChange={setRoiPct}>
-                <SelectTrigger><SelectValue placeholder={LANG.plans.selectRewardPercent} /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="5">5%</SelectItem>
-                  <SelectItem value="7">7%</SelectItem>
-                  <SelectItem value="10">10%</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+          <AssignPlanForm
+            pkgAmount={pkgAmount}
+            onAmountChange={setPkgAmount}
+            roiPct={roiPct}
+            onRoiChange={setRoiPct}
+          />
           <DialogFooter className="flex-col sm:flex-row gap-2">
             <Button
               type="button"
