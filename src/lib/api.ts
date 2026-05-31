@@ -551,8 +551,11 @@ export interface SimulationResult {
     cycleMode: CycleModeValue;
     daysBetweenCycles: number;
     monthlyRoiAmount: number;
+    monthlyPrincipalDeduction: number;
     totalRoiPayout: number;
     totalPrincipalReturn: number;
+    totalAutoPayProjected: number;
+    walletNetAfterAutoPay: number;
     maturityDate: string | null;
     initialNextRoiDate: string | null;
   };

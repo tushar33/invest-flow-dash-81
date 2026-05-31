@@ -1,5 +1,7 @@
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { AdminLayout } from "@/components/AdminLayout";
+import { StatCard } from "@/components/StatCard";
 import { PageHeader } from "@/components/ui/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -22,7 +24,17 @@ import {
 } from "@/components/ui/table";
 import { EmptyState } from "@/components/ui/empty-state";
 import { CycleModeBadge } from "@/components/CycleModeBadge";
-import { FlaskConical, Loader2, AlertTriangle } from "lucide-react";
+import {
+  FlaskConical,
+  Loader2,
+  AlertTriangle,
+  CheckCircle2,
+  CalendarDays,
+  Gift,
+  CreditCard,
+  Wallet,
+  RotateCcw,
+} from "lucide-react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   admin as adminApi,
@@ -33,24 +45,69 @@ import { LANG } from "@/lib/language";
 import {
   DEFAULT_CYCLE_MODE,
   DEFAULT_DAYS_BETWEEN_CYCLES,
+  cycleModeDescription,
   cycleModeLabel,
   formatCycleDate,
   parseCycleMode,
   type CycleMode,
 } from "@/lib/cycle-schedule";
 import { formatCredits } from "@/lib/format";
+import { useToast } from "@/hooks/use-toast";
 
 function todayIsoDate(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
+function buildPayload(
+  principalAmount: string,
+  roiPercentage: string,
+  startDate: string,
+  cycleMode: CycleMode,
+  daysBetweenCycles: string,
+  autoPayMode: SimulateInput["autoPayMode"],
+): SimulateInput | null {
+  const principal = Number(principalAmount);
+  const roi = Number(roiPercentage);
+  if (!Number.isFinite(principal) || principal <= 0) return null;
+  if (!Number.isFinite(roi)) return null;
+
+  const payload: SimulateInput = {
+    principalAmount: principal,
+    roiPercentage: roi,
+    startDate: new Date(`${startDate}T00:00:00.000Z`).toISOString(),
+    cycleMode,
+    autoPayMode,
+  };
+
+  if (cycleMode === "FIXED_DAYS") {
+    const days = Number(daysBetweenCycles);
+    if (!Number.isFinite(days) || days < 1) return null;
+    payload.daysBetweenCycles = days;
+  }
+
+  return payload;
+}
+
 export default function AdminSimulator() {
-  const [principalAmount, setPrincipalAmount] = useState("500000");
-  const [roiPercentage, setRoiPercentage] = useState("10");
+  const { toast } = useToast();
+  const [searchParams] = useSearchParams();
+  const previewUserName = searchParams.get("userName") ?? "";
+  const fromAssign = searchParams.get("from") === "assign";
+  const autoRanRef = useRef(false);
+  const settingsAppliedRef = useRef(false);
+
+  const [principalAmount, setPrincipalAmount] = useState(
+    () => searchParams.get("principal") ?? "500000",
+  );
+  const [roiPercentage, setRoiPercentage] = useState(
+    () => searchParams.get("roi") ?? "10",
+  );
   const [startDate, setStartDate] = useState(todayIsoDate());
   const [cycleMode, setCycleMode] = useState<CycleMode>(DEFAULT_CYCLE_MODE);
   const [daysBetweenCycles, setDaysBetweenCycles] = useState(String(DEFAULT_DAYS_BETWEEN_CYCLES));
-  const [autoPayMode, setAutoPayMode] = useState<SimulateInput["autoPayMode"]>("NONE");
+  const [autoPayMode, setAutoPayMode] = useState<SimulateInput["autoPayMode"]>(
+    () => (searchParams.get("autoPay") as SimulateInput["autoPayMode"]) ?? "NONE",
+  );
   const [result, setResult] = useState<SimulationResult | null>(null);
 
   const { data: settings = [] } = useQuery({
@@ -64,32 +121,81 @@ export default function AdminSimulator() {
 
   const settingsMode = parseCycleMode(settings.find((s) => s.key === "cycleMode")?.value);
 
+  useEffect(() => {
+    if (settings.length === 0 || settingsAppliedRef.current) return;
+    settingsAppliedRef.current = true;
+    setCycleMode(settingsMode);
+    setDaysBetweenCycles(settingsDays);
+  }, [settings.length, settingsMode, settingsDays]);
+
   const mutation = useMutation({
     mutationFn: (payload: SimulateInput) => adminApi.simulate(payload),
     onSuccess: (data) => setResult(data),
   });
 
-  function handleRun() {
-    const principal = Number(principalAmount);
-    const roi = Number(roiPercentage);
-    if (!Number.isFinite(principal) || principal <= 0) return;
-    if (!Number.isFinite(roi)) return;
+  const runSimulation = useCallback(
+    (payload: SimulateInput) => mutation.mutate(payload),
+    [mutation.mutate],
+  );
 
-    const payload: SimulateInput = {
-      principalAmount: principal,
-      roiPercentage: roi,
-      startDate: new Date(`${startDate}T00:00:00.000Z`).toISOString(),
+  const handleRun = useCallback(() => {
+    const payload = buildPayload(
+      principalAmount,
+      roiPercentage,
+      startDate,
       cycleMode,
+      daysBetweenCycles,
       autoPayMode,
-    };
-
-    if (cycleMode === "FIXED_DAYS") {
-      const days = Number(daysBetweenCycles);
-      if (!Number.isFinite(days) || days < 1) return;
-      payload.daysBetweenCycles = days;
+    );
+    if (!payload) {
+      toast({
+        title: LANG.common.validationError,
+        description: LANG.simulator.invalidPrincipal,
+        variant: "destructive",
+      });
+      return;
     }
+    runSimulation(payload);
+  }, [
+    principalAmount,
+    roiPercentage,
+    startDate,
+    cycleMode,
+    daysBetweenCycles,
+    autoPayMode,
+    runSimulation,
+    toast,
+  ]);
 
-    mutation.mutate(payload);
+  useEffect(() => {
+    if (!fromAssign || autoRanRef.current || settings.length === 0) return;
+    const payload = buildPayload(
+      principalAmount,
+      roiPercentage,
+      startDate,
+      settingsMode,
+      settingsDays,
+      autoPayMode,
+    );
+    if (payload) {
+      autoRanRef.current = true;
+      runSimulation(payload);
+    }
+  }, [
+    fromAssign,
+    settings.length,
+    settingsMode,
+    settingsDays,
+    principalAmount,
+    roiPercentage,
+    startDate,
+    autoPayMode,
+    runSimulation,
+  ]);
+
+  function applySettingsDefaults() {
+    setCycleMode(settingsMode);
+    setDaysBetweenCycles(settingsDays);
   }
 
   const isFixedDays = cycleMode === "FIXED_DAYS";
@@ -103,12 +209,21 @@ export default function AdminSimulator() {
           subtitle={LANG.simulator.subtitle}
         />
 
+        {previewUserName && (
+          <div className="rounded-lg border border-accent/30 bg-accent/5 px-4 py-3 space-y-1">
+            <p className="text-sm font-medium">{LANG.simulator.previewForUser(previewUserName)}</p>
+            <p className="text-xs text-muted-foreground">{LANG.simulator.previewHint}</p>
+          </div>
+        )}
+
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">{LANG.simulator.title}</CardTitle>
             <CardDescription>
-              Defaults from settings: {cycleModeLabel(settingsMode)}
+              System defaults: {cycleModeLabel(settingsMode)}
               {settingsMode === "FIXED_DAYS" ? ` · ${settingsDays} days` : ""}
+              {" · "}
+              {cycleModeDescription(settingsMode, Number(settingsDays))}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-5">
@@ -184,14 +299,20 @@ export default function AdminSimulator() {
               </div>
             </div>
 
-            <Button onClick={handleRun} disabled={mutation.isPending} className="w-full sm:w-auto">
-              {mutation.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <FlaskConical className="h-4 w-4" />
-              )}
-              {mutation.isPending ? LANG.simulator.running : LANG.simulator.run}
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button onClick={handleRun} disabled={mutation.isPending}>
+                {mutation.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <FlaskConical className="h-4 w-4" />
+                )}
+                {mutation.isPending ? LANG.simulator.running : LANG.simulator.run}
+              </Button>
+              <Button type="button" variant="outline" onClick={applySettingsDefaults}>
+                <RotateCcw className="h-4 w-4" />
+                {LANG.simulator.useSettingsDefaults}
+              </Button>
+            </div>
 
             {mutation.isError && (
               <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
@@ -220,6 +341,12 @@ export default function AdminSimulator() {
           <div className="space-y-4">
             <div className="flex flex-wrap items-center gap-2">
               <CycleModeBadge mode={result.summary.cycleMode} />
+              {result.validation.passed ? (
+                <span className="inline-flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400">
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  {LANG.simulator.validationPassed}
+                </span>
+              ) : null}
               {result.summary.initialNextRoiDate && (
                 <span className="text-xs text-muted-foreground">
                   {LANG.plans.nextCycleDate}: {formatCycleDate(result.summary.initialNextRoiDate)}
@@ -240,6 +367,39 @@ export default function AdminSimulator() {
               </div>
             )}
 
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              <StatCard
+                label={LANG.simulator.totalCycles}
+                value={String(result.summary.totalCycles)}
+                icon={CalendarDays}
+              />
+              <StatCard
+                label={LANG.simulator.monthlyBenefit}
+                value={formatCredits(result.summary.monthlyRoiAmount)}
+                icon={Gift}
+              />
+              <StatCard
+                label={LANG.simulator.maturityDate}
+                value={formatCycleDate(result.summary.maturityDate)}
+                icon={CalendarDays}
+              />
+              <StatCard
+                label={LANG.simulator.totalRewards}
+                value={formatCredits(result.summary.totalRoiPayout)}
+                icon={Gift}
+              />
+              <StatCard
+                label={LANG.simulator.totalAutoPay}
+                value={formatCredits(result.summary.totalAutoPayProjected ?? 0)}
+                icon={CreditCard}
+              />
+              <StatCard
+                label={LANG.simulator.walletAfterAutoPay}
+                value={formatCredits(result.summary.walletNetAfterAutoPay ?? 0)}
+                icon={Wallet}
+              />
+            </div>
+
             <Card>
               <CardContent className="p-0">
                 <div className="overflow-x-auto">
@@ -249,6 +409,8 @@ export default function AdminSimulator() {
                         <TableHead>{LANG.simulator.month}</TableHead>
                         <TableHead>{LANG.cycle.cycleDate}</TableHead>
                         <TableHead className="text-right">{LANG.simulator.rewardCredit}</TableHead>
+                        <TableHead className="text-right">{LANG.simulator.autoPayPayout}</TableHead>
+                        <TableHead className="text-right">{LANG.simulator.walletNet}</TableHead>
                         <TableHead className="text-right">{LANG.simulator.balanceAdjustment}</TableHead>
                         <TableHead className="text-right">{LANG.simulator.remainingBalance}</TableHead>
                       </TableRow>
@@ -260,6 +422,12 @@ export default function AdminSimulator() {
                           <TableCell>{formatCycleDate(row.cycleDate ?? row.scheduledDate)}</TableCell>
                           <TableCell className="text-right tabular-nums">
                             {formatCredits(row.reward ?? row.roiAmount)}
+                          </TableCell>
+                          <TableCell className="text-right tabular-nums">
+                            {formatCredits(row.autoPay?.payoutAmount ?? 0)}
+                          </TableCell>
+                          <TableCell className="text-right tabular-nums">
+                            {formatCredits(row.walletCreditNet ?? 0)}
                           </TableCell>
                           <TableCell className="text-right tabular-nums">
                             {formatCredits(row.adjustment ?? row.principalDeduction)}

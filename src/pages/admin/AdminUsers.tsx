@@ -2,7 +2,7 @@ import { AdminLayout } from "@/components/AdminLayout";
 import { AutoPayModeBadge } from "@/components/AutoPayModeBadge";
 import { FilterBar, type FilterField } from "@/components/FilterBar";
 import { useUrlFilters } from "@/hooks/useUrlFilters";
-import { Eye, Plus, BookOpen, Landmark, Check, X, ExternalLink, FileText } from "lucide-react";
+import { Eye, Plus, BookOpen, Landmark, Check, X, ExternalLink, FileText, FlaskConical } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { admin as adminApi, bankVerificationStatusLabel, normalizeBankVerificationStatus, resolveUploadUrl } from "@/lib/api";
 import { useState } from "react";
@@ -282,7 +282,22 @@ export default function AdminUsers() {
   const [selectedUserId, setSelectedUserId] = useState("");
   const [selectedUserName, setSelectedUserName] = useState("");
   const [pkgAmount, setPkgAmount] = useState("");
+  const [selectedUserAutoPay, setSelectedUserAutoPay] = useState<AutoPayModeValue>("NONE");
+
   const [roiPct, setRoiPct] = useState("");
+
+  const handlePreviewSchedule = () => {
+    if (!pkgAmount || !roiPct) return;
+    const params = new URLSearchParams({
+      principal: pkgAmount,
+      roi: roiPct,
+      autoPay: selectedUserAutoPay,
+      userName: selectedUserName,
+      from: "assign",
+    });
+    setAssignOpen(false);
+    navigate(`/admin/simulator?${params.toString()}`);
+  };
 
   const assignMutation = useMutation({
     mutationFn: () =>
@@ -323,9 +338,10 @@ export default function AdminUsers() {
     autopayMutation.mutate({ userId, autoPayMode });
   };
 
-  const openAssignModal = (userId: string, userName: string) => {
+  const openAssignModal = (userId: string, userName: string, autoPayMode?: string) => {
     setSelectedUserId(userId);
     setSelectedUserName(userName);
+    setSelectedUserAutoPay((autoPayMode as AutoPayModeValue) ?? "NONE");
     setPkgAmount("");
     setRoiPct("");
     setAssignOpen(true);
@@ -407,7 +423,7 @@ export default function AdminUsers() {
                     )}
                   </div>
                   <div className="flex flex-col gap-2 mt-3 pt-3 border-t border-border">
-                    <Button size="sm" variant="outline" className="w-full justify-start text-xs" onClick={() => openAssignModal(u.id, u.name)}>
+                    <Button size="sm" variant="outline" className="w-full justify-start text-xs" onClick={() => openAssignModal(u.id, u.name, u.autoPayMode)}>
                       <Plus className="h-3.5 w-3.5 mr-1" /> {LANG.admin.assignPlanAction}
                     </Button>
                     <Button size="sm" variant="outline" className="w-full justify-start text-xs" onClick={() => navigate(`/admin/packages?userId=${u.id}`)}>
@@ -471,7 +487,7 @@ export default function AdminUsers() {
                       <td className="p-4"><span className="text-[10px] font-bold bg-accent/15 text-accent px-2 py-0.5 rounded-full">{roleLabel(u.role)}</span></td>
                       <td className="p-4 text-right">
                         <div className="flex flex-col gap-2 w-[160px] ml-auto">
-                          <Button size="sm" variant="outline" className="text-xs justify-center w-full" onClick={() => openAssignModal(u.id, u.name)}>
+                          <Button size="sm" variant="outline" className="text-xs justify-center w-full" onClick={() => openAssignModal(u.id, u.name, u.autoPayMode)}>
                             <Plus className="h-3.5 w-3.5 mr-1" /> {LANG.admin.assignPlanAction}
                           </Button>
                           <Button size="sm" variant="outline" className="text-xs justify-center w-full" onClick={() => navigate(`/admin/packages?userId=${u.id}`)}>
@@ -521,14 +537,26 @@ export default function AdminUsers() {
               </Select>
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setAssignOpen(false)}>{LANG.common.cancel}</Button>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
             <Button
-              onClick={() => assignMutation.mutate()}
-              disabled={!pkgAmount || !roiPct || assignMutation.isPending}
+              type="button"
+              variant="secondary"
+              onClick={handlePreviewSchedule}
+              disabled={!pkgAmount || !roiPct}
+              className="w-full sm:w-auto"
             >
-              {assignMutation.isPending ? LANG.common.assigning : LANG.plans.assignPlan}
+              <FlaskConical className="h-4 w-4" />
+              {LANG.simulator.previewSchedule}
             </Button>
+            <div className="flex gap-2 w-full sm:w-auto sm:ml-auto">
+              <Button variant="outline" onClick={() => setAssignOpen(false)}>{LANG.common.cancel}</Button>
+              <Button
+                onClick={() => assignMutation.mutate()}
+                disabled={!pkgAmount || !roiPct || assignMutation.isPending}
+              >
+                {assignMutation.isPending ? LANG.common.assigning : LANG.plans.assignPlan}
+              </Button>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>

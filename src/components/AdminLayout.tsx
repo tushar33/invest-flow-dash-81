@@ -1,7 +1,7 @@
 import { ReactNode, useState } from "react";
 import { DesktopSidebar } from "./DesktopSidebar";
 import { NavLink as RouterNavLink, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Users, Package, CreditCard, TrendingUp, Settings, User, LogOut } from "lucide-react";
+import { LayoutDashboard, Users, Package, CreditCard, TrendingUp, Settings, User, LogOut, FlaskConical } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
@@ -13,7 +13,7 @@ const adminMobileNav = [
   { to: "/admin", icon: LayoutDashboard, label: LANG.nav.home },
   { to: "/admin/users", icon: Users, label: LANG.nav.users },
   { to: "/admin/packages", icon: Package, label: LANG.nav.packages },
-  { to: "/admin/payouts", icon: CreditCard, label: LANG.nav.payouts },
+  { to: "/admin/simulator", icon: FlaskConical, label: LANG.nav.simulator },
   { to: "/admin/settings", icon: Settings, label: LANG.nav.settings },
 ];
 

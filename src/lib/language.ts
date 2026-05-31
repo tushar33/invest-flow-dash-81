@@ -367,7 +367,7 @@ export const LANG = {
 
   simulator: {
     title: "Reward Simulator",
-    subtitle: "Preview reward schedules using backend cycle calculations.",
+    subtitle: "Preview reward schedules before assigning a plan to a member.",
     run: "Run Simulation",
     running: "Simulating…",
     emptyTitle: "No simulation yet",
@@ -381,8 +381,21 @@ export const LANG = {
     rewardCredit: "Reward Credit",
     balanceAdjustment: "Balance Adjustment",
     remainingBalance: "Remaining Balance",
+    autoPayPayout: "Auto Redemption",
+    walletNet: "Wallet Credit",
     validationWarnings: "Validation warnings",
     validationPassed: "All validation checks passed.",
+    previewForUser: (name: string) => `Previewing schedule for ${name}`,
+    previewHint: "Review the cycle schedule below, then assign the plan from Users when ready.",
+    totalCycles: "Total Cycles",
+    monthlyBenefit: "Monthly Benefit",
+    maturityDate: "Maturity Date",
+    totalRewards: "Total Rewards",
+    totalAutoPay: "Total Auto Redemption",
+    walletAfterAutoPay: "Wallet After Auto Redemption",
+    useSettingsDefaults: "Use system defaults",
+    invalidPrincipal: "Enter a valid contribution amount greater than zero.",
+    previewSchedule: "Preview Schedule",
   },
 
   plans: {
