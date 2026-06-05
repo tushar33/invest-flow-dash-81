@@ -28,6 +28,16 @@ export function clearToken() {
   localStorage.removeItem("auth_token");
 }
 
+/** Clears auth and notifies AuthContext (see auth:session-expired listener). */
+export function handleSessionExpired() {
+  clearToken();
+  window.dispatchEvent(new Event("auth:session-expired"));
+}
+
+function isAuthEndpoint(path: string): boolean {
+  return path.startsWith("/auth/login") || path.startsWith("/auth/register");
+}
+
 /** Build query string from params object, skipping undefined/null/empty values */
 function buildQs(params?: Record<string, string | number | undefined | null>): string {
   if (!params) return "";
@@ -63,6 +73,11 @@ async function request<T>(
 
   const res = await fetch(`${API_BASE}${path}`, { ...fetchOptions, headers });
 
+  if (res.status === 401 && !isAuthEndpoint(path)) {
+    handleSessionExpired();
+    throw new Error(LANG.auth.sessionExpired);
+  }
+
   if (!res.ok) {
     if (nullOn404 && res.status === 404) return null as T;
     const body = await res.json().catch(() => ({ message: res.statusText }));
@@ -82,6 +97,11 @@ async function uploadRequest<T>(path: string, formData: FormData, method = "POST
   }
 
   const res = await fetch(`${API_BASE}${path}`, { method, body: formData, headers });
+
+  if (res.status === 401 && !isAuthEndpoint(path)) {
+    handleSessionExpired();
+    throw new Error(LANG.auth.sessionExpired);
+  }
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({ message: res.statusText }));
@@ -486,6 +506,21 @@ export interface AdminRoiLogFilters {
   limit?: number;
 }
 
+export type RoiRunType = "MANUAL" | "CRON";
+export type RoiProcessingStatus = "PROCESSING" | "SUCCESS" | "FAILED";
+
+export interface RoiProcessingLog {
+  id: string;
+  runType: RoiRunType;
+  startedAt: string;
+  completedAt: string | null;
+  packagesProcessed: number;
+  roiCreditsCreated: number;
+  autoPayoutsCreated: number;
+  errorsCount: number;
+  status: RoiProcessingStatus;
+}
+
 export interface AdminWalletFilters {
   type?: string;
   from?: string;
@@ -576,9 +611,8 @@ export const admin = {
       (res) => res.data,
     );
   },
-  roiLogs: (filters?: AdminRoiLogFilters) => {
-    return request<any>(`/admin/roi-logs${buildQs(filters as any)}`);
-  },
+  roiLogs: (filters?: AdminRoiLogFilters) =>
+    request<PaginatedResponse<RoiProcessingLog[]>>(`/admin/roi-logs${buildQs(filters as any)}`),
   processPayout: (id: string, data: { status: string; rejectionReason?: string }) =>
     request<PayoutRequest>(`/payouts/${id}/process`, { method: "PATCH", body: JSON.stringify(data) }),
   assignPackage: (data: { userId: string; principalAmount: number; roiPercentage: number }) =>

@@ -6,6 +6,7 @@ import { Wallet, Gift, TrendingUp, Clock, ArrowDownLeft, ArrowUpRight, ChevronRi
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
 import { wallet as walletApi, packages as packagesApi, payouts as payoutsApi, bankDetailsQueryOptions, normalizeBankVerificationStatus } from "@/lib/api";
 import { formatCredits, formatCreditsSigned, formatTransactionLabel } from "@/lib/format";
 import { LANG, greeting } from "@/lib/language";
@@ -14,10 +15,29 @@ import { filterUserVisibleTransactions } from "@/lib/wallet-transactions";
 
 export default function Dashboard() {
   const { user } = useAuth();
-  const { data: walletData } = useQuery({ queryKey: ["wallet"], queryFn: () => walletApi.get() });
-  const { data: pkgs } = useQuery({ queryKey: ["packages"], queryFn: () => packagesApi.list() });
-  const { data: payoutsList } = useQuery({ queryKey: ["payouts"], queryFn: () => payoutsApi.list() });
-  const { data: bank } = useQuery(bankDetailsQueryOptions(user?.id));
+  const walletQuery = useQuery({ queryKey: ["wallet"], queryFn: () => walletApi.get() });
+  const packagesQuery = useQuery({ queryKey: ["packages"], queryFn: () => packagesApi.list() });
+  const payoutsQuery = useQuery({ queryKey: ["payouts"], queryFn: () => payoutsApi.list() });
+  const bankQuery = useQuery(bankDetailsQueryOptions(user?.id));
+
+  const { data: walletData } = walletQuery;
+  const { data: pkgs } = packagesQuery;
+  const { data: payoutsList } = payoutsQuery;
+  const { data: bank } = bankQuery;
+
+  const isLoading =
+    walletQuery.isLoading || packagesQuery.isLoading || payoutsQuery.isLoading || bankQuery.isLoading;
+  const isError =
+    walletQuery.isError || packagesQuery.isError || payoutsQuery.isError || bankQuery.isError;
+  const error =
+    walletQuery.error ?? packagesQuery.error ?? payoutsQuery.error ?? bankQuery.error;
+
+  const refetchAll = () => {
+    void walletQuery.refetch();
+    void packagesQuery.refetch();
+    void payoutsQuery.refetch();
+    void bankQuery.refetch();
+  };
 
   const balance = walletData?.availableBalance ?? 0;
   const totalContribution = pkgs?.reduce((s, p) => s + Number(p.principalAmount), 0) ?? 0;
@@ -39,6 +59,31 @@ export default function Dashboard() {
   const redemptionReady = bankVerificationStatus === "verified";
   const canRequestRedemption = balance > 0;
   const recentTx = filterUserVisibleTransactions(walletData?.transactions ?? []).slice(0, 4);
+
+  if (isLoading) {
+    return (
+      <UserLayout>
+        <div className="flex justify-center py-24">
+          <div className="h-8 w-8 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+        </div>
+      </UserLayout>
+    );
+  }
+
+  if (isError) {
+    return (
+      <UserLayout>
+        <div className="flex flex-col items-center justify-center gap-3 py-24 text-center">
+          <p className="text-sm text-destructive">
+            {error instanceof Error ? error.message : LANG.dashboard.loadFailed}
+          </p>
+          <Button variant="outline" size="sm" onClick={refetchAll}>
+            {LANG.common.retry}
+          </Button>
+        </div>
+      </UserLayout>
+    );
+  }
 
   return (
     <UserLayout>

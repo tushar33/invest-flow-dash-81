@@ -62,7 +62,7 @@ export default function Packages() {
             </div>
             <div className="text-right">
               <p className="text-[11px] uppercase tracking-widest opacity-80 font-semibold">{LANG.dashboard.activePlans}</p>
-              <p className="text-2xl font-bold mt-1 text-accent tabular-nums">{activeCount}</p>
+              <p className="text-2xl font-bold mt-1 tabular-nums">{activeCount}</p>
             </div>
           </div>
         </GradientCard>

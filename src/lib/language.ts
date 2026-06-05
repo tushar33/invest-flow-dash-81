@@ -159,6 +159,7 @@ export const LANG = {
     closed: "Closed",
     success: "Success",
     failed: "Failed",
+    processing: "Processing",
     verified: "Verified",
     none: "None",
     half: "Half",
@@ -214,9 +215,11 @@ export const LANG = {
     ],
     enterIdentifier: "Enter your email, phone, or username",
     requestFailed: (status: number) => `Request failed (${status})`,
+    sessionExpired: "Your session has expired. Please sign in again.",
   },
 
   dashboard: {
+    loadFailed: "Failed to load dashboard data",
     goodMorning: "Good morning",
     goodAfternoon: "Good afternoon",
     goodEvening: "Good evening",
@@ -342,6 +345,12 @@ export const LANG = {
     cyclesSuffix: "cycles",
     cyclesProgress: (completed: number, total: number) => `${completed}/${total} cycles`,
     noneFound: "No reward logs found",
+    lastRun: (when: string) => `Last run: ${when}`,
+    runToday: (time: string) => `Today ${time}`,
+    runLogPackagesCredited: (count: number) =>
+      count === 1 ? "1 package credited" : `${count} packages credited`,
+    runLogTriggeredByAdmin: "Triggered by admin",
+    runLogErrors: (count: number) => (count === 1 ? "1 error" : `${count} errors`),
     percent: "Reward %",
     engine: "Reward Engine",
     engineDescription: "Configure how reward cycles are scheduled for newly assigned plans.",
@@ -570,6 +579,9 @@ export const LANG = {
     returnHome: "Return to Home",
     blankAppTitle: "Welcome to Your Blank App",
     blankAppDescription: "Start building your amazing project here!",
+    unexpectedTitle: "Something went wrong",
+    unexpectedDescription: "An unexpected error occurred. Please refresh the page or try again later.",
+    refreshPage: "Refresh page",
   },
 
   transaction: {
@@ -867,6 +879,7 @@ export function directionLabel(direction: string): string {
 export function runStatusLabel(status: string): string {
   if (status === "SUCCESS") return LANG.status.success;
   if (status === "FAILED") return LANG.status.failed;
+  if (status === "PROCESSING") return LANG.status.processing;
   return status;
 }
 
