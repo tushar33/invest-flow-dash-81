@@ -214,52 +214,67 @@ export default function AdminPackages() {
         ) : !filtered.length ? (
           <p className="text-center text-muted-foreground py-12">{LANG.plans.noneFound}</p>
         ) : (
-          <div className="space-y-3">
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {filtered.map((pkg) => {
               const planCycles = pkg.totalCycles ?? pkg.durationMonths ?? 1;
+              const progress = Math.min(100, (pkg.cyclesCompleted / planCycles) * 100);
               return (
-              <div key={pkg.packageId} className="bg-card rounded-xl border border-border p-4 animate-fade-in">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-lg bg-accent/10 flex items-center justify-center">
-                      <Package className="h-5 w-5 text-accent" />
+              <div key={pkg.packageId} className="group bg-card rounded-xl border border-border/70 p-3.5 hover:border-accent/40 hover:shadow-md transition-all animate-fade-in flex flex-col">
+                {/* Header */}
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="h-9 w-9 rounded-lg bg-accent/10 flex items-center justify-center shrink-0">
+                      <Package className="h-4.5 w-4.5 text-accent" />
                     </div>
-                    <div>
-                      <p className="font-semibold text-sm">{pkg.userName}</p>
-                      <p className="text-lg font-bold">{formatCredits(Number(pkg.principalAmount))}</p>
+                    <div className="min-w-0">
+                      <p className="font-medium text-xs text-muted-foreground truncate">{pkg.userName}</p>
+                      <p className="text-base font-bold tabular-nums leading-tight">{formatCredits(Number(pkg.principalAmount))}</p>
                     </div>
                   </div>
                   <StatusBadge status={statusMap[pkg.status] || "inactive"}>{planStatusLabel(pkg.status)}</StatusBadge>
                 </div>
-                <div className="flex items-center gap-4 mt-3 pt-3 border-t border-border text-xs text-muted-foreground flex-wrap">
-                  <span>{LANG.plans.rewardLabel} {pkg.roiPercentage}%</span>
-                  <span>{LANG.plans.cyclesLabel} {pkg.cyclesCompleted}/{planCycles}</span>
-                  <span>{LANG.plans.assignedLabel} {new Date(pkg.assignedDate).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</span>
+
+                {/* Inline stats */}
+                <div className="flex items-center gap-1.5 mt-3 flex-wrap">
+                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-accent/10 text-accent border border-accent/20">
+                    {pkg.roiPercentage}% Reward
+                  </span>
+                  <span className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-muted text-muted-foreground tabular-nums">
+                    {pkg.cyclesCompleted}/{planCycles} cycles
+                  </span>
+                  <span className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-muted text-muted-foreground">
+                    {new Date(pkg.assignedDate).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "2-digit" })}
+                  </span>
                 </div>
-                <div className="mt-3">
-                  <PlanCycleDetails
-                    pkg={pkg}
-                    daysBetweenCycles={daysBetweenCycles}
-                    compact
-                  />
+
+                {/* Progress */}
+                <div className="mt-2.5 h-1 bg-muted rounded-full overflow-hidden">
+                  <div className="h-full bg-gradient-to-r from-accent to-accent/70 rounded-full transition-all" style={{ width: `${progress}%` }} />
                 </div>
-                <div className="mt-3 pt-3 border-t border-border flex flex-wrap gap-2">
-                  <Button size="sm" variant="outline" className="text-xs" onClick={() => navigate(`/wallet/ledger?userId=${pkg.userId}`)}>
-                    <BookOpen className="h-3.5 w-3.5 mr-1" /> {LANG.plans.viewLedger}
+
+                {/* Cycle details */}
+                <div className="mt-2.5">
+                  <PlanCycleDetails pkg={pkg} daysBetweenCycles={daysBetweenCycles} compact />
+                </div>
+
+                {/* Actions */}
+                <div className="mt-3 pt-3 border-t border-border/60 flex items-center gap-1 -mx-0.5">
+                  <Button size="sm" variant="ghost" className="flex-1 h-8 text-[11px] px-2" onClick={() => navigate(`/wallet/ledger?userId=${pkg.userId}`)}>
+                    <BookOpen className="h-3.5 w-3.5 mr-1" /> Ledger
                   </Button>
-                  <Button size="sm" variant="outline" className="text-xs"
+                  <Button size="sm" variant="ghost" className="flex-1 h-8 text-[11px] px-2"
                     disabled={pkg.cyclesCompleted > 0}
                     title={pkg.cyclesCompleted > 0 ? LANG.plans.cannotEditTooltip : LANG.plans.editDateTooltip}
                     onClick={() => setEditTarget(pkg)}
                   >
-                    <Calendar className="h-3.5 w-3.5 mr-1" /> {LANG.plans.editDate}
+                    <Calendar className="h-3.5 w-3.5 mr-1" /> Date
                   </Button>
-                  <Button size="sm" variant="outline" className="text-xs text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                  <Button size="sm" variant="ghost" className="flex-1 h-8 text-[11px] px-2 text-destructive hover:bg-destructive/10 hover:text-destructive"
                     disabled={pkg.status !== "ACTIVE"}
                     title={pkg.status !== "ACTIVE" ? LANG.plans.onlyActiveCancelTooltip : LANG.plans.cancelPlanTooltip}
                     onClick={() => setCancelTarget(pkg)}
                   >
-                    <XCircle className="h-3.5 w-3.5 mr-1" /> {LANG.plans.cancelPlan}
+                    <XCircle className="h-3.5 w-3.5 mr-1" /> Cancel
                   </Button>
                 </div>
               </div>
