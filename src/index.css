@@ -6,28 +6,28 @@
 
 @layer base {
   :root {
-    --background: 220 30% 98%;
-    --foreground: 224 45% 12%;
+    --background: 210 25% 98%;
+    --foreground: 222 47% 11%;
 
     --card: 0 0% 100%;
-    --card-foreground: 224 45% 12%;
+    --card-foreground: 222 47% 11%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 224 45% 12%;
+    --popover-foreground: 222 47% 11%;
 
-    --primary: 235 60% 22%;
+    --primary: 222 47% 14%;
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 240 70% 45%;
+    --primary-glow: 222 47% 25%;
 
-    --secondary: 225 25% 95%;
-    --secondary-foreground: 224 45% 12%;
+    --secondary: 210 20% 95%;
+    --secondary-foreground: 222 47% 11%;
 
-    --muted: 225 25% 94%;
-    --muted-foreground: 224 14% 42%;
+    --muted: 210 20% 94%;
+    --muted-foreground: 215 16% 42%;
 
-    --accent: 244 75% 58%;
+    --accent: 168 72% 42%;
     --accent-foreground: 0 0% 100%;
-    --accent-glow: 250 90% 70%;
+    --accent-glow: 168 80% 55%;
 
     --destructive: 0 78% 58%;
     --destructive-foreground: 0 0% 100%;
@@ -41,36 +41,36 @@
     --info: 212 92% 56%;
     --info-foreground: 0 0% 100%;
 
-    --border: 224 20% 88%;
-    --input: 224 20% 88%;
-    --ring: 244 75% 58%;
+    --border: 215 20% 88%;
+    --input: 215 20% 88%;
+    --ring: 168 72% 42%;
 
     --radius: 1rem;
 
     /* Premium gradients */
-    --gradient-hero: linear-gradient(135deg, hsl(235 60% 22%) 0%, hsl(244 65% 35%) 50%, hsl(250 80% 55%) 100%);
-    --gradient-card: linear-gradient(140deg, hsl(0 0% 100%) 0%, hsl(225 30% 98%) 100%);
-    --gradient-accent: linear-gradient(135deg, hsl(244 75% 58%) 0%, hsl(260 85% 68%) 100%);
-    --gradient-primary: linear-gradient(135deg, hsl(235 60% 22%) 0%, hsl(244 65% 38%) 100%);
-    --gradient-subtle: linear-gradient(180deg, hsl(225 30% 98%) 0%, hsl(225 25% 95%) 100%);
-    --gradient-mesh: radial-gradient(at 20% 20%, hsl(244 75% 58% / 0.18) 0px, transparent 50%),
-                     radial-gradient(at 80% 0%, hsl(260 70% 55% / 0.22) 0px, transparent 50%),
-                     radial-gradient(at 80% 80%, hsl(220 90% 60% / 0.15) 0px, transparent 50%);
+    --gradient-hero: linear-gradient(135deg, hsl(222 47% 14%) 0%, hsl(210 50% 22%) 50%, hsl(168 72% 38%) 100%);
+    --gradient-card: linear-gradient(140deg, hsl(0 0% 100%) 0%, hsl(210 25% 98%) 100%);
+    --gradient-accent: linear-gradient(135deg, hsl(168 72% 42%) 0%, hsl(180 75% 50%) 100%);
+    --gradient-primary: linear-gradient(135deg, hsl(222 47% 14%) 0%, hsl(222 47% 25%) 100%);
+    --gradient-subtle: linear-gradient(180deg, hsl(210 25% 98%) 0%, hsl(210 20% 95%) 100%);
+    --gradient-mesh: radial-gradient(at 20% 20%, hsl(168 72% 42% / 0.18) 0px, transparent 50%),
+                     radial-gradient(at 80% 0%, hsl(180 75% 50% / 0.18) 0px, transparent 50%),
+                     radial-gradient(at 80% 80%, hsl(212 92% 56% / 0.12) 0px, transparent 50%);
 
     /* Premium shadows */
-    --shadow-card: 0 1px 3px hsl(224 40% 12% / 0.05), 0 1px 2px hsl(224 40% 12% / 0.03);
-    --shadow-elevated: 0 10px 30px -12px hsl(224 40% 12% / 0.14), 0 4px 8px -4px hsl(224 40% 12% / 0.07);
-    --shadow-glow: 0 0 40px -10px hsl(244 75% 58% / 0.45), 0 8px 24px -8px hsl(244 75% 58% / 0.25);
-    --shadow-primary-glow: 0 20px 50px -20px hsl(235 60% 22% / 0.5);
+    --shadow-card: 0 1px 3px hsl(222 40% 12% / 0.05), 0 1px 2px hsl(222 40% 12% / 0.03);
+    --shadow-elevated: 0 10px 30px -12px hsl(222 40% 12% / 0.14), 0 4px 8px -4px hsl(222 40% 12% / 0.07);
+    --shadow-glow: 0 0 40px -10px hsl(168 72% 42% / 0.45), 0 8px 24px -8px hsl(168 72% 42% / 0.25);
+    --shadow-primary-glow: 0 20px 50px -20px hsl(222 47% 14% / 0.5);
 
-    --sidebar-background: 235 55% 14%;
-    --sidebar-foreground: 224 20% 92%;
-    --sidebar-primary: 244 75% 62%;
+    --sidebar-background: 222 47% 11%;
+    --sidebar-foreground: 210 20% 92%;
+    --sidebar-primary: 168 72% 42%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 235 50% 22%;
+    --sidebar-accent: 222 47% 18%;
     --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 235 50% 22%;
-    --sidebar-ring: 244 75% 62%;
+    --sidebar-border: 222 47% 18%;
+    --sidebar-ring: 168 72% 42%;
   }
 
 }
