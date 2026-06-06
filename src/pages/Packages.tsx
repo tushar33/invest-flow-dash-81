@@ -82,7 +82,7 @@ export default function Packages() {
         ) : !filtered.length ? (
           <EmptyState icon={PackageIcon} title={LANG.plans.noneFound} description={LANG.plans.noneDescription} />
         ) : (
-          <div className="space-y-3">
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {filtered.map((pkg) => {
               const statusMap: Record<string, "active" | "completed" | "inactive"> = {
                 ACTIVE: "active", MATURED: "completed", CLOSED: "inactive"
@@ -92,39 +92,46 @@ export default function Packages() {
               const remainingBalance = remainingCycles * Number(pkg.roiCycleAmount);
               const progress = (pkg.cyclesCompleted / planCycles) * 100;
               return (
-                <div key={pkg.id} className="bg-card rounded-2xl border border-border p-4 shadow-card hover:shadow-elevated hover:border-accent/30 transition-all animate-slide-up-fade">
-                  <div className="flex items-center justify-between mb-3">
-                    <div>
-                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">{LANG.plans.contribution}</p>
-                      <p className="text-xl font-bold tabular-nums">{formatCredits(Number(pkg.principalAmount))}</p>
+                <div key={pkg.id} className="group bg-card rounded-xl border border-border/70 p-4 shadow-card hover:shadow-elevated hover:border-accent/40 transition-all animate-slide-up-fade flex flex-col">
+                  {/* Header */}
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="h-9 w-9 rounded-lg bg-accent/10 flex items-center justify-center shrink-0">
+                        <PackageIcon className="h-4.5 w-4.5 text-accent" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">{LANG.plans.contribution}</p>
+                        <p className="text-lg font-bold tabular-nums leading-tight">{formatCredits(Number(pkg.principalAmount))}</p>
+                      </div>
                     </div>
                     <StatusBadge status={statusMap[pkg.status] || "inactive"}>{planStatusLabel(pkg.status)}</StatusBadge>
                   </div>
 
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="flex items-center gap-1.5 text-[11px] bg-gradient-to-r from-accent/15 to-accent/5 text-accent font-semibold rounded-lg px-2.5 py-1.5 border border-accent/20">
-                      <Gift className="h-3 w-3" />
-                      {LANG.reward.rewardCycleLabel(Number(pkg.roiPercentage), formatCredits(Number(pkg.roiCycleAmount)))}
-                    </div>
+                  {/* Reward chip */}
+                  <div className="mt-3 flex items-center gap-1.5 text-[11px] bg-gradient-to-r from-accent/15 to-accent/5 text-accent font-semibold rounded-lg px-2.5 py-1.5 border border-accent/20 w-fit">
+                    <Gift className="h-3 w-3" />
+                    {LANG.reward.rewardCycleLabel(Number(pkg.roiPercentage), formatCredits(Number(pkg.roiCycleAmount)))}
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3 mb-3 pt-3 border-t border-border/50">
+                  {/* Stats */}
+                  <div className="grid grid-cols-2 gap-3 mt-3 pt-3 border-t border-border/50">
                     <div>
                       <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">{LANG.plans.monthlyBenefit}</p>
-                      <p className="text-[13px] font-semibold mt-0.5 tabular-nums">{formatCredits(Number(pkg.roiCycleAmount))}</p>
+                      <p className="text-sm font-semibold mt-0.5 tabular-nums">{formatCredits(Number(pkg.roiCycleAmount))}</p>
                     </div>
-                    <div>
+                    <div className="text-right">
                       <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">{LANG.plans.remainingBalance}</p>
-                      <p className="text-[13px] font-semibold mt-0.5 tabular-nums">{formatCredits(remainingBalance)}</p>
+                      <p className="text-sm font-semibold mt-0.5 tabular-nums">{formatCredits(remainingBalance)}</p>
                     </div>
                   </div>
 
-                  <div className="mb-3">
-                    <div className="flex items-center justify-between text-[11px] mb-1.5">
-                      <span className="text-muted-foreground">{LANG.plans.cyclesCompleted}</span>
+                  {/* Progress */}
+                  <div className="mt-3">
+                    <div className="flex items-center justify-between text-[10px] mb-1">
+                      <span className="text-muted-foreground uppercase tracking-wider font-semibold">{LANG.plans.cyclesCompleted}</span>
                       <span className="font-semibold tabular-nums">{pkg.cyclesCompleted}/{planCycles}</span>
                     </div>
-                    <div className="h-2 bg-muted rounded-full overflow-hidden">
+                    <div className="h-1.5 bg-muted rounded-full overflow-hidden">
                       <div
                         className="h-full bg-gradient-accent rounded-full transition-all duration-700 shadow-glow"
                         style={{ width: `${progress}%` }}
@@ -132,14 +139,11 @@ export default function Packages() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2 pt-3 border-t border-border/50">
-                    <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                      <CalendarDays className="h-3 w-3 shrink-0" />
-                      <div>
-                        <p className="text-[10px] opacity-70">{LANG.plans.assigned}</p>
-                        <p className="font-medium text-foreground">{new Date(pkg.startDate).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</p>
-                      </div>
-                    </div>
+                  {/* Assigned date */}
+                  <div className="mt-3 pt-3 border-t border-border/50 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                    <CalendarDays className="h-3 w-3 shrink-0" />
+                    <span className="opacity-70">{LANG.plans.assigned}:</span>
+                    <span className="font-medium text-foreground">{new Date(pkg.startDate).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</span>
                   </div>
 
                   <PlanCycleDetails pkg={pkg} />
