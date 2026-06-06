@@ -102,6 +102,13 @@ export default function Packages() {
                       <div className="min-w-0">
                         <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">{LANG.plans.contribution}</p>
                         <p className="text-lg font-bold tabular-nums leading-tight">{formatCredits(Number(pkg.principalAmount))}</p>
+                        {(pkg.legacyUserCode || pkg.legacyPkgCnt != null) && (
+                          <p className="text-[10px] text-muted-foreground truncate mt-0.5">
+                            {[pkg.legacyUserCode, pkg.legacyPkgCnt != null ? `pkg ${pkg.legacyPkgCnt}` : null]
+                              .filter(Boolean)
+                              .join(" · ")}
+                          </p>
+                        )}
                       </div>
                     </div>
                     <StatusBadge status={statusMap[pkg.status] || "inactive"}>{planStatusLabel(pkg.status)}</StatusBadge>

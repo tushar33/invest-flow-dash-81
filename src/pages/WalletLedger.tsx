@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 import { UserLayout } from "@/components/UserLayout";
@@ -22,25 +22,13 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { formatCredits, formatCreditsSigned, formatTransactionLabel } from "@/lib/format";
 import { LANG, FILTER_OPTIONS, directionLabel } from "@/lib/language";
-import { filterUserVisibleTransactions } from "@/lib/wallet-transactions";
-
-const userLedgerFilterFields: FilterField[] = [
-  {
-    key: "type", label: LANG.filter.activityType, type: "select", placeholder: LANG.filter.allTypes,
-    options: [...FILTER_OPTIONS.transactionType],
-  },
-  { key: "from", label: LANG.filter.fromDate, type: "date", placeholder: LANG.filter.startDate },
-  { key: "to", label: LANG.filter.toDate, type: "date", placeholder: LANG.filter.endDate },
-];
-
-const adminLedgerFilterFields: FilterField[] = [
-  {
-    key: "type", label: LANG.filter.activityType, type: "select", placeholder: LANG.filter.allTypes,
-    options: [...FILTER_OPTIONS.ledgerType],
-  },
-  { key: "from", label: LANG.filter.fromDate, type: "date", placeholder: LANG.filter.startDate },
-  { key: "to", label: LANG.filter.toDate, type: "date", placeholder: LANG.filter.endDate },
-];
+import { matchesActivityTypeFilter } from "@/lib/wallet-api-params";
+import {
+  filterUserVisibleTransactions,
+  formatLedgerPackageLabel,
+  isRoiCreditTransaction,
+} from "@/lib/wallet-transactions";
+import { usePlanFilterOptions } from "@/hooks/usePlanFilterOptions";
 
 export default function WalletLedger() {
   const { user } = useAuth();
@@ -57,7 +45,42 @@ export default function WalletLedger() {
 
   const resolvedUserId = userIdFromUrl || selectedUserId;
 
-  const filterValues = { type: typeFilter, from: fromFilter, to: toFilter };
+  const filterValues = {
+    type: typeFilter,
+    from: fromFilter,
+    to: toFilter,
+    packageId: packageIdFilter,
+  };
+
+  const planOptionsQuery = usePlanFilterOptions(
+    isAdmin ? resolvedUserId || undefined : undefined,
+    isAdmin ? !!resolvedUserId : true,
+  );
+  const planOptions = planOptionsQuery.data ?? [];
+
+  const ledgerFilterFields = useMemo<FilterField[]>(
+    () => [
+      {
+        key: "packageId",
+        label: LANG.wallet.filterByPlan,
+        type: "select",
+        placeholder: LANG.wallet.allPlans,
+        options: planOptions,
+      },
+      {
+        key: "type",
+        label: LANG.filter.activityType,
+        type: "select",
+        placeholder: LANG.filter.allTypes,
+        options: [...(isAdmin ? FILTER_OPTIONS.ledgerType : FILTER_OPTIONS.transactionType)],
+      },
+      { key: "from", label: LANG.filter.fromDate, type: "date", placeholder: LANG.filter.startDate },
+      { key: "to", label: LANG.filter.toDate, type: "date", placeholder: LANG.filter.endDate },
+    ],
+    [isAdmin, planOptions],
+  );
+
+  const selectedPlanLabel = planOptions.find((o) => o.value === packageIdFilter)?.label;
 
   const setFilter = (key: string, value: string) => {
     setSearchParams((prev) => {
@@ -71,48 +94,46 @@ export default function WalletLedger() {
     setSearchParams((prev) => {
       const next = new URLSearchParams();
       if (prev.get("userId")) next.set("userId", prev.get("userId")!);
-      if (prev.get("packageId")) next.set("packageId", prev.get("packageId")!);
       return next;
     }, { replace: true });
   };
 
-  const hasActiveFilters = !!(typeFilter || fromFilter || toFilter);
+  const hasActiveFilters = !!(typeFilter || fromFilter || toFilter || packageIdFilter);
 
   const { data: walletData, isLoading } = useQuery({
     queryKey: ["wallet", resolvedUserId, packageIdFilter, typeFilter, fromFilter, toFilter],
-    queryFn: () => {
+    queryFn: async () => {
       const filterParams = {
         type: typeFilter || undefined,
         from: fromFilter || undefined,
         to: toFilter || undefined,
         packageId: packageIdFilter || undefined,
+        limit: 200,
       };
-      if (isAdmin && resolvedUserId) return admin.userWallet(resolvedUserId, filterParams);
+      if (isAdmin && resolvedUserId) {
+        const [balance, ledger] = await Promise.all([
+          admin.userWallet(resolvedUserId),
+          wallet.getLedger({ ...filterParams, userId: resolvedUserId }),
+        ]);
+        return {
+          ...ledger,
+          availableBalance: balance.availableBalance,
+          totalRoiCredited: balance.totalRoiCredited,
+        };
+      }
       return wallet.get(filterParams);
     },
     enabled: isAdmin ? !!resolvedUserId : true,
   });
 
-  const matchesTypeFilter = (txnType: string, filter: string) => {
-    if (!filter) return true;
-    if (filter === "ROI") return txnType === "ROI_CREDIT" || txnType === "ROI";
-    if (filter === "PRINCIPAL") return txnType === "PRINCIPAL";
-    return txnType === filter;
-  };
+  const visibleTransactions = isAdmin
+    ? walletData?.transactions ?? []
+    : filterUserVisibleTransactions(walletData?.transactions ?? []);
 
-  const filteredTransactions = (isAdmin
-    ? walletData?.transactions
-    : filterUserVisibleTransactions(walletData?.transactions ?? [])
-  )?.filter((txn) => {
-    if (typeFilter && !matchesTypeFilter(txn.type, typeFilter)) return false;
-    if (fromFilter && new Date(txn.createdAt) < new Date(fromFilter)) return false;
-    if (toFilter && new Date(txn.createdAt) > new Date(toFilter)) return false;
-    if (packageIdFilter) {
-      const pid = txn.packageId ?? txn.referenceId ?? "";
-      if (pid !== packageIdFilter) return false;
-    }
+  const filteredTransactions = visibleTransactions.filter((txn) => {
+    if (typeFilter && !matchesActivityTypeFilter(txn.type, typeFilter)) return false;
     return true;
-  }) || [];
+  });
 
   const totalCredits = filteredTransactions.filter(txn => txn.direction === "CREDIT").reduce((sum, txn) => sum + parseFloat(txn.amount), 0);
   const totalDebits = filteredTransactions.filter(txn => txn.direction === "DEBIT").reduce((sum, txn) => sum + parseFloat(txn.amount), 0);
@@ -130,7 +151,11 @@ export default function WalletLedger() {
         <PageHeader
           icon={<Wallet className="h-5 w-5" />}
           title={LANG.wallet.activityLedgerTitle}
-          subtitle={packageIdFilter ? LANG.wallet.activityForPlan(packageIdFilter) : LANG.wallet.ledgerSubtitle}
+          subtitle={
+            selectedPlanLabel
+              ? `${LANG.wallet.plan}: ${selectedPlanLabel}`
+              : LANG.wallet.ledgerSubtitle
+          }
         />
 
         {isAdmin && !userIdFromUrl && (
@@ -157,7 +182,7 @@ export default function WalletLedger() {
         )}
 
         <FilterBar
-          fields={isAdmin ? adminLedgerFilterFields : userLedgerFilterFields}
+          fields={ledgerFilterFields}
           values={filterValues}
           onChange={(k, v) => setFilter(k, v)}
           onReset={resetFilters}
@@ -193,8 +218,25 @@ export default function WalletLedger() {
                         <Badge variant={txn.direction === "CREDIT" ? "default" : "destructive"} className="text-xs">{directionLabel(txn.direction)}</Badge>
                       </div>
                       <p className="text-xs text-muted-foreground">{format(new Date(txn.createdAt), "MMM d, yyyy 'at' h:mm a")}</p>
-                      {txn.description && <p className="text-xs text-muted-foreground mt-1 truncate">{txn.description}</p>}
-                      {txn.referenceId && <p className="text-xs text-muted-foreground mt-1">{LANG.common.ref} {txn.referenceId}</p>}
+                      {isRoiCreditTransaction(txn) && txn.package ? (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {LANG.wallet.plan}: {formatLedgerPackageLabel(txn.package)}
+                          {txn.roiCycleNumber != null
+                            ? ` · ${LANG.wallet.planCycle(txn.roiCycleNumber)}`
+                            : ""}
+                        </p>
+                      ) : (
+                        <>
+                          {txn.description && (
+                            <p className="text-xs text-muted-foreground mt-1 truncate">{txn.description}</p>
+                          )}
+                          {txn.referenceId && !txn.package && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {LANG.common.ref} {txn.referenceId}
+                            </p>
+                          )}
+                        </>
+                      )}
                     </div>
                     <div className="text-right">
                       <p className={cn("font-bold text-sm", getTransactionColor(txn.direction))}>

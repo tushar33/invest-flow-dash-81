@@ -1,4 +1,6 @@
 import { LANG } from "@/lib/language";
+import { toWalletApiParams, type WalletUiFilters } from "@/lib/wallet-api-params";
+import type { LedgerPackageSummary } from "@/lib/wallet-transactions";
 
 // Base URL for the backend API.
 const DEFAULT_LOCAL_API_BASE = "http://localhost:3000";
@@ -35,7 +37,12 @@ export function handleSessionExpired() {
 }
 
 function isAuthEndpoint(path: string): boolean {
-  return path.startsWith("/auth/login") || path.startsWith("/auth/register");
+  return (
+    path.startsWith("/auth/login") ||
+    path.startsWith("/auth/register") ||
+    path.startsWith("/auth/forgot-password") ||
+    path.startsWith("/auth/reset-password")
+  );
 }
 
 /** Build query string from params object, skipping undefined/null/empty values */
@@ -153,9 +160,12 @@ export function buildLoginPayload(identifier: string, password: string): LoginPa
   if (/^\d{10}$/.test(t)) {
     return { phone: t, password };
   }
-  const taMatch = t.match(/^ta-(\d+)$/i);
+  const taMatch = t.match(/^ta-?(\d+)$/i);
   if (taMatch) {
-    return { username: `TA-${taMatch[1]}`, password };
+    const digits = taMatch[1];
+    const username =
+      digits.length === 7 ? `TA-${digits}` : `ta${digits}`;
+    return { username, password };
   }
   return { username: t.toLowerCase(), password };
 }
@@ -165,6 +175,16 @@ export const auth = {
     request<AuthResponse>("/auth/register", { method: "POST", body: JSON.stringify(data) }),
   login: (data: LoginPayload) =>
     request<AuthResponse>("/auth/login", { method: "POST", body: JSON.stringify(data) }),
+  forgotPassword: (email: string) =>
+    request<{ message: string }>("/auth/forgot-password", {
+      method: "POST",
+      body: JSON.stringify({ email: email.trim() }),
+    }),
+  resetPassword: (data: { token: string; newPassword: string }) =>
+    request<{ message: string }>("/auth/reset-password", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
   me: () => request<AuthUser>("/auth/me"),
 };
 
@@ -202,6 +222,9 @@ export interface Package {
   maturityDate: string;
   principalWithdrawnAmount: string;
   status: "ACTIVE" | "MATURED" | "CLOSED";
+  /** Legacy migration: original userCode for this package row (packages are never merged). */
+  legacyUserCode?: string | null;
+  legacyPkgCnt?: number | null;
   roiCycles?: RoiCycle[];
   user?: { id: string; fullName: string; email: string | null; phone: string | null };
 }
@@ -234,6 +257,8 @@ export interface WalletTransaction {
   payoutRequestId?: string | null;
   /** API compatibility: packageId ?? payoutRequestId */
   referenceId?: string | null;
+  /** Linked plan for ROI credits (from backend enrichment). */
+  package?: LedgerPackageSummary | null;
   description: string | null;
   createdAt: string;
   autoPayoutRequestCreated?: boolean;
@@ -249,17 +274,36 @@ export interface WalletData {
   limit?: number;
 }
 
-export interface WalletFilters {
-  type?: string;
-  from?: string;
-  to?: string;
-  packageId?: string;
-  page?: number;
-  limit?: number;
+export type WalletFilters = WalletUiFilters;
+
+export interface WalletLedgerResponse {
+  total: number;
+  page: number;
+  limit: number;
+  data: WalletTransaction[];
+}
+
+async function fetchWalletData(path: string, filters?: WalletFilters): Promise<WalletData> {
+  const qs = buildQs(toWalletApiParams(filters));
+  const res = await request<WalletData | WalletLedgerResponse>(`${path}${qs}`);
+  if ("data" in res && Array.isArray(res.data)) {
+    return {
+      availableBalance: 0,
+      transactions: res.data,
+      total: res.total,
+      page: res.page,
+      limit: res.limit,
+    };
+  }
+  return res as WalletData;
 }
 
 export const wallet = {
-  get: (filters?: WalletFilters) => request<WalletData>(`/user/wallet${buildQs(filters as any)}`),
+  get: (filters?: WalletFilters) =>
+    request<WalletData>(`/user/wallet${buildQs(toWalletApiParams(filters))}`),
+  /** Admin can pass userId; supports server-side activity type + date filters. */
+  getLedger: async (filters?: WalletFilters): Promise<WalletData> =>
+    fetchWalletData("/wallet/ledger", { limit: 200, ...filters }),
 };
 
 // ── Bank Details ──
@@ -521,13 +565,7 @@ export interface RoiProcessingLog {
   status: RoiProcessingStatus;
 }
 
-export interface AdminWalletFilters {
-  type?: string;
-  from?: string;
-  to?: string;
-  page?: number;
-  limit?: number;
-}
+export type AdminWalletFilters = WalletUiFilters;
 
 export type SystemSettingType = "STRING" | "BOOLEAN" | "NUMBER" | "JSON";
 

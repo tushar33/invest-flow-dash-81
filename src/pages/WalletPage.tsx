@@ -6,47 +6,65 @@ import { GradientCard } from "@/components/ui/gradient-card";
 import { StatTile } from "@/components/ui/stat-tile";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ArrowUpRight, ArrowDownLeft, Wallet as WalletIcon, Eye, EyeOff, Activity, TrendingUp, TrendingDown } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { wallet as walletApi } from "@/lib/api";
 import { formatCredits, formatCreditsSigned, formatTransactionLabel } from "@/lib/format";
 import { LANG, FILTER_OPTIONS } from "@/lib/language";
-import { filterUserVisibleTransactions } from "@/lib/wallet-transactions";
+import {
+  filterUserVisibleTransactions,
+  formatLedgerPackageLabel,
+  isRoiCreditTransaction,
+} from "@/lib/wallet-transactions";
+import { usePlanFilterOptions } from "@/hooks/usePlanFilterOptions";
+import { matchesActivityTypeFilter } from "@/lib/wallet-api-params";
 
-const filterDefaults = { type: "", from: "", to: "" };
-
-const filterFields: FilterField[] = [
-  {
-    key: "type", label: LANG.common.type, type: "select", placeholder: LANG.common.all,
-    options: [...FILTER_OPTIONS.transactionType],
-  },
-  { key: "from", label: LANG.filter.fromDate, type: "date", placeholder: LANG.filter.startDate },
-  { key: "to", label: LANG.filter.toDate, type: "date", placeholder: LANG.filter.endDate },
-];
+const filterDefaults = { type: "", from: "", to: "", packageId: "" };
 
 export default function WalletPage() {
   const [showBalance, setShowBalance] = useState(true);
   const { filters, setFilters, resetFilters, hasActiveFilters } = useUrlFilters(filterDefaults);
+  const { data: planOptions = [] } = usePlanFilterOptions();
+
+  const filterFields = useMemo<FilterField[]>(
+    () => [
+      {
+        key: "packageId",
+        label: LANG.wallet.filterByPlan,
+        type: "select",
+        placeholder: LANG.wallet.allPlans,
+        options: planOptions,
+      },
+      {
+        key: "type",
+        label: LANG.common.type,
+        type: "select",
+        placeholder: LANG.common.all,
+        options: [...FILTER_OPTIONS.transactionType],
+      },
+      { key: "from", label: LANG.filter.fromDate, type: "date", placeholder: LANG.filter.startDate },
+      { key: "to", label: LANG.filter.toDate, type: "date", placeholder: LANG.filter.endDate },
+    ],
+    [planOptions],
+  );
 
   const { data: walletData, isLoading } = useQuery({
     queryKey: ["wallet", filters],
-    queryFn: () => walletApi.get({
-      type: filters.type || undefined,
-      from: filters.from || undefined,
-      to: filters.to || undefined,
-    }),
+    queryFn: () =>
+      walletApi.get({
+        type: filters.type || undefined,
+        from: filters.from || undefined,
+        to: filters.to || undefined,
+        packageId: filters.packageId || undefined,
+        limit: 200,
+      }),
   });
 
   const balance = walletData?.availableBalance ?? 0;
   const transactions = filterUserVisibleTransactions(walletData?.transactions ?? []);
 
-  const filtered = transactions.filter(t => {
-    if (filters.type) {
-      if (filters.type === "ROI" && t.type !== "ROI_CREDIT" && t.type !== "ROI") return false;
-      if (filters.type === "PAYOUT_DEBIT" && t.type !== "PAYOUT_DEBIT") return false;
-    }
-    if (filters.from && new Date(t.createdAt) < new Date(filters.from)) return false;
-    if (filters.to && new Date(t.createdAt) > new Date(filters.to)) return false;
+  const filtered = transactions.filter((t) => {
+    if (filters.type && !matchesActivityTypeFilter(t.type, filters.type)) return false;
     return true;
   });
 
@@ -116,7 +134,16 @@ export default function WalletPage() {
                       </div>
                       <div>
                         <p className="text-[13px] font-semibold">{formatTransactionLabel(tx.type)}</p>
-                        <p className="text-[11px] text-muted-foreground">{tx.description || ""}</p>
+                        {isRoiCreditTransaction(tx) && tx.package ? (
+                          <p className="text-[11px] text-muted-foreground">
+                            {LANG.wallet.plan}: {formatLedgerPackageLabel(tx.package)}
+                            {tx.roiCycleNumber != null
+                              ? ` · ${LANG.wallet.planCycle(tx.roiCycleNumber)}`
+                              : ""}
+                          </p>
+                        ) : (
+                          <p className="text-[11px] text-muted-foreground">{tx.description || ""}</p>
+                        )}
                       </div>
                     </div>
                     <div className="text-right">

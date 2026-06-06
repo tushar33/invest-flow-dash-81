@@ -9,6 +9,8 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import Home from "./pages/public/Home";
 import About from "./pages/public/About";
 import Products from "./pages/public/Products";
@@ -65,6 +67,8 @@ const App = () => (
                 <Route path="/contact" element={<Contact />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/dashboard" element={<ProtectedRoute requiresApproved><Dashboard /></ProtectedRoute>} />
                 <Route path="/packages" element={<ProtectedRoute requiresApproved><Packages /></ProtectedRoute>} />
                 <Route path="/wallet" element={<ProtectedRoute requiresApproved><WalletPage /></ProtectedRoute>} />
