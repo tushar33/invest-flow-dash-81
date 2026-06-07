@@ -51,18 +51,14 @@ export default function Login() {
         <div className="relative z-10 space-y-6 max-w-md">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur border border-white/20 text-xs">
             <Sparkles className="h-3.5 w-3.5 text-accent-glow" />
-            <span>Welcome back</span>
+            <span>Global Import &amp; Export</span>
           </div>
           <h2 className="text-4xl font-bold leading-tight tracking-tight">
-            Grow smarter with disciplined returns.
+            Connecting markets across borders.
           </h2>
           <p className="text-base opacity-80 leading-relaxed">
-            Track your portfolio, monitor payouts, and stay on top of every cycle — all in one elegant dashboard.
+            Streamlined global trade — manage shipments, partners, and cross-border transactions from a single intelligent platform.
           </p>
-          <div className="flex items-center gap-2 text-xs opacity-75">
-            <ShieldCheck className="h-4 w-4 text-accent-glow" />
-            <span>Bank-grade security · Encrypted end-to-end</span>
-          </div>
         </div>
 
         <div className="relative z-10 text-xs opacity-60">
