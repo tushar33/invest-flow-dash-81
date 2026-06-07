@@ -188,6 +188,19 @@ export const auth = {
   me: () => request<AuthUser>("/auth/me"),
 };
 
+export const contact = {
+  submitInquiry: (data: {
+    name: string;
+    email: string;
+    subject: string;
+    message: string;
+  }) =>
+    request<{ message: string }>("/contact", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+};
+
 // ── Packages ──
 export interface RoiCycle {
   id: string;
@@ -486,10 +499,12 @@ export interface AdminFinancialSummary {
 export interface AdminUser {
   id: string;
   name: string;
+  username?: string | null;
   email: string | null;
   role: string;
   totalPackages: number;
   currentBalance: number;
+  totalRewardsCredited: number;
   autoPayMode?: string;
 }
 
@@ -563,6 +578,18 @@ export interface RoiProcessingLog {
   autoPayoutsCreated: number;
   errorsCount: number;
   status: RoiProcessingStatus;
+}
+
+export interface RoiLogCreditedPackage {
+  packageId: string;
+  userId: string;
+  userName: string;
+  userEmail: string | null;
+  principalAmount: string;
+  roiPercentage: string;
+  cycleNumber: number | null;
+  roiAmount: string | null;
+  creditedAt: string;
 }
 
 export type AdminWalletFilters = WalletUiFilters;
@@ -651,6 +678,8 @@ export const admin = {
   },
   roiLogs: (filters?: AdminRoiLogFilters) =>
     request<PaginatedResponse<RoiProcessingLog[]>>(`/admin/roi-logs${buildQs(filters as any)}`),
+  roiLogPackages: (logId: string) =>
+    request<{ data: RoiLogCreditedPackage[] }>(`/admin/roi-logs/${logId}/packages`),
   processPayout: (id: string, data: { status: string; rejectionReason?: string }) =>
     request<PayoutRequest>(`/payouts/${id}/process`, { method: "PATCH", body: JSON.stringify(data) }),
   assignPackage: (data: { userId: string; principalAmount: number; roiPercentage: number }) =>

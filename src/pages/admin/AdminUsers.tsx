@@ -36,6 +36,11 @@ const filterFields: FilterField[] = [
   },
 ];
 
+function formatAdminUserLabel(user: { username?: string | null; name: string }) {
+  if (user.username) return `${user.name} (${user.username})`;
+  return user.name;
+}
+
 function isPdfSource(nameOrUrl: string): boolean {
   return nameOrUrl.toLowerCase().endsWith(".pdf");
 }
@@ -476,14 +481,18 @@ export default function AdminUsers() {
                 <div key={u.id} className="bg-card rounded-xl border border-border p-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="font-semibold text-sm">{u.name}</p>
+                      <p className="font-semibold text-sm">{formatAdminUserLabel(u)}</p>
                       <p className="text-xs text-muted-foreground">{u.email || LANG.common.noData}</p>
                     </div>
                     <span className="text-[10px] font-bold bg-accent/15 text-accent px-2 py-0.5 rounded-full">{roleLabel(u.role)}</span>
                   </div>
                   <div className="flex items-center justify-between mt-3 pt-3 border-t border-border">
-                    <span className="text-xs text-muted-foreground">{LANG.common.balance}</span>
+                    <span className="text-xs text-muted-foreground">{LANG.common.availableBalance}</span>
                     <span className="text-sm font-semibold">{formatCredits(u.currentBalance)}</span>
+                  </div>
+                  <div className="flex items-center justify-between mt-1">
+                    <span className="text-xs text-muted-foreground">{LANG.common.totalRewards}</span>
+                    <span className="text-sm font-semibold">{formatCredits(u.totalRewardsCredited ?? 0)}</span>
                   </div>
                   <div className="flex items-center justify-between mt-1">
                     <span className="text-xs text-muted-foreground">{LANG.nav.plans}</span>
@@ -540,7 +549,8 @@ export default function AdminUsers() {
                     <th className="text-left text-xs font-medium text-muted-foreground p-4">{LANG.common.email}</th>
                     <th className="text-left text-xs font-medium text-muted-foreground p-4">{LANG.filter.autoRedemption}</th>
                     <th className="text-left text-xs font-medium text-muted-foreground p-4">{LANG.nav.plans}</th>
-                    <th className="text-left text-xs font-medium text-muted-foreground p-4">{LANG.common.balance}</th>
+                    <th className="text-left text-xs font-medium text-muted-foreground p-4">{LANG.common.availableBalance}</th>
+                    <th className="text-left text-xs font-medium text-muted-foreground p-4">{LANG.common.totalRewards}</th>
                     <th className="text-left text-xs font-medium text-muted-foreground p-4">{LANG.common.role}</th>
                     <th className="text-right text-xs font-medium text-muted-foreground p-4">{LANG.common.actions}</th>
                   </tr>
@@ -548,7 +558,7 @@ export default function AdminUsers() {
                 <tbody className="divide-y divide-border">
                   {filtered.map((u) => (
                     <tr key={u.id} className="hover:bg-muted/50 transition-colors">
-                      <td className="p-4 text-sm font-medium">{u.name}</td>
+                      <td className="p-4 text-sm font-medium">{formatAdminUserLabel(u)}</td>
                       <td className="p-4 text-sm text-muted-foreground">{u.email || LANG.common.noData}</td>
                       <td className="p-4">
                         {currentUser?.id === u.id ? (
@@ -572,6 +582,7 @@ export default function AdminUsers() {
                       </td>
                       <td className="p-4 text-sm font-semibold">{u.totalPackages}</td>
                       <td className="p-4 text-sm font-semibold">{formatCredits(u.currentBalance)}</td>
+                      <td className="p-4 text-sm font-semibold">{formatCredits(u.totalRewardsCredited ?? 0)}</td>
                       <td className="p-4"><span className="text-[10px] font-bold bg-accent/15 text-accent px-2 py-0.5 rounded-full">{roleLabel(u.role)}</span></td>
                       <td className="p-4 text-right">
                         <div className="flex flex-col gap-2 w-[160px] ml-auto">

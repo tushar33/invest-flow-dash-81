@@ -189,12 +189,8 @@ export default function PublicLayout({ children, transparentTop = false }: Props
           </div>
         </div>
         <div className="border-t border-neutral-800">
-          <div className="container py-5 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-neutral-500">
-            <div>{LANG.brand.copyright(new Date().getFullYear())}</div>
-            <div className="flex gap-5">
-              <a href="#" className="hover:text-neutral-300">{LANG.public.privacy}</a>
-              <a href="#" className="hover:text-neutral-300">{LANG.public.terms}</a>
-            </div>
+          <div className="container py-5 text-xs text-neutral-500">
+            {LANG.brand.copyright(new Date().getFullYear())}
           </div>
         </div>
       </footer>

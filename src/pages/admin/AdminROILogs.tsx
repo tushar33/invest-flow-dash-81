@@ -1,11 +1,12 @@
+import { useState } from "react";
 import { AdminLayout } from "@/components/AdminLayout";
 import { FilterBar, type FilterField } from "@/components/FilterBar";
 import { StatusBadge } from "@/components/StatusBadge";
 import { useUrlFilters } from "@/hooks/useUrlFilters";
-import { Clock, Zap } from "lucide-react";
+import { ChevronDown, Clock, Zap } from "lucide-react";
 import { format, isToday } from "date-fns";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { admin as adminApi, type RoiProcessingLog } from "@/lib/api";
+import { admin as adminApi, type RoiLogCreditedPackage, type RoiProcessingLog } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { LANG, FILTER_OPTIONS, runStatusLabel, runTypeLabel } from "@/lib/language";
 import { cn } from "@/lib/utils";
@@ -54,6 +55,93 @@ function runStatusVariant(status: RoiProcessingLog["status"]) {
   if (status === "SUCCESS") return "approved" as const;
   if (status === "FAILED") return "rejected" as const;
   return "pending" as const;
+}
+
+function formatInr(amount: string | number | null | undefined): string {
+  const value = Number(amount);
+  if (!Number.isFinite(value)) return LANG.common.noData;
+  return `₹${value.toLocaleString("en-IN")}`;
+}
+
+function RunLogCard({ log }: { log: RoiProcessingLog }) {
+  const [expanded, setExpanded] = useState(false);
+  const showPackages = log.status !== "FAILED" && log.packagesProcessed > 0;
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["admin-roi-log-packages", log.id],
+    queryFn: () => adminApi.roiLogPackages(log.id),
+    enabled: expanded && showPackages,
+  });
+
+  const packages: RoiLogCreditedPackage[] = data?.data ?? [];
+
+  return (
+    <div className="bg-card rounded-xl border border-border p-4 space-y-2.5">
+      <p className="text-sm font-medium">{formatRunListDate(log.startedAt)}</p>
+      <div className="flex items-center gap-2 flex-wrap">
+        <span
+          className={cn(
+            "inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide border",
+            log.runType === "CRON"
+              ? "bg-blue-500/10 text-blue-400 border-blue-500/20"
+              : "bg-accent/10 text-accent border-accent/20",
+          )}
+        >
+          {runTypeLabel(log.runType)}
+        </span>
+        <StatusBadge status={runStatusVariant(log.status)}>{runStatusLabel(log.status)}</StatusBadge>
+      </div>
+      {runLogDescription(log) && (
+        <p className="text-xs text-muted-foreground">{runLogDescription(log)}</p>
+      )}
+      {showPackages && (
+        <div className="pt-1">
+          <button
+            type="button"
+            onClick={() => setExpanded((open) => !open)}
+            className="inline-flex items-center gap-1 text-xs font-medium text-accent hover:underline"
+          >
+            <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", expanded && "rotate-180")} />
+            {expanded ? LANG.reward.runLogHidePackages : LANG.reward.runLogViewPackages}
+          </button>
+          {expanded && (
+            <div className="mt-2 rounded-lg border border-border/70 bg-muted/20 p-3 space-y-2">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                {LANG.reward.runLogCreditedPackages}
+              </p>
+              {isLoading ? (
+                <div className="flex justify-center py-3">
+                  <div className="h-5 w-5 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+                </div>
+              ) : packages.length === 0 ? (
+                <p className="text-xs text-muted-foreground">{LANG.reward.runLogNoPackageDetails}</p>
+              ) : (
+                <ul className="space-y-2">
+                  {packages.map((pkg) => (
+                    <li
+                      key={`${pkg.packageId}-${pkg.creditedAt}`}
+                      className="flex items-start justify-between gap-3 text-xs"
+                    >
+                      <div className="min-w-0">
+                        <p className="font-medium truncate">{pkg.userName}</p>
+                        <p className="text-muted-foreground truncate">
+                          {formatInr(pkg.principalAmount)} · {pkg.roiPercentage}% reward
+                          {pkg.cycleNumber != null ? ` · ${LANG.reward.runLogCycleLabel(pkg.cycleNumber)}` : ""}
+                        </p>
+                      </div>
+                      {pkg.roiAmount && (
+                        <p className="shrink-0 font-medium text-emerald-500">+{formatInr(pkg.roiAmount)}</p>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default function AdminROILogs() {
@@ -120,25 +208,7 @@ export default function AdminROILogs() {
         ) : (
           <div className="space-y-3">
             {logItems.map((log) => (
-              <div key={log.id} className="bg-card rounded-xl border border-border p-4 space-y-2.5">
-                <p className="text-sm font-medium">{formatRunListDate(log.startedAt)}</p>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span
-                    className={cn(
-                      "inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide border",
-                      log.runType === "CRON"
-                        ? "bg-blue-500/10 text-blue-400 border-blue-500/20"
-                        : "bg-accent/10 text-accent border-accent/20",
-                    )}
-                  >
-                    {runTypeLabel(log.runType)}
-                  </span>
-                  <StatusBadge status={runStatusVariant(log.status)}>{runStatusLabel(log.status)}</StatusBadge>
-                </div>
-                {runLogDescription(log) && (
-                  <p className="text-xs text-muted-foreground">{runLogDescription(log)}</p>
-                )}
-              </div>
+              <RunLogCard key={log.id} log={log} />
             ))}
           </div>
         )}

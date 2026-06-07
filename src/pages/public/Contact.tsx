@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Mail, MapPin } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { contact as contactApi } from "@/lib/api";
 import { LANG } from "@/lib/language";
 
 const contactItems = [
@@ -17,11 +18,28 @@ const contactItems = [
 
 export default function Contact() {
   const [form, setForm] = useState({ name: "", email: "", subject: "", message: "" });
+  const [submitting, setSubmitting] = useState(false);
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast({ title: LANG.toast.inquirySent, description: LANG.toast.inquirySentDescription });
-    setForm({ name: "", email: "", subject: "", message: "" });
+    setSubmitting(true);
+    try {
+      const result = await contactApi.submitInquiry(form);
+      toast({
+        title: LANG.toast.inquirySent,
+        description: result.message || LANG.toast.inquirySentDescription,
+      });
+      setForm({ name: "", email: "", subject: "", message: "" });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : LANG.common.error;
+      toast({
+        title: LANG.common.error,
+        description: message,
+        variant: "destructive",
+      });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -82,9 +100,10 @@ export default function Contact() {
                   </div>
                   <Button
                     type="submit"
+                    disabled={submitting}
                     className="bg-orange-500 hover:bg-orange-600 text-white rounded-full px-8 h-12 font-semibold shadow-lg shadow-orange-500/30"
                   >
-                    {LANG.common.sendInquiry}
+                    {submitting ? LANG.common.submitting : LANG.common.sendInquiry}
                   </Button>
                 </form>
               </Card>
