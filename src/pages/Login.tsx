@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { getPostAuthPath } from "@/lib/onboarding";
-import { User, Lock, Eye, EyeOff, ArrowRight, ShieldCheck, Sparkles } from "lucide-react";
+import { User, Lock, Eye, EyeOff, ArrowRight, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import trinityLogo from "@/assets/trinity-arrows-logo.png";
 import { LANG } from "@/lib/language";
