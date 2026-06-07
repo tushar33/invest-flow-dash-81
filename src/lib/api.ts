@@ -4,7 +4,7 @@ import type { LedgerPackageSummary } from "@/lib/wallet-transactions";
 
 // Base URL for the backend API.
 const DEFAULT_LOCAL_API_BASE = "http://localhost:3000";
-const DEFAULT_PROD_API_BASE = "https://roi-backend-fiyp.onrender.com";
+const DEFAULT_PROD_API_BASE = "https://api.trinityarrows.com";
 const isLocalHost =
   typeof window !== "undefined" &&
   (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
