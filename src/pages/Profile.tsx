@@ -148,6 +148,11 @@ export default function Profile() {
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-bold text-[17px] truncate">{user?.fullName}</p>
+              {user?.id && (
+                <p className="text-[11px] opacity-80 font-mono truncate" title={user.id}>
+                  ID: {user.id}
+                </p>
+              )}
               <p className="text-[12px] opacity-80">
                 {user?.createdAt
                   ? LANG.common.memberSince(new Date(user.createdAt).toLocaleDateString("en-IN", { month: "short", year: "numeric" }))
