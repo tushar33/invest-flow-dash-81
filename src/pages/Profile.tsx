@@ -148,9 +148,9 @@ export default function Profile() {
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-bold text-[17px] truncate">{user?.fullName}</p>
-              {(user?.email || user?.phone) && (
-                <p className="text-[11px] opacity-80 font-mono truncate" title={user?.email || user?.phone || ""}>
-                  @{(user?.email?.split("@")[0]) || user?.phone}
+              {user?.username && (
+                <p className="text-[12px] font-mono font-semibold text-accent truncate" title={user.username}>
+                  @{user.username}
                 </p>
               )}
               <p className="text-[12px] opacity-80">
