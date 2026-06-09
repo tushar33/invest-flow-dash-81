@@ -116,12 +116,12 @@ export function DesktopSidebar({ role }: DesktopSidebarProps) {
           <div className="flex-1 min-w-0">
             <p className="text-xs font-semibold text-sidebar-foreground truncate">{user?.fullName}</p>
             <p className="text-[10px] text-sidebar-foreground/55 truncate">{user?.email || user?.phone}</p>
-            {user?.id && (
+            {(user?.email || user?.phone) && (
               <p
                 className="text-[9px] text-sidebar-foreground/50 font-mono truncate mt-0.5"
-                title={user.id}
+                title={user?.email || user?.phone || ""}
               >
-                ID: {user.id}
+                @{(user?.email?.split("@")[0]) || user?.phone}
               </p>
             )}
           </div>
