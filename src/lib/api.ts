@@ -124,6 +124,7 @@ async function uploadRequest<T>(path: string, formData: FormData, method = "POST
 export interface AuthUser {
   id: string;
   fullName: string;
+  username?: string | null;
   email: string | null;
   phone: string | null;
   city?: string | null;

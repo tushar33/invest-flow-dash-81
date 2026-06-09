@@ -71,9 +71,9 @@ export function AdminLayout({ children }: { children: ReactNode }) {
                   <div className="min-w-0">
                     <p className="text-sm font-semibold truncate">{user?.fullName}</p>
                     <p className="text-xs text-muted-foreground truncate">{user?.email || user?.phone}</p>
-                    {(user?.email || user?.phone) && (
-                      <p className="text-[10px] text-muted-foreground font-mono truncate" title={user?.email || user?.phone || ""}>
-                        @{(user?.email?.split("@")[0]) || user?.phone}
+                    {user?.username && (
+                      <p className="text-[11px] text-accent font-mono font-semibold truncate" title={user.username}>
+                        @{user.username}
                       </p>
                     )}
                     <p className="text-[10px] text-accent font-semibold mt-0.5">ADMIN</p>
