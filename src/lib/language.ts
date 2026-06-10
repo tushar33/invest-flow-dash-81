@@ -535,6 +535,8 @@ export const LANG = {
     nomineeNamePlaceholder: "Full name",
     nomineeRelationPlaceholder: "e.g. Spouse, Parent",
     invalidPincode: "Pincode must be exactly 6 digits.",
+    invalidEmail: "Enter a valid email address.",
+    emailAlreadyInUse: "This email is already registered to another account.",
   },
 
   admin: {

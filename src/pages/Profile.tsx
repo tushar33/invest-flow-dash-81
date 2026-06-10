@@ -41,6 +41,8 @@ const emptyKycForm = (): KycForm => ({
   nomineeRelation: "",
 });
 
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 function kycToForm(kyc?: KycDetails | null): KycForm {
   if (!kyc) return emptyKycForm();
   return {
@@ -63,6 +65,7 @@ export default function Profile() {
   const [kycEditMode, setKycEditMode] = useState(false);
   const [showPasswordForm, setShowPasswordForm] = useState(false);
   const [name, setName] = useState(user?.fullName ?? "");
+  const [email, setEmail] = useState(user?.email ?? "");
   const [phone, setPhone] = useState(user?.phone ?? "");
   const [city, setCity] = useState(user?.city ?? "");
   const [kycForm, setKycForm] = useState<KycForm>(emptyKycForm());
@@ -76,17 +79,33 @@ export default function Profile() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: () => profileApi.update({
-      name,
-      ...(phone ? { phone } : {}),
-      ...(city.trim() ? { city: city.trim() } : {}),
-    }),
-      onSuccess: () => {
+    mutationFn: () => {
+      const trimmedEmail = email.trim().toLowerCase();
+      const currentEmail = (user?.email ?? "").trim().toLowerCase();
+      const emailChanged = trimmedEmail !== currentEmail;
+
+      if (emailChanged && trimmedEmail && !EMAIL_PATTERN.test(trimmedEmail)) {
+        throw new Error(LANG.profile.invalidEmail);
+      }
+
+      return profileApi.update({
+        name,
+        ...(phone ? { phone } : {}),
+        ...(city.trim() ? { city: city.trim() } : {}),
+        ...(emailChanged && trimmedEmail ? { email: trimmedEmail } : {}),
+      });
+    },
+    onSuccess: () => {
       toast({ title: LANG.toast.profileUpdated });
       setEditMode(false);
       refreshUser();
     },
-    onError: (err: any) => toast({ title: LANG.common.error, description: err.message, variant: "destructive" }),
+    onError: (err: Error) => {
+      const message = /email.*(already|exist|taken|duplicate|unique|registered)/i.test(err.message)
+        ? LANG.profile.emailAlreadyInUse
+        : err.message;
+      toast({ title: LANG.common.error, description: message, variant: "destructive" });
+    },
   });
 
   const kycUpdateMutation = useMutation({
@@ -172,7 +191,7 @@ export default function Profile() {
         <div className="bg-card rounded-2xl border border-border overflow-hidden shadow-card animate-slide-up-fade">
           <div className="flex items-center justify-between px-4 pt-3 pb-2">
             <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">{LANG.common.personalDetails}</p>
-            <button onClick={() => { setEditMode(!editMode); if (!editMode) { setName(user?.fullName ?? ""); setPhone(user?.phone ?? ""); setCity(user?.city ?? ""); } }}
+            <button onClick={() => { setEditMode(!editMode); if (!editMode) { setName(user?.fullName ?? ""); setEmail(user?.email ?? ""); setPhone(user?.phone ?? ""); setCity(user?.city ?? ""); } }}
               className="text-[11px] text-accent font-semibold flex items-center gap-1 hover:text-accent/80 transition-colors">
               <Edit3 className="h-3 w-3" />
               {editMode ? LANG.common.cancel : LANG.common.edit}
@@ -185,6 +204,17 @@ export default function Profile() {
                 <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">{LANG.common.fullName}</label>
                 <input type="text" value={name} onChange={(e) => setName(e.target.value)}
                   className="w-full mt-1.5 px-3 py-3 rounded-xl border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all" />
+              </div>
+              <div>
+                <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">{LANG.common.email}</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder={LANG.auth.emailPlaceholder}
+                  autoComplete="email"
+                  className="w-full mt-1.5 px-3 py-3 rounded-xl border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all"
+                />
               </div>
               <div>
                 <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">{LANG.common.phone}</label>

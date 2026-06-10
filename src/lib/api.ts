@@ -447,7 +447,7 @@ export const payouts = {
 // ── Profile ──
 export const profile = {
   get: () => request<AuthUser>("/user/profile"),
-  update: (data: { name: string; phone?: string; city?: string }) =>
+  update: (data: { name: string; email?: string; phone?: string; city?: string }) =>
     request<AuthUser>("/user/profile", { method: "PATCH", body: JSON.stringify(data) }),
   changePassword: (data: { currentPassword: string; newPassword: string }) =>
     request<{ message: string }>("/user/change-password", { method: "PATCH", body: JSON.stringify(data) }),
