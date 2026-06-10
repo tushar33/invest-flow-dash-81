@@ -1,6 +1,8 @@
 import { NavLink as RouterNavLink, useLocation, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
+import { packages as packagesApi } from "@/lib/api";
 import {
   LayoutDashboard, Package, Wallet, CreditCard, User,
   Users, Settings, FileText, TrendingUp, Shield, LogOut, FlaskConical
@@ -42,10 +44,24 @@ export function DesktopSidebar({ role }: DesktopSidebarProps) {
     return item.to === "/bank-details" || item.to === "/profile";
   });
 
+  const { data: userPackages } = useQuery({
+    queryKey: ["sidebar-user-packages", user?.id],
+    queryFn: () => packagesApi.list({ userId: user!.id, status: "ACTIVE", limit: 50 }),
+    enabled: !!user?.id && role === "user",
+    staleTime: 60_000,
+  });
+
+  const roiBadge = (() => {
+    if (!userPackages?.length) return null;
+    const pcts = Array.from(new Set(userPackages.map((p) => Math.round(parseFloat(p.roiPercentage))))).sort((a, b) => a - b);
+    return pcts.map((p) => `${p}%`).join(" / ");
+  })();
+
   const handleLogout = () => {
     logout();
     navigate("/login", { replace: true });
   };
+
 
   const initials = user?.fullName?.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2) || "U";
 
@@ -116,13 +132,18 @@ export function DesktopSidebar({ role }: DesktopSidebarProps) {
           <div className="flex-1 min-w-0">
             <p className="text-xs font-semibold text-sidebar-foreground truncate">{user?.fullName}</p>
             {user?.username && (
-              <p className="text-[10px] text-accent font-mono font-semibold truncate" title={user.username}>
-                @{user.username}
+              <p
+                className="mt-0.5 inline-flex items-center gap-1 rounded-md bg-accent/15 px-1.5 py-0.5 text-[13px] font-extrabold tracking-wide text-accent font-mono truncate max-w-full"
+                title={user.username}
+              >
+                <span className="truncate">{user.username.toUpperCase()}</span>
+                {roiBadge && <span className="text-accent">@{roiBadge}</span>}
               </p>
             )}
-            <p className="text-[10px] text-sidebar-foreground/55 truncate">{user?.email || user?.phone}</p>
+            <p className="text-[10px] text-sidebar-foreground/55 truncate mt-0.5">{user?.email || user?.phone}</p>
           </div>
         </div>
+
 
         <button
           onClick={handleLogout}
