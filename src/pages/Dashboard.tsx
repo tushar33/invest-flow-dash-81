@@ -7,7 +7,8 @@ import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { wallet as walletApi, packages as packagesApi, payouts as payoutsApi, bankDetailsQueryOptions, normalizeBankVerificationStatus } from "@/lib/api";
+import { wallet as walletApi, packages as packagesApi, payouts as payoutsApi, bankDetailsQueryOptions } from "@/lib/api";
+import { isBankVerifiedForUser } from "@/lib/onboarding";
 import { formatCredits, formatCreditsSigned, formatTransactionLabel } from "@/lib/format";
 import { LANG, greeting } from "@/lib/language";
 import { NoCreditsToRedeem } from "@/components/NoCreditsToRedeem";
@@ -55,8 +56,8 @@ export default function Dashboard() {
     .reduce((s, p) => s + Number(p.amount), 0) ?? 0;
   const activePlansAmount = pkgs?.filter(p => p.status === "ACTIVE")
     .reduce((s, p) => s + Number(p.principalAmount), 0) ?? 0;
-  const bankVerificationStatus = normalizeBankVerificationStatus(bank?.verificationStatus);
-  const redemptionReady = bankVerificationStatus === "verified";
+  const bankVerified = isBankVerifiedForUser(bank);
+  const redemptionReady = bankVerified;
   const canRequestRedemption = balance > 0;
   const recentTx = filterUserVisibleTransactions(walletData?.transactions ?? []).slice(0, 4);
 
@@ -142,14 +143,14 @@ export default function Dashboard() {
               <div className="flex-1">
                 <p className="text-[13px] font-semibold text-warning">
                   {bank
-                    ? bankVerificationStatus === "rejected"
+                    ? bank.verificationStatus?.toLowerCase() === "rejected"
                       ? LANG.status.verificationRejected
                       : LANG.status.verificationPending
                     : LANG.status.setupRequired}
                 </p>
                 <p className="text-[11px] text-muted-foreground">
                   {bank
-                    ? bankVerificationStatus === "rejected"
+                    ? bank.verificationStatus?.toLowerCase() === "rejected"
                       ? LANG.dashboard.updateDetailsPrompt
                       : LANG.dashboard.underReviewPrompt
                     : LANG.dashboard.addDetailsPrompt}

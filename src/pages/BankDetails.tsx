@@ -13,6 +13,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { LANG, accountTypeDisplay } from "@/lib/language";
+import { BYPASS_BANK_VERIFICATION } from "@/lib/onboarding";
 
 const MAX_FILE_SIZE = 2 * 1024 * 1024;
 const ACCEPTED_FILE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/jpg", "application/pdf"];
@@ -289,11 +290,13 @@ export default function BankDetails() {
     return `${"*".repeat(value.length - 4)}${value.slice(-4)}`;
   };
 
-  const verificationStatus = normalizeBankVerificationStatus(bank?.verificationStatus);
+  const verificationStatus = BYPASS_BANK_VERIFICATION
+    ? "verified"
+    : normalizeBankVerificationStatus(bank?.verificationStatus);
   const verificationBadgeStatus =
     verificationStatus === "verified" ? "approved" : verificationStatus === "rejected" ? "rejected" : "pending";
   const verificationLabel = bankVerificationStatusLabel(verificationStatus);
-  const canEditBankDetails = !isUnderReview;
+  const canEditBankDetails = BYPASS_BANK_VERIFICATION || !isUnderReview;
 
   if (isLoading) {
     return (
@@ -455,7 +458,8 @@ export default function BankDetails() {
           </div>
         )}
 
-        {bank && !showForm && isUnderReview && (
+        {/* Bank verification step — disabled while BYPASS_BANK_VERIFICATION is true */}
+        {!BYPASS_BANK_VERIFICATION && bank && !showForm && isUnderReview && (
           <div className="bg-warning/10 border border-warning/20 rounded-2xl p-4 flex items-start gap-3 animate-slide-up-fade">
             <div className="h-9 w-9 shrink-0 rounded-xl bg-warning/15 flex items-center justify-center">
               <AlertCircle className="h-4 w-4 text-warning" />
@@ -469,7 +473,7 @@ export default function BankDetails() {
           </div>
         )}
 
-        {bank && !showForm && !isUnderReview && verificationStatus === "pending" && (
+        {!BYPASS_BANK_VERIFICATION && bank && !showForm && !isUnderReview && verificationStatus === "pending" && (
           <div className="bg-warning/10 border border-warning/20 rounded-2xl p-4 flex items-start gap-3 animate-slide-up-fade">
             <div className="h-9 w-9 shrink-0 rounded-xl bg-warning/15 flex items-center justify-center">
               <AlertCircle className="h-4 w-4 text-warning" />
@@ -486,7 +490,7 @@ export default function BankDetails() {
           </div>
         )}
 
-        {bank && !showForm && verificationStatus === "rejected" && (
+        {!BYPASS_BANK_VERIFICATION && bank && !showForm && verificationStatus === "rejected" && (
           <div className="bg-destructive/10 border border-destructive/20 rounded-2xl p-4 flex items-start gap-3 animate-slide-up-fade">
             <div className="h-9 w-9 shrink-0 rounded-xl bg-destructive/15 flex items-center justify-center">
               <AlertCircle className="h-4 w-4 text-destructive" />

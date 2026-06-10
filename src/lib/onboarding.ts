@@ -3,10 +3,23 @@ import type { AuthUser } from "@/lib/api";
 export type OnboardingStatus = AuthUser["onboardingStatus"];
 
 /**
- * Temporary: skip KYC/bank verification gates (menus, routes, login redirect).
- * Set to false when verification should be enforced again.
+ * Onboarding and bank verification bypass helpers.
+ *
+ * Flags are temporary — see doc/VERIFICATION_BYPASS.md in the repo root.
+ * Backend mirrors the same flags in backend/src/common/constants/verification-bypass.ts
  */
 const BYPASS_ONBOARDING_VERIFICATION = true;
+
+/** Must match backend BYPASS_BANK_VERIFICATION. See doc/VERIFICATION_BYPASS.md */
+export const BYPASS_BANK_VERIFICATION = true;
+
+export function isBankVerifiedForUser(
+  bank: { verificationStatus?: string | null } | null | undefined,
+): boolean {
+  if (!bank) return false;
+  if (BYPASS_BANK_VERIFICATION) return true;
+  return bank.verificationStatus?.toLowerCase() === "verified";
+}
 
 export function isOnboardingComplete(user: AuthUser | null | undefined): boolean {
   if (!user) return false;

@@ -10,6 +10,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { payouts as payoutsApi, wallet as walletApi, bankDetailsQueryOptions, normalizeBankVerificationStatus } from "@/lib/api";
+import { isBankVerifiedForUser } from "@/lib/onboarding";
 import { useToast } from "@/hooks/use-toast";
 import { formatCredits } from "@/lib/format";
 import { useAuth } from "@/contexts/AuthContext";
@@ -57,7 +58,7 @@ export default function Payouts() {
   const canRequestRedemption = availableBalance > 0;
   const pendingAmount = payoutsList?.filter(p => p.status === "PENDING").reduce((s, p) => s + Number(p.amount), 0) ?? 0;
   const bankVerificationStatus = normalizeBankVerificationStatus(bank?.verificationStatus);
-  const bankVerified = bankVerificationStatus === "verified";
+  const bankVerified = isBankVerifiedForUser(bank);
 
   const createMutation = useMutation({
     mutationFn: (amt: number) => payoutsApi.create({ requestType: "ROI", amount: amt }),
