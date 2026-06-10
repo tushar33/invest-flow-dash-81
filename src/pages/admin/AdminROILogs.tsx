@@ -123,7 +123,12 @@ function RunLogCard({ log }: { log: RoiProcessingLog }) {
                       className="flex items-start justify-between gap-3 text-xs"
                     >
                       <div className="min-w-0">
-                        <p className="font-medium truncate">{pkg.userName}</p>
+                        <p className="font-medium truncate">
+                          {pkg.userName}
+                          {pkg.username && (
+                            <span className="ml-1 text-accent font-mono font-normal">(@{pkg.username})</span>
+                          )}
+                        </p>
                         <p className="text-muted-foreground truncate">
                           {formatInr(pkg.principalAmount)} · {pkg.roiPercentage}% reward
                           {pkg.cycleNumber != null ? ` · ${LANG.reward.runLogCycleLabel(pkg.cycleNumber)}` : ""}
