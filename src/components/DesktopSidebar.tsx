@@ -44,10 +44,24 @@ export function DesktopSidebar({ role }: DesktopSidebarProps) {
     return item.to === "/bank-details" || item.to === "/profile";
   });
 
+  const { data: userPackages } = useQuery({
+    queryKey: ["sidebar-user-packages", user?.id],
+    queryFn: () => packagesApi.list({ userId: user!.id, status: "ACTIVE", limit: 50 }),
+    enabled: !!user?.id && role === "user",
+    staleTime: 60_000,
+  });
+
+  const roiBadge = (() => {
+    if (!userPackages?.length) return null;
+    const pcts = Array.from(new Set(userPackages.map((p) => Math.round(parseFloat(p.roiPercentage))))).sort((a, b) => a - b);
+    return pcts.map((p) => `${p}%`).join(" / ");
+  })();
+
   const handleLogout = () => {
     logout();
     navigate("/login", { replace: true });
   };
+
 
   const initials = user?.fullName?.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2) || "U";
 
