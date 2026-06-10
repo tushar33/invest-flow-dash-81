@@ -1,6 +1,8 @@
 import { NavLink as RouterNavLink, useLocation, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
+import { packages as packagesApi } from "@/lib/api";
 import {
   LayoutDashboard, Package, Wallet, CreditCard, User,
   Users, Settings, FileText, TrendingUp, Shield, LogOut, FlaskConical
