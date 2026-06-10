@@ -132,13 +132,18 @@ export function DesktopSidebar({ role }: DesktopSidebarProps) {
           <div className="flex-1 min-w-0">
             <p className="text-xs font-semibold text-sidebar-foreground truncate">{user?.fullName}</p>
             {user?.username && (
-              <p className="text-[10px] text-accent font-mono font-semibold truncate" title={user.username}>
-                @{user.username}
+              <p
+                className="mt-0.5 inline-flex items-center gap-1 rounded-md bg-accent/15 px-1.5 py-0.5 text-[13px] font-extrabold tracking-wide text-accent font-mono truncate max-w-full"
+                title={user.username}
+              >
+                <span className="truncate">{user.username.toUpperCase()}</span>
+                {roiBadge && <span className="text-accent">@{roiBadge}</span>}
               </p>
             )}
-            <p className="text-[10px] text-sidebar-foreground/55 truncate">{user?.email || user?.phone}</p>
+            <p className="text-[10px] text-sidebar-foreground/55 truncate mt-0.5">{user?.email || user?.phone}</p>
           </div>
         </div>
+
 
         <button
           onClick={handleLogout}
