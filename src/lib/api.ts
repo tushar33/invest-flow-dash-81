@@ -586,6 +586,7 @@ export interface RoiLogCreditedPackage {
   userId: string;
   userName: string;
   userEmail: string | null;
+  username?: string | null;
   principalAmount: string;
   roiPercentage: string;
   cycleNumber: number | null;
