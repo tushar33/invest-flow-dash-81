@@ -112,7 +112,6 @@ export function DesktopSidebar({ role }: DesktopSidebarProps) {
 
         {role === "user" && user?.username && (
           <div className="mt-3 mx-1 rounded-xl bg-accent/15 border border-accent/30 px-3 py-2.5 text-center">
-            <p className="text-[10px] uppercase tracking-widest text-sidebar-foreground/60 mb-1">Member</p>
             <p className="text-base font-extrabold tracking-wide text-accent font-mono leading-tight">
               {user.username.toUpperCase()}
               {roiBadge && <span className="ml-1">@{roiBadge}</span>}
