@@ -23,6 +23,7 @@ export function ProtectedRoute({
 
   if (!user) return <Navigate to="/login" replace />;
   if (adminOnly && user.role !== "ADMIN") return <Navigate to="/dashboard" replace />;
+  // KYC/onboarding route gate — disabled while BYPASS_ONBOARDING_VERIFICATION is true in @/lib/onboarding
   if (requiresApproved && !isOnboardingComplete(user)) {
     return <Navigate to={getPostAuthPath(user)} replace />;
   }
