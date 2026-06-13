@@ -128,9 +128,15 @@ export function BottomNav() {
                   <div className="h-12 w-12 rounded-2xl bg-gradient-accent flex items-center justify-center text-sm font-bold text-accent-foreground shadow-glow">
                     {initials}
                   </div>
-                  <div>
-                    <p className="text-sm font-semibold">{user?.fullName}</p>
-                    <p className="text-xs text-muted-foreground">{user?.email || user?.phone}</p>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold truncate">{user?.fullName}</p>
+                    {user?.username && (
+                      <p className="mt-1 inline-block rounded-md bg-accent/15 border border-accent/40 px-2 py-0.5 text-[13px] font-extrabold tracking-wide text-accent font-mono">
+                        {user.username.toUpperCase()}
+                        {roiBadge && <span className="ml-1">@{roiBadge}</span>}
+                      </p>
+                    )}
+                    <p className="text-xs text-muted-foreground truncate mt-0.5">{user?.email || user?.phone}</p>
                   </div>
                 </div>
                 <Button variant="ghost" onClick={() => { setProfileOpen(false); navigate("/profile"); }} className="w-full justify-start">
