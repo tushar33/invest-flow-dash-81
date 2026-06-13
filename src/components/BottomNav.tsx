@@ -45,8 +45,30 @@ export function BottomNav() {
         { to: "/profile", icon: User, label: LANG.common.profile },
       ];
 
+  const { data: userPackages } = useQuery({
+    queryKey: ["sidebar-user-packages", user?.id],
+    queryFn: () => packagesApi.list({ userId: user!.id, status: "ACTIVE", limit: 50 }),
+    enabled: !!user?.id,
+    staleTime: 60_000,
+  });
+  const roiBadge = (() => {
+    if (!userPackages?.length) return null;
+    const pcts = Array.from(new Set(userPackages.map((p) => Math.round(parseFloat(p.roiPercentage))))).sort((a, b) => a - b);
+    return pcts.map((p) => `${p}%`).join(" / ");
+  })();
+
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden px-3 pb-3 pointer-events-none">
+      {user?.username && (
+        <div className="pointer-events-auto mb-2 flex justify-center">
+          <div className="rounded-full bg-accent/15 border border-accent/40 px-3 py-1 shadow-glow backdrop-blur-xl">
+            <p className="text-sm font-extrabold tracking-wide text-accent font-mono leading-none">
+              {user.username.toUpperCase()}
+              {roiBadge && <span className="ml-1">@{roiBadge}</span>}
+            </p>
+          </div>
+        </div>
+      )}
       <div className="pointer-events-auto bg-card/85 backdrop-blur-2xl border border-border/60 rounded-2xl shadow-elevated">
         <div className="flex items-center justify-around h-[64px] px-1">
           {navItems.map((item) => {
