@@ -25,7 +25,7 @@ type AutoPayModeValue = (typeof AUTO_PAY_MODES)[number];
 const filterDefaults = { search: "", role: "", autoPayMode: "" };
 
 const filterFields: FilterField[] = [
-  { key: "search", label: LANG.common.search, type: "search", placeholder: LANG.filter.nameOrEmailPlaceholder },
+  { key: "search", label: LANG.common.search, type: "search", placeholder: "Name, email or TA ID..." },
   {
     key: "role", label: LANG.common.role, type: "select", placeholder: LANG.filter.allRoles,
     options: [...FILTER_OPTIONS.userRole],
@@ -35,6 +35,7 @@ const filterFields: FilterField[] = [
     options: [...FILTER_OPTIONS.autoPayMode],
   },
 ];
+
 
 function formatAdminUserLabel(user: { username?: string | null; name: string }) {
   if (user.username) return `${user.name} (${user.username})`;
