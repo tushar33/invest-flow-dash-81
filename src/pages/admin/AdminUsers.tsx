@@ -552,20 +552,22 @@ export default function AdminUsers() {
                 <thead>
                   <tr className="border-b border-border">
                     <th className="text-left text-xs font-medium text-muted-foreground p-4">{LANG.common.name}</th>
-                    <th className="text-left text-xs font-medium text-muted-foreground p-4">{LANG.common.email}</th>
                     <th className="text-left text-xs font-medium text-muted-foreground p-4">{LANG.filter.autoRedemption}</th>
                     <th className="text-left text-xs font-medium text-muted-foreground p-4">{LANG.nav.plans}</th>
                     <th className="text-left text-xs font-medium text-muted-foreground p-4">{LANG.common.availableBalance}</th>
                     <th className="text-left text-xs font-medium text-muted-foreground p-4">{LANG.common.totalRewards}</th>
-                    <th className="text-left text-xs font-medium text-muted-foreground p-4">{LANG.common.role}</th>
                     <th className="text-right text-xs font-medium text-muted-foreground p-4 sticky right-0 bg-card">{LANG.common.actions}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
                   {filtered.map((u) => (
                     <tr key={u.id} className="hover:bg-muted/50 transition-colors">
-                      <td className="p-4 text-sm font-medium whitespace-nowrap">{formatAdminUserLabel(u)}</td>
-                      <td className="p-4 text-sm text-muted-foreground whitespace-nowrap">{u.email || LANG.common.noData}</td>
+                      <td className="p-4 whitespace-nowrap">
+                        <div className="flex flex-col">
+                          <span className="text-sm font-medium">{formatAdminUserLabel(u)}</span>
+                          <span className="text-xs text-muted-foreground">{u.email || LANG.common.noData}</span>
+                        </div>
+                      </td>
                       <td className="p-4">
                         {currentUser?.id === u.id ? (
                           <AutoPayModeBadge mode={u.autoPayMode ?? "NONE"} />
@@ -589,7 +591,6 @@ export default function AdminUsers() {
                       <td className="p-4 text-sm font-semibold">{u.totalPackages}</td>
                       <td className="p-4 text-sm font-semibold whitespace-nowrap">{formatCredits(u.currentBalance)}</td>
                       <td className="p-4 text-sm font-semibold whitespace-nowrap">{formatCredits(u.totalRewardsCredited ?? 0)}</td>
-                      <td className="p-4"><span className="text-[10px] font-bold bg-accent/15 text-accent px-2 py-0.5 rounded-full">{roleLabel(u.role)}</span></td>
                       <td className="p-4 text-right sticky right-0 bg-card group-hover:bg-muted/50">
                         <div className="flex items-center gap-1 justify-end">
                           <Button size="sm" variant="outline" className="h-8 w-8 p-0" title={LANG.admin.assignPlanAction} onClick={() => openAssignModal(u.id, u.name, u.autoPayMode)}>
@@ -609,10 +610,11 @@ export default function AdminUsers() {
                     </tr>
                   ))}
                   {filtered.length === 0 && (
-                    <tr><td colSpan={8} className="text-center text-muted-foreground py-12">{LANG.admin.noUsers}</td></tr>
+                    <tr><td colSpan={6} className="text-center text-muted-foreground py-12">{LANG.admin.noUsers}</td></tr>
                   )}
                 </tbody>
               </table>
+
             </div>
 
           </>
