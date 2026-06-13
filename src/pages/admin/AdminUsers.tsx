@@ -547,8 +547,8 @@ export default function AdminUsers() {
             </div>
 
             {/* Desktop table */}
-            <div className="hidden md:block bg-card rounded-xl border border-border overflow-hidden">
-              <table className="w-full">
+            <div className="hidden md:block bg-card rounded-xl border border-border overflow-x-auto">
+              <table className="w-full min-w-[1100px]">
                 <thead>
                   <tr className="border-b border-border">
                     <th className="text-left text-xs font-medium text-muted-foreground p-4">{LANG.common.name}</th>
@@ -558,14 +558,14 @@ export default function AdminUsers() {
                     <th className="text-left text-xs font-medium text-muted-foreground p-4">{LANG.common.availableBalance}</th>
                     <th className="text-left text-xs font-medium text-muted-foreground p-4">{LANG.common.totalRewards}</th>
                     <th className="text-left text-xs font-medium text-muted-foreground p-4">{LANG.common.role}</th>
-                    <th className="text-right text-xs font-medium text-muted-foreground p-4">{LANG.common.actions}</th>
+                    <th className="text-right text-xs font-medium text-muted-foreground p-4 sticky right-0 bg-card">{LANG.common.actions}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
                   {filtered.map((u) => (
                     <tr key={u.id} className="hover:bg-muted/50 transition-colors">
-                      <td className="p-4 text-sm font-medium">{formatAdminUserLabel(u)}</td>
-                      <td className="p-4 text-sm text-muted-foreground">{u.email || LANG.common.noData}</td>
+                      <td className="p-4 text-sm font-medium whitespace-nowrap">{formatAdminUserLabel(u)}</td>
+                      <td className="p-4 text-sm text-muted-foreground whitespace-nowrap">{u.email || LANG.common.noData}</td>
                       <td className="p-4">
                         {currentUser?.id === u.id ? (
                           <AutoPayModeBadge mode={u.autoPayMode ?? "NONE"} />
@@ -587,33 +587,34 @@ export default function AdminUsers() {
                         )}
                       </td>
                       <td className="p-4 text-sm font-semibold">{u.totalPackages}</td>
-                      <td className="p-4 text-sm font-semibold">{formatCredits(u.currentBalance)}</td>
-                      <td className="p-4 text-sm font-semibold">{formatCredits(u.totalRewardsCredited ?? 0)}</td>
+                      <td className="p-4 text-sm font-semibold whitespace-nowrap">{formatCredits(u.currentBalance)}</td>
+                      <td className="p-4 text-sm font-semibold whitespace-nowrap">{formatCredits(u.totalRewardsCredited ?? 0)}</td>
                       <td className="p-4"><span className="text-[10px] font-bold bg-accent/15 text-accent px-2 py-0.5 rounded-full">{roleLabel(u.role)}</span></td>
-                      <td className="p-4 text-right">
-                        <div className="flex flex-col gap-2 w-[160px] ml-auto">
-                          <Button size="sm" variant="outline" className="text-xs justify-center w-full" onClick={() => openAssignModal(u.id, u.name, u.autoPayMode)}>
-                            <Plus className="h-3.5 w-3.5 mr-1" /> {LANG.admin.assignPlanAction}
+                      <td className="p-4 text-right sticky right-0 bg-card group-hover:bg-muted/50">
+                        <div className="flex items-center gap-1 justify-end">
+                          <Button size="sm" variant="outline" className="h-8 w-8 p-0" title={LANG.admin.assignPlanAction} onClick={() => openAssignModal(u.id, u.name, u.autoPayMode)}>
+                            <Plus className="h-3.5 w-3.5" />
                           </Button>
-                          <Button size="sm" variant="outline" className="text-xs justify-center w-full" onClick={() => navigate(`/admin/packages?userId=${u.id}`)}>
-                            <Eye className="h-3.5 w-3.5 mr-1" /> {LANG.admin.viewPlans}
+                          <Button size="sm" variant="outline" className="h-8 w-8 p-0" title={LANG.admin.viewPlans} onClick={() => navigate(`/admin/packages?userId=${u.id}`)}>
+                            <Eye className="h-3.5 w-3.5" />
                           </Button>
-                          <Button size="sm" variant="outline" className="text-xs justify-center w-full" onClick={() => navigate(`/wallet/ledger?userId=${u.id}`)}>
-                            <BookOpen className="h-3.5 w-3.5 mr-1" /> {LANG.plans.viewLedger}
+                          <Button size="sm" variant="outline" className="h-8 w-8 p-0" title={LANG.plans.viewLedger} onClick={() => navigate(`/wallet/ledger?userId=${u.id}`)}>
+                            <BookOpen className="h-3.5 w-3.5" />
                           </Button>
-                          <Button size="sm" variant="outline" className="text-xs justify-center w-full" onClick={() => openBankVerifyModal(u.id, u.name)}>
-                            <Landmark className="h-3.5 w-3.5 mr-1" /> {LANG.admin.verifyBankDetails}
+                          <Button size="sm" variant="outline" className="h-8 w-8 p-0" title={LANG.admin.verifyBankDetails} onClick={() => openBankVerifyModal(u.id, u.name)}>
+                            <Landmark className="h-3.5 w-3.5" />
                           </Button>
                         </div>
                       </td>
                     </tr>
                   ))}
                   {filtered.length === 0 && (
-                    <tr><td colSpan={7} className="text-center text-muted-foreground py-12">{LANG.admin.noUsers}</td></tr>
+                    <tr><td colSpan={8} className="text-center text-muted-foreground py-12">{LANG.admin.noUsers}</td></tr>
                   )}
                 </tbody>
               </table>
             </div>
+
           </>
         )}
       </div>
