@@ -1,4 +1,5 @@
 import { NavLink as RouterNavLink, useLocation, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { LucideIcon, LayoutDashboard, Package, Wallet, CreditCard, User, LogOut, FileText, Settings } from "lucide-react";
@@ -7,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { LANG } from "@/lib/language";
 import { isOnboardingComplete } from "@/lib/onboarding";
+import { packages as packagesApi } from "@/lib/api";
 
 interface NavItem {
   to: string;
