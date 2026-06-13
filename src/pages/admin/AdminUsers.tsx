@@ -448,11 +448,16 @@ export default function AdminUsers() {
   };
 
   const filtered = (users ?? []).filter(u => {
-    if (filters.search && !u.name.toLowerCase().includes(filters.search.toLowerCase()) && !(u.email ?? "").toLowerCase().includes(filters.search.toLowerCase())) return false;
+    if (filters.search) {
+      const q = filters.search.toLowerCase().trim();
+      const hay = `${u.name} ${u.email ?? ""} ${u.username ?? ""}`.toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
     if (filters.role && u.role !== filters.role) return false;
     if (filters.autoPayMode && (u.autoPayMode ?? "NONE") !== filters.autoPayMode) return false;
     return true;
   });
+
 
   return (
     <AdminLayout>
