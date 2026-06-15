@@ -2,7 +2,7 @@ import { UserLayout } from "@/components/UserLayout";
 import { GradientCard } from "@/components/ui/gradient-card";
 import { StatTile } from "@/components/ui/stat-tile";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Wallet, Gift, TrendingUp, Clock, ArrowDownLeft, ArrowUpRight, ChevronRight, CheckCircle2, AlertCircle, Package, Activity } from "lucide-react";
+import { Wallet, Gift, TrendingUp, Clock, ArrowDownLeft, ArrowUpRight, ChevronRight, CheckCircle2, AlertCircle, Package, Activity, Lock } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
@@ -58,7 +58,8 @@ export default function Dashboard() {
     .reduce((s, p) => s + Number(p.principalAmount), 0) ?? 0;
   const bankVerified = isBankVerifiedForUser(bank);
   const redemptionReady = bankVerified;
-  const canRequestRedemption = balance > 0;
+  const hasLockedPlan = pkgs?.some(p => p.status === "ACTIVE" && p.redemptionLocked) ?? false;
+  const canRequestRedemption = balance > 0 && !hasLockedPlan;
   const recentTx = filterUserVisibleTransactions(walletData?.transactions ?? []).slice(0, 4);
 
   if (isLoading) {
@@ -103,7 +104,11 @@ export default function Dashboard() {
             <span className="text-[11px] uppercase tracking-widest opacity-80 font-semibold">{LANG.dashboard.availableBalance}</span>
           </div>
           <p className="text-[36px] font-bold leading-tight tabular-nums">{formatCredits(balance)}</p>
-          {canRequestRedemption ? (
+          {hasLockedPlan ? (
+            <span className="inline-flex items-center gap-1.5 mt-3 text-[12px] font-semibold bg-white/10 backdrop-blur rounded-full px-3 py-1.5">
+              <Lock className="h-3.5 w-3.5" /> {LANG.redemption.status}: {LANG.redemption.statusLocked}
+            </span>
+          ) : canRequestRedemption ? (
             <Link to="/payouts" className="inline-flex items-center gap-1 mt-3 text-[12px] text-accent-foreground font-semibold bg-accent/90 hover:bg-accent rounded-full px-3 py-1.5 transition-colors shadow-glow">
               {LANG.dashboard.requestRedemption} <ChevronRight className="h-3.5 w-3.5" />
             </Link>
@@ -119,6 +124,19 @@ export default function Dashboard() {
           <StatTile label={LANG.dashboard.activePlans} value={formatCredits(activePlansAmount)} icon={TrendingUp} accent="info" />
         </div>
 
+        {hasLockedPlan && (
+          <div className="rounded-2xl p-4 flex items-center gap-3 border animate-slide-up-fade bg-warning/10 border-warning/20">
+            <div className="h-9 w-9 shrink-0 rounded-xl bg-warning/15 flex items-center justify-center">
+              <Lock className="h-4 w-4 text-warning" />
+            </div>
+            <div>
+              <p className="text-[13px] font-semibold text-warning">{LANG.redemption.status}: {LANG.redemption.statusLocked}</p>
+              <p className="text-[11px] text-muted-foreground">{LANG.redemption.lockedMessage}</p>
+            </div>
+          </div>
+        )}
+
+        {!hasLockedPlan && (
         <div className={`rounded-2xl p-4 flex items-center gap-3 border animate-slide-up-fade ${redemptionReady && canRequestRedemption ? "bg-success/10 border-success/20" : !canRequestRedemption && redemptionReady ? "bg-muted/50 border-border" : "bg-warning/10 border-warning/20"}`}>
           {redemptionReady && canRequestRedemption ? (
             <>
@@ -162,6 +180,7 @@ export default function Dashboard() {
             </>
           )}
         </div>
+        )}
 
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-bold tracking-tight">{LANG.dashboard.recentActivity}</h2>

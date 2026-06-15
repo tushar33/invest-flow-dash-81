@@ -5,7 +5,7 @@ import { useUrlFilters } from "@/hooks/useUrlFilters";
 import { PageHeader } from "@/components/ui/page-header";
 import { GradientCard } from "@/components/ui/gradient-card";
 import { EmptyState } from "@/components/ui/empty-state";
-import { CreditCard, Plus, X, Clock, Info, ArrowDownToLine } from "lucide-react";
+import { CreditCard, Plus, X, Clock, Info, ArrowDownToLine, Lock } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -53,9 +53,11 @@ export default function Payouts() {
   });
   const { data: walletData } = useQuery({ queryKey: ["wallet"], queryFn: () => walletApi.get() });
   const { data: bank } = useQuery(bankDetailsQueryOptions(user?.id));
+  const { data: payoutStatus } = useQuery({ queryKey: ["payout-status"], queryFn: () => payoutsApi.status() });
 
   const availableBalance = walletData?.availableBalance ?? 0;
-  const canRequestRedemption = availableBalance > 0;
+  const redemptionLocked = payoutStatus?.redemptionLocked ?? false;
+  const canRequestRedemption = availableBalance > 0 && !redemptionLocked;
   const pendingAmount = payoutsList?.filter(p => p.status === "PENDING").reduce((s, p) => s + Number(p.amount), 0) ?? 0;
   const bankVerificationStatus = normalizeBankVerificationStatus(bank?.verificationStatus);
   const bankVerified = isBankVerifiedForUser(bank);
@@ -75,6 +77,10 @@ export default function Payouts() {
   });
 
   const handleSubmit = () => {
+    if (redemptionLocked) {
+      toast({ title: LANG.common.error, description: LANG.redemption.lockedMessage, variant: "destructive" });
+      return;
+    }
     const val = Number(amount);
     if (!val || val <= 0) {
       toast({ title: LANG.common.error, description: LANG.redemption.invalidAmount, variant: "destructive" });
@@ -105,7 +111,7 @@ export default function Payouts() {
             <button
               onClick={() => canRequestRedemption && setShowForm(!showForm)}
               disabled={!canRequestRedemption}
-              title={!canRequestRedemption ? LANG.dashboard.noCreditsToRedeem : undefined}
+              title={redemptionLocked ? LANG.redemption.lockedMessage : !canRequestRedemption ? LANG.dashboard.noCreditsToRedeem : undefined}
               className="bg-gradient-accent text-accent-foreground text-xs font-semibold px-4 py-2.5 rounded-xl flex items-center gap-1.5 active:scale-[0.98] transition-transform shadow-glow disabled:opacity-50 disabled:pointer-events-none"
             >
               {showForm ? <X className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
@@ -113,6 +119,18 @@ export default function Payouts() {
             </button>
           }
         />
+
+        {redemptionLocked && (
+          <div className="rounded-2xl p-3.5 flex items-start gap-3 border animate-slide-up-fade bg-warning/10 border-warning/20">
+            <div className="h-9 w-9 shrink-0 rounded-xl bg-warning/15 flex items-center justify-center">
+              <Lock className="h-4 w-4 text-warning" />
+            </div>
+            <div>
+              <p className="text-[12px] font-semibold text-warning">{LANG.redemption.status}: {LANG.redemption.statusLocked}</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">{LANG.redemption.lockedMessage}</p>
+            </div>
+          </div>
+        )}
 
         <div className={`rounded-2xl p-3.5 flex items-start gap-3 border animate-slide-up-fade ${withinWindow ? "bg-success/10 border-success/20" : "bg-warning/10 border-warning/20"}`}>
           <div className={`h-9 w-9 shrink-0 rounded-xl flex items-center justify-center ${withinWindow ? "bg-success/15" : "bg-warning/15"}`}>
@@ -141,7 +159,7 @@ export default function Payouts() {
           </div>
         </GradientCard>
 
-        {!canRequestRedemption && <NoCreditsToRedeem />}
+        {!canRequestRedemption && !redemptionLocked && <NoCreditsToRedeem />}
 
         {showForm && canRequestRedemption && (
           <div className="bg-card rounded-2xl border border-accent/30 p-4 shadow-elevated animate-slide-up-fade">

@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -272,11 +273,15 @@ function AssignPlanForm({
   onAmountChange,
   roiPct,
   onRoiChange,
+  redemptionLocked,
+  onRedemptionLockedChange,
 }: {
   pkgAmount: string;
   onAmountChange: (value: string) => void;
   roiPct: string;
   onRoiChange: (value: string) => void;
+  redemptionLocked: boolean;
+  onRedemptionLockedChange: (value: boolean) => void;
 }) {
   const parsedAmount = useMemo(() => parseAmountInput(pkgAmount), [pkgAmount]);
   const formattedAmount = parsedAmount != null ? formatIndianNumber(parsedAmount) : "";
@@ -318,6 +323,31 @@ function AssignPlanForm({
             <SelectItem value="10">10%</SelectItem>
           </SelectContent>
         </Select>
+      </div>
+
+      <div className="space-y-2">
+        <Label>{LANG.plans.redemptionPermission}</Label>
+        <RadioGroup
+          value={redemptionLocked ? "locked" : "allowed"}
+          onValueChange={(value) => onRedemptionLockedChange(value === "locked")}
+          className="flex gap-6 pt-1"
+        >
+          <div className="flex items-center gap-2">
+            <RadioGroupItem value="allowed" id="redemption-allowed" />
+            <Label htmlFor="redemption-allowed" className="font-normal cursor-pointer">
+              {LANG.plans.redemptionAllowed}
+            </Label>
+          </div>
+          <div className="flex items-center gap-2">
+            <RadioGroupItem value="locked" id="redemption-locked" />
+            <Label htmlFor="redemption-locked" className="font-normal cursor-pointer">
+              {LANG.plans.redemptionLocked}
+            </Label>
+          </div>
+        </RadioGroup>
+        {redemptionLocked && (
+          <p className="text-xs text-muted-foreground">{LANG.plans.redemptionLockedHint}</p>
+        )}
       </div>
 
       {showSummary && (
@@ -376,6 +406,7 @@ export default function AdminUsers() {
   const [selectedUserId, setSelectedUserId] = useState("");
   const [selectedUserName, setSelectedUserName] = useState("");
   const [pkgAmount, setPkgAmount] = useState("");
+  const [redemptionLocked, setRedemptionLocked] = useState(false);
   const [selectedUserAutoPay, setSelectedUserAutoPay] = useState<AutoPayModeValue>("NONE");
 
   const [roiPct, setRoiPct] = useState("");
@@ -399,6 +430,7 @@ export default function AdminUsers() {
         userId: selectedUserId,
         principalAmount: Number(pkgAmount),
         roiPercentage: Number(roiPct),
+        redemptionLocked,
       }),
     onSuccess: () => {
       toast({ title: LANG.toast.planAssigned });
@@ -407,6 +439,7 @@ export default function AdminUsers() {
       setAssignOpen(false);
       setPkgAmount("");
       setRoiPct("");
+      setRedemptionLocked(false);
     },
     onError: (err: Error) => {
       toast({ title: LANG.toast.planAssignFailed, description: err.message, variant: "destructive" });
@@ -438,6 +471,7 @@ export default function AdminUsers() {
     setSelectedUserAutoPay((autoPayMode as AutoPayModeValue) ?? "NONE");
     setPkgAmount("");
     setRoiPct("");
+    setRedemptionLocked(false);
     setAssignOpen(true);
   };
 
@@ -633,6 +667,8 @@ export default function AdminUsers() {
             onAmountChange={setPkgAmount}
             roiPct={roiPct}
             onRoiChange={setRoiPct}
+            redemptionLocked={redemptionLocked}
+            onRedemptionLockedChange={setRedemptionLocked}
           />
           <DialogFooter className="flex-col sm:flex-row gap-2">
             <Button

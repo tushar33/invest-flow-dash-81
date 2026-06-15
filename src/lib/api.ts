@@ -233,6 +233,10 @@ export interface Package {
   maturityDate: string;
   principalWithdrawnAmount: string;
   status: "ACTIVE" | "MATURED" | "CLOSED";
+  /** When true, the user cannot create redemption requests for this plan. */
+  redemptionLocked?: boolean;
+  redemptionLockedAt?: string | null;
+  redemptionLockedBy?: string | null;
   /** Legacy migration: original userCode for this package row (packages are never merged). */
   legacyUserCode?: string | null;
   legacyPkgCnt?: number | null;
@@ -432,6 +436,17 @@ export interface PayoutFilters {
   limit?: number;
 }
 
+export interface PayoutStatus {
+  walletBalance: number;
+  hasBankDetails: boolean;
+  bankVerified: boolean;
+  payoutWindowOpen: boolean;
+  pendingPayout: boolean;
+  redemptionLocked: boolean;
+  readyForPayout: boolean;
+  message: string;
+}
+
 export const payouts = {
   create: (data: { requestType: string; amount: number; packageId?: string }) =>
     request<PayoutRequest>("/payouts", { method: "POST", body: JSON.stringify(data) }),
@@ -439,6 +454,7 @@ export const payouts = {
     return request<PaginatedResponse<PayoutRequest[]>>(`/payouts${buildQs(params as any)}`).then((res) => res.data);
   },
   getById: (id: string) => request<PayoutRequest>(`/payouts/${id}`),
+  status: () => request<PayoutStatus>("/user/payout-status"),
 };
 
 // ── Profile ──
@@ -531,6 +547,9 @@ export interface AdminPackage {
   totalCycles: number;
   durationMonths?: number;
   status: string;
+  redemptionLocked?: boolean;
+  redemptionLockedAt?: string | null;
+  redemptionLockedBy?: string | null;
 }
 
 export interface AdminPackageFilters {
@@ -681,9 +700,9 @@ export const admin = {
     request<{ data: RoiLogCreditedPackage[] }>(`/admin/roi-logs/${logId}/packages`),
   processPayout: (id: string, data: { status: string; rejectionReason?: string }) =>
     request<PayoutRequest>(`/payouts/${id}/process`, { method: "PATCH", body: JSON.stringify(data) }),
-  assignPackage: (data: { userId: string; principalAmount: number; roiPercentage: number }) =>
+  assignPackage: (data: { userId: string; principalAmount: number; roiPercentage: number; redemptionLocked?: boolean }) =>
     request<Package>("/packages/assign", { method: "POST", body: JSON.stringify(data) }),
-  updatePackage: (id: string, data: { status: string }) =>
+  updatePackage: (id: string, data: { status?: string; redemptionLocked?: boolean }) =>
     request<Package>(`/packages/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
   triggerRoi: () => request<{ processed: number; message: string }>("/roi-engine/process", { method: "POST" }),
   userWallet: (userId: string, filters?: AdminWalletFilters) =>

@@ -5,7 +5,7 @@ import { useUrlFilters } from "@/hooks/useUrlFilters";
 import { PageHeader } from "@/components/ui/page-header";
 import { GradientCard } from "@/components/ui/gradient-card";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Gift, CalendarDays, Package as PackageIcon } from "lucide-react";
+import { Gift, CalendarDays, Package as PackageIcon, Lock } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { packages as packagesApi } from "@/lib/api";
 import { formatCredits } from "@/lib/format";
@@ -115,9 +115,17 @@ export default function Packages() {
                   </div>
 
                   {/* Reward chip */}
-                  <div className="mt-3 flex items-center gap-1.5 text-[11px] bg-gradient-to-r from-accent/15 to-accent/5 text-accent font-semibold rounded-lg px-2.5 py-1.5 border border-accent/20 w-fit">
-                    <Gift className="h-3 w-3" />
-                    {LANG.reward.rewardCycleLabel(Number(pkg.roiPercentage), formatCredits(Number(pkg.roiCycleAmount)))}
+                  <div className="mt-3 flex items-center gap-2 flex-wrap">
+                    <div className="flex items-center gap-1.5 text-[11px] bg-gradient-to-r from-accent/15 to-accent/5 text-accent font-semibold rounded-lg px-2.5 py-1.5 border border-accent/20 w-fit">
+                      <Gift className="h-3 w-3" />
+                      {LANG.reward.rewardCycleLabel(Number(pkg.roiPercentage), formatCredits(Number(pkg.roiCycleAmount)))}
+                    </div>
+                    {pkg.redemptionLocked && (
+                      <div className="flex items-center gap-1.5 text-[11px] bg-warning/10 text-warning font-semibold rounded-lg px-2.5 py-1.5 border border-warning/20 w-fit">
+                        <Lock className="h-3 w-3" />
+                        {LANG.redemption.status}: {LANG.redemption.statusLocked}
+                      </div>
+                    )}
                   </div>
 
                   {/* Stats */}

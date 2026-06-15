@@ -356,6 +356,11 @@ export const LANG = {
     noRequests: "No redemption requests",
     noRequestsDescription: "Your redemption history will appear here.",
     label: "Redemption",
+    lockedMessage: "Redemption requests are currently disabled for this plan.",
+    lockedTitle: "Redemption Locked",
+    status: "Redemption Status",
+    statusAllowed: "Allowed",
+    statusLocked: "Locked",
   },
 
   reward: {
@@ -489,6 +494,15 @@ export const LANG = {
     planSummary: "Plan Summary",
     rewardPlanName: (pct: number) => `${pct}% Reward Plan`,
     selectPlanToPreview: "Select a reward percentage to preview the plan",
+    redemptionPermission: "Redemption Permission",
+    redemptionAllowed: "Allowed",
+    redemptionLocked: "Locked",
+    redemptionStatus: "Redemption Status",
+    lockRedemption: "Lock Redemption",
+    unlockRedemption: "Unlock Redemption",
+    redemptionLockedHint: "Rewards continue to generate. The user cannot submit redemption requests.",
+    redemptionLockUpdated: "Redemption permission updated",
+    redemptionLockFailed: "Failed to update redemption permission",
   },
 
   wallet: {

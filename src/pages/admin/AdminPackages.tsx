@@ -3,7 +3,7 @@ import { AdminLayout } from "@/components/AdminLayout";
 import { StatusBadge } from "@/components/StatusBadge";
 import { FilterBar, type FilterField } from "@/components/FilterBar";
 import { useUrlFilters } from "@/hooks/useUrlFilters";
-import { Package, BookOpen, Calendar, XCircle } from "lucide-react";
+import { Package, BookOpen, Calendar, XCircle, Lock, Unlock } from "lucide-react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { admin as adminApi, type AdminPackage } from "@/lib/api";
 import { useNavigate } from "react-router-dom";
@@ -134,9 +134,26 @@ const filterFields: FilterField[] = [
 
 export default function AdminPackages() {
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   const { filters, setFilters, resetFilters, hasActiveFilters } = useUrlFilters(filterDefaults);
   const [editTarget, setEditTarget] = useState<AdminPackage | null>(null);
   const [cancelTarget, setCancelTarget] = useState<AdminPackage | null>(null);
+  const [lockUpdatingId, setLockUpdatingId] = useState<string | null>(null);
+
+  const lockMutation = useMutation({
+    mutationFn: ({ id, redemptionLocked }: { id: string; redemptionLocked: boolean }) =>
+      adminApi.updatePackage(id, { redemptionLocked }),
+    onMutate: ({ id }) => setLockUpdatingId(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-packages"] });
+      toast({ title: LANG.plans.redemptionLockUpdated });
+    },
+    onError: (err: Error) => {
+      toast({ title: LANG.plans.redemptionLockFailed, description: err.message, variant: "destructive" });
+    },
+    onSettled: () => setLockUpdatingId(null),
+  });
 
   const { data: pkgs, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["admin-packages", filters],
@@ -245,6 +262,15 @@ export default function AdminPackages() {
                   <span className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-muted text-muted-foreground">
                     {new Date(pkg.assignedDate).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "2-digit" })}
                   </span>
+                  {pkg.redemptionLocked ? (
+                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-destructive/10 text-destructive border border-destructive/20 inline-flex items-center gap-1">
+                      <Lock className="h-2.5 w-2.5" /> {LANG.plans.redemptionStatus}: {LANG.plans.redemptionLocked}
+                    </span>
+                  ) : (
+                    <span className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-success/10 text-success border border-success/20">
+                      {LANG.plans.redemptionStatus}: {LANG.plans.redemptionAllowed}
+                    </span>
+                  )}
                 </div>
 
                 {/* Progress */}
@@ -268,6 +294,15 @@ export default function AdminPackages() {
                     onClick={() => setEditTarget(pkg)}
                   >
                     <Calendar className="h-3.5 w-3.5 mr-1" /> Date
+                  </Button>
+                  <Button size="sm" variant="ghost" className="flex-1 h-8 text-[11px] px-2"
+                    disabled={lockUpdatingId === pkg.packageId}
+                    title={pkg.redemptionLocked ? LANG.plans.unlockRedemption : LANG.plans.lockRedemption}
+                    onClick={() => lockMutation.mutate({ id: pkg.packageId, redemptionLocked: !pkg.redemptionLocked })}
+                  >
+                    {pkg.redemptionLocked
+                      ? <><Unlock className="h-3.5 w-3.5 mr-1" /> Unlock</>
+                      : <><Lock className="h-3.5 w-3.5 mr-1" /> Lock</>}
                   </Button>
                   <Button size="sm" variant="ghost" className="flex-1 h-8 text-[11px] px-2 text-destructive hover:bg-destructive/10 hover:text-destructive"
                     disabled={pkg.status !== "ACTIVE"}
