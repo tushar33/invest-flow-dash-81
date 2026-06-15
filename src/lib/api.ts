@@ -142,33 +142,27 @@ interface AuthResponse {
 }
 
 export type LoginPayload = {
-  email?: string;
-  phone?: string;
-  username?: string;
+  username: string;
   password: string;
 };
 
-/** Map a single login field to the API's exactly-one-identifier body. */
-export function buildLoginPayload(identifier: string, password: string): LoginPayload {
-  const t = identifier.trim();
+/** Map User ID input to stored username format. */
+export function normalizeUserId(userId: string): string {
+  const t = userId.trim();
   if (!t) {
     throw new Error(LANG.auth.enterIdentifier);
-  }
-  // Email — must be checked before username (emails can contain dots, etc.)
-  if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(t) || t.includes("@")) {
-    return { email: t, password };
-  }
-  if (/^\d{10}$/.test(t)) {
-    return { phone: t, password };
   }
   const taMatch = t.match(/^ta-?(\d+)$/i);
   if (taMatch) {
     const digits = taMatch[1];
-    const username =
-      digits.length === 7 ? `TA-${digits}` : `ta${digits}`;
-    return { username, password };
+    return digits.length === 7 ? `TA-${digits}` : `ta${digits}`;
   }
-  return { username: t.toLowerCase(), password };
+  return t.toLowerCase();
+}
+
+/** Map User ID input to the API login body. */
+export function buildLoginPayload(userId: string, password: string): LoginPayload {
+  return { username: normalizeUserId(userId), password };
 }
 
 export const auth = {
@@ -176,10 +170,13 @@ export const auth = {
     request<AuthResponse>("/auth/register", { method: "POST", body: JSON.stringify(data) }),
   login: (data: LoginPayload) =>
     request<AuthResponse>("/auth/login", { method: "POST", body: JSON.stringify(data) }),
-  forgotPassword: (email: string) =>
+  forgotPassword: (userId: string, email: string) =>
     request<{ message: string }>("/auth/forgot-password", {
       method: "POST",
-      body: JSON.stringify({ email: email.trim() }),
+      body: JSON.stringify({
+        username: normalizeUserId(userId),
+        email: email.trim(),
+      }),
     }),
   resetPassword: (data: { token: string; newPassword: string }) =>
     request<{ message: string }>("/auth/reset-password", {

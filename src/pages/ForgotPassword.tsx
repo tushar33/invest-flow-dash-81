@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Mail, ArrowRight, ArrowLeft } from "lucide-react";
+import { Mail, User, ArrowRight, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { auth } from "@/lib/api";
 import { LANG } from "@/lib/language";
 import trinityLogo from "@/assets/trinity-arrows-logo.png";
 
 export default function ForgotPassword() {
+  const [userId, setUserId] = useState("");
   const [email, setEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [sent, setSent] = useState(false);
@@ -16,7 +17,7 @@ export default function ForgotPassword() {
     e.preventDefault();
     setSubmitting(true);
     try {
-      await auth.forgotPassword(email);
+      await auth.forgotPassword(userId, email);
       setSent(true);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : LANG.common.error;
@@ -48,7 +49,6 @@ export default function ForgotPassword() {
         <div className="bg-card border border-border rounded-2xl shadow-elevated p-5">
           {sent ? (
             <div className="space-y-4">
-              <p className="text-sm text-muted-foreground text-center">{email}</p>
               <Link
                 to="/login"
                 className="group w-full bg-gradient-accent text-accent-foreground text-sm font-semibold py-3.5 rounded-xl shadow-glow active:scale-[0.98] hover:brightness-110 transition-all flex items-center justify-center gap-2"
@@ -61,6 +61,24 @@ export default function ForgotPassword() {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
+                  {LANG.auth.identifierLabel}
+                </label>
+                <div className="relative mt-1.5 group">
+                  <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-accent transition-colors" />
+                  <input
+                    type="text"
+                    value={userId}
+                    onChange={(e) => setUserId(e.target.value)}
+                    required
+                    autoComplete="username"
+                    placeholder={LANG.auth.identifierPlaceholder}
+                    className="w-full pl-11 pr-4 py-3 rounded-xl border border-input bg-background text-sm shadow-card focus:outline-none focus:ring-4 focus:ring-accent/15 focus:border-accent transition-all"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
                   {LANG.common.email}
                 </label>
                 <div className="relative mt-1.5 group">
@@ -71,7 +89,7 @@ export default function ForgotPassword() {
                     onChange={(e) => setEmail(e.target.value)}
                     required
                     autoComplete="email"
-                    placeholder={LANG.auth.emailPlaceholder}
+                    placeholder={LANG.auth.registeredEmailPlaceholder}
                     className="w-full pl-11 pr-4 py-3 rounded-xl border border-input bg-background text-sm shadow-card focus:outline-none focus:ring-4 focus:ring-accent/15 focus:border-accent transition-all"
                   />
                 </div>
