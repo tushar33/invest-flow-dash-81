@@ -16,7 +16,7 @@ export const ADMIN_PLAN_OPTIONS = [
 export type AdminPlanOption = (typeof ADMIN_PLAN_OPTIONS)[number];
 
 export function planOptionKey(option: AdminPlanOption): string {
-  return option.planType ?? String(option.roiPercentage);
+  return "planType" in option ? option.planType : String(option.roiPercentage);
 }
 
 export function findPlanOptionIndex(
@@ -25,7 +25,7 @@ export function findPlanOptionIndex(
 ): number {
   const idx = ADMIN_PLAN_OPTIONS.findIndex((opt) => {
     if (opt.roiPercentage !== roiPercentage) return false;
-    if (opt.planType) return opt.planType === planType;
+    if ("planType" in opt) return opt.planType === planType;
     return !planType || planType === `FIVE_PERCENT` || planType === `SEVEN_PERCENT`;
   });
   if (idx >= 0) return idx;
