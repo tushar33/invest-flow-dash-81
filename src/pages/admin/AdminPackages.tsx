@@ -357,32 +357,32 @@ export default function AdminPackages() {
                 </div>
 
                 {/* Actions */}
-                <div className="mt-3 pt-3 border-t border-border/60 flex items-center gap-1 -mx-0.5">
-                  <Button size="sm" variant="ghost" className="flex-1 h-8 text-[11px] px-2" onClick={() => navigate(`/wallet/ledger?userId=${pkg.userId}`)}>
-                    <BookOpen className="h-3.5 w-3.5 mr-1" /> Ledger
+                <div className="mt-3 pt-3 border-t border-border/60 grid grid-cols-4 gap-1">
+                  <Button size="sm" variant="ghost" className="h-8 text-[11px] px-1 min-w-0" onClick={() => navigate(`/wallet/ledger?userId=${pkg.userId}`)}>
+                    <BookOpen className="h-3.5 w-3.5 mr-1 shrink-0" /> <span className="truncate">Ledger</span>
                   </Button>
-                  <Button size="sm" variant="ghost" className="flex-1 h-8 text-[11px] px-2"
+                  <Button size="sm" variant="ghost" className="h-8 text-[11px] px-1 min-w-0"
                     disabled={pkg.cyclesCompleted > 0}
                     title={pkg.cyclesCompleted > 0 ? LANG.plans.cannotEditTooltip : LANG.plans.editDateTooltip}
                     onClick={() => setEditTarget(pkg)}
                   >
-                    <Calendar className="h-3.5 w-3.5 mr-1" /> {LANG.plans.editDate}
+                    <Calendar className="h-3.5 w-3.5 mr-1 shrink-0" /> <span className="truncate">{LANG.plans.editDate}</span>
                   </Button>
-                  <Button size="sm" variant="ghost" className="flex-1 h-8 text-[11px] px-2"
+                  <Button size="sm" variant="ghost" className="h-8 text-[11px] px-1 min-w-0"
                     disabled={lockUpdatingId === pkg.packageId}
                     title={pkg.redemptionLocked ? LANG.plans.unlockRedemption : LANG.plans.lockRedemption}
                     onClick={() => lockMutation.mutate({ id: pkg.packageId, redemptionLocked: !pkg.redemptionLocked })}
                   >
                     {pkg.redemptionLocked
-                      ? <><Unlock className="h-3.5 w-3.5 mr-1" /> Unlock</>
-                      : <><Lock className="h-3.5 w-3.5 mr-1" /> Lock</>}
+                      ? <><Unlock className="h-3.5 w-3.5 mr-1 shrink-0" /> <span className="truncate">Unlock</span></>
+                      : <><Lock className="h-3.5 w-3.5 mr-1 shrink-0" /> <span className="truncate">Lock</span></>}
                   </Button>
-                  <Button size="sm" variant="ghost" className="flex-1 h-8 text-[11px] px-2 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                  <Button size="sm" variant="ghost" className="h-8 text-[11px] px-1 min-w-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
                     disabled={pkg.status !== "ACTIVE"}
                     title={pkg.status !== "ACTIVE" ? LANG.plans.onlyActiveCancelTooltip : LANG.plans.cancelPlanTooltip}
                     onClick={() => setCancelTarget(pkg)}
                   >
-                    <XCircle className="h-3.5 w-3.5 mr-1" /> Cancel
+                    <XCircle className="h-3.5 w-3.5 mr-1 shrink-0" /> <span className="truncate">Cancel</span>
                   </Button>
                 </div>
               </div>
