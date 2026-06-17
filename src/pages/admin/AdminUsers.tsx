@@ -19,6 +19,7 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { toast } from "@/hooks/use-toast";
 import { formatCredits, formatIndianNumber, amountInIndianWords, parseAmountInput } from "@/lib/format";
 import { LANG, FILTER_OPTIONS, autoPayModeLabel, roleLabel, accountTypeDisplay } from "@/lib/language";
+import { ADMIN_PLAN_OPTIONS } from "@/lib/plan-options";
 
 const AUTO_PAY_MODES = ["NONE", "HALF", "FULL"] as const;
 type AutoPayModeValue = (typeof AUTO_PAY_MODES)[number];
@@ -271,22 +272,23 @@ function VerifyBankDetailsModal({
 function AssignPlanForm({
   pkgAmount,
   onAmountChange,
-  roiPct,
-  onRoiChange,
+  planKey,
+  onPlanChange,
   redemptionLocked,
   onRedemptionLockedChange,
 }: {
   pkgAmount: string;
   onAmountChange: (value: string) => void;
-  roiPct: string;
-  onRoiChange: (value: string) => void;
+  planKey: string;
+  onPlanChange: (value: string) => void;
   redemptionLocked: boolean;
   onRedemptionLockedChange: (value: boolean) => void;
 }) {
   const parsedAmount = useMemo(() => parseAmountInput(pkgAmount), [pkgAmount]);
   const formattedAmount = parsedAmount != null ? formatIndianNumber(parsedAmount) : "";
   const wordsAmount = parsedAmount != null ? amountInIndianWords(parsedAmount) : "";
-  const selectedPlanName = roiPct ? LANG.plans.rewardPlanName(Number(roiPct)) : null;
+  const selectedPlan = ADMIN_PLAN_OPTIONS[Number(planKey)] ?? ADMIN_PLAN_OPTIONS[0];
+  const selectedPlanName = selectedPlan.label;
   const showSummary = parsedAmount != null && parsedAmount > 0;
 
   return (
@@ -314,13 +316,15 @@ function AssignPlanForm({
       </div>
 
       <div className="space-y-2">
-        <Label>{LANG.plans.rewardPercentage}</Label>
-        <Select value={roiPct} onValueChange={onRoiChange}>
+        <Label>{LANG.plans.planTypeLabel}</Label>
+        <Select value={planKey} onValueChange={onPlanChange}>
           <SelectTrigger><SelectValue placeholder={LANG.plans.selectRewardPercent} /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="5">5%</SelectItem>
-            <SelectItem value="7">7%</SelectItem>
-            <SelectItem value="10">10%</SelectItem>
+            {ADMIN_PLAN_OPTIONS.map((opt, index) => (
+              <SelectItem key={`${opt.label}-${index}`} value={String(index)}>
+                {opt.label}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>
@@ -409,17 +413,22 @@ export default function AdminUsers() {
   const [redemptionLocked, setRedemptionLocked] = useState(false);
   const [selectedUserAutoPay, setSelectedUserAutoPay] = useState<AutoPayModeValue>("NONE");
 
-  const [roiPct, setRoiPct] = useState("");
+  const [planKey, setPlanKey] = useState("0");
+
+  const selectedAssignPlan = ADMIN_PLAN_OPTIONS[Number(planKey)] ?? ADMIN_PLAN_OPTIONS[0];
 
   const handlePreviewSchedule = () => {
-    if (!pkgAmount || !roiPct) return;
+    if (!pkgAmount || !planKey) return;
     const params = new URLSearchParams({
       principal: pkgAmount,
-      roi: roiPct,
+      roi: String(selectedAssignPlan.roiPercentage),
       autoPay: selectedUserAutoPay,
       userName: selectedUserName,
       from: "assign",
     });
+    if ("planType" in selectedAssignPlan && selectedAssignPlan.planType) {
+      params.set("planType", selectedAssignPlan.planType);
+    }
     setAssignOpen(false);
     navigate(`/admin/simulator?${params.toString()}`);
   };
@@ -429,7 +438,14 @@ export default function AdminUsers() {
       adminApi.assignPackage({
         userId: selectedUserId,
         principalAmount: Number(pkgAmount),
-        roiPercentage: Number(roiPct),
+        roiPercentage: selectedAssignPlan.roiPercentage,
+        ...("planType" in selectedAssignPlan && selectedAssignPlan.planType
+          ? { planType: selectedAssignPlan.planType }
+          : selectedAssignPlan.roiPercentage === 5
+            ? { planType: "FIVE_PERCENT" }
+            : selectedAssignPlan.roiPercentage === 7
+              ? { planType: "SEVEN_PERCENT" }
+              : {}),
         redemptionLocked,
       }),
     onSuccess: () => {
@@ -438,7 +454,7 @@ export default function AdminUsers() {
       queryClient.invalidateQueries({ queryKey: ["admin-packages"] });
       setAssignOpen(false);
       setPkgAmount("");
-      setRoiPct("");
+      setPlanKey("0");
       setRedemptionLocked(false);
     },
     onError: (err: Error) => {
@@ -470,7 +486,7 @@ export default function AdminUsers() {
     setSelectedUserName(userName);
     setSelectedUserAutoPay((autoPayMode as AutoPayModeValue) ?? "NONE");
     setPkgAmount("");
-    setRoiPct("");
+    setPlanKey("0");
     setRedemptionLocked(false);
     setAssignOpen(true);
   };
@@ -665,8 +681,8 @@ export default function AdminUsers() {
           <AssignPlanForm
             pkgAmount={pkgAmount}
             onAmountChange={setPkgAmount}
-            roiPct={roiPct}
-            onRoiChange={setRoiPct}
+            planKey={planKey}
+            onPlanChange={setPlanKey}
             redemptionLocked={redemptionLocked}
             onRedemptionLockedChange={setRedemptionLocked}
           />
@@ -675,7 +691,7 @@ export default function AdminUsers() {
               type="button"
               variant="secondary"
               onClick={handlePreviewSchedule}
-              disabled={!pkgAmount || !roiPct}
+              disabled={!pkgAmount || !planKey}
               className="w-full sm:w-auto"
             >
               <FlaskConical className="h-4 w-4" />
@@ -685,7 +701,7 @@ export default function AdminUsers() {
               <Button variant="outline" onClick={() => setAssignOpen(false)}>{LANG.common.cancel}</Button>
               <Button
                 onClick={() => assignMutation.mutate()}
-                disabled={!pkgAmount || !roiPct || assignMutation.isPending}
+                disabled={!pkgAmount || !planKey || assignMutation.isPending}
               >
                 {assignMutation.isPending ? LANG.common.assigning : LANG.plans.assignPlan}
               </Button>

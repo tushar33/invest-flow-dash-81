@@ -22,22 +22,72 @@ import { formatCredits } from "@/lib/format";
 import { LANG, FILTER_OPTIONS, planStatusLabel } from "@/lib/language";
 import { PlanCycleDetails } from "@/components/PlanCycleDetails";
 import { DEFAULT_DAYS_BETWEEN_CYCLES } from "@/lib/cycle-schedule";
+import {
+  ADMIN_PLAN_OPTIONS,
+  findPlanOptionIndex,
+} from "@/lib/plan-options";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 
-/* ── Edit Assignment Date Modal ───────────────────────────────────────── */
-interface EditDateModalProps { pkg: AdminPackage; onClose: () => void; onSuccess: () => void; }
+/* ── Edit Plan Modal (pre-ROI) ─────────────────────────────────────────── */
+interface EditPlanModalProps { pkg: AdminPackage; onClose: () => void; onSuccess: () => void; }
 
-function EditDateModal({ pkg, onClose, onSuccess }: EditDateModalProps) {
+function EditPlanModal({ pkg, onClose, onSuccess }: EditPlanModalProps) {
+  const initialPlanKey = String(findPlanOptionIndex(pkg.roiPercentage, pkg.planType));
   const currentDate = pkg.assignedDate.slice(0, 10);
+  const [principal, setPrincipal] = useState(String(pkg.principalAmount));
+  const [planKey, setPlanKey] = useState(initialPlanKey);
   const [date, setDate] = useState(currentDate);
   const [error, setError] = useState("");
+  const selectedPlan = ADMIN_PLAN_OPTIONS[Number(planKey)] ?? ADMIN_PLAN_OPTIONS[0];
   const queryClient = useQueryClient();
   const mutation = useMutation({
-    mutationFn: (assignedDate: string) =>
-      adminApi.updateAssignmentDate(pkg.packageId, { assignedDate: new Date(assignedDate).toISOString() }),
+    mutationFn: () => {
+      const body: {
+        assignedDate?: string;
+        principalAmount?: number;
+        roiPercentage?: number;
+        planType?: string;
+      } = {};
+      const parsedPrincipal = Number(principal);
+      if (parsedPrincipal !== pkg.principalAmount) {
+        body.principalAmount = parsedPrincipal;
+      }
+      if (date !== currentDate) {
+        body.assignedDate = new Date(date).toISOString();
+      }
+      if (planKey !== initialPlanKey) {
+        body.roiPercentage = selectedPlan.roiPercentage;
+        if ("planType" in selectedPlan && selectedPlan.planType) {
+          body.planType = selectedPlan.planType;
+        } else if (selectedPlan.roiPercentage === 5) {
+          body.planType = "FIVE_PERCENT";
+        } else if (selectedPlan.roiPercentage === 7) {
+          body.planType = "SEVEN_PERCENT";
+        }
+      }
+      return adminApi.updatePackagePlan(pkg.packageId, body);
+    },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["admin-packages"] }); onSuccess(); onClose(); },
     onError: (err: Error) => setError(err.message),
   });
-  function handleSubmit(e: FormEvent) { e.preventDefault(); setError(""); if (date === currentDate) return; mutation.mutate(date); }
+
+  const unchanged =
+    Number(principal) === pkg.principalAmount &&
+    planKey === initialPlanKey &&
+    date === currentDate;
+
+  function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    setError("");
+    if (unchanged) return;
+    if (!principal || Number(principal) <= 0) {
+      setError("Contribution amount must be positive");
+      return;
+    }
+    mutation.mutate();
+  }
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
@@ -46,20 +96,43 @@ function EditDateModal({ pkg, onClose, onSuccess }: EditDateModalProps) {
         <div className="space-y-4 py-2">
           <div className="space-y-1 text-sm text-muted-foreground">
             <p><span className="font-medium text-foreground">{LANG.plans.userLabel}</span> {pkg.userName}</p>
-            <p><span className="font-medium text-foreground">{LANG.plans.contributionLabel}</span> {formatCredits(Number(pkg.principalAmount))}</p>
             <p><span className="font-medium text-foreground">{LANG.plans.cyclesCompletedLabel}</span> {pkg.cyclesCompleted}/{pkg.totalCycles ?? pkg.durationMonths ?? 1}</p>
           </div>
           {error && <p className="text-sm text-destructive">{error}</p>}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
+              <Label htmlFor="edit-principal">{LANG.plans.contributionAmount}</Label>
+              <Input
+                id="edit-principal"
+                type="number"
+                min={1}
+                required
+                value={principal}
+                onChange={(e) => setPrincipal(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>{LANG.plans.planTypeLabel}</Label>
+              <Select value={planKey} onValueChange={setPlanKey}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {ADMIN_PLAN_OPTIONS.map((opt, index) => (
+                    <SelectItem key={`${opt.label}-${index}`} value={String(index)}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
               <Label htmlFor="assignedDate">{LANG.plans.newAssignmentDate}</Label>
               <Input id="assignedDate" type="date" required value={date} onChange={(e) => setDate(e.target.value)} />
-              <p className="text-xs text-muted-foreground">{LANG.plans.editDateHint}</p>
+              <p className="text-xs text-muted-foreground">{LANG.plans.editPlanHint}</p>
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={onClose}>{LANG.common.cancel}</Button>
-              <Button type="submit" disabled={mutation.isPending || date === currentDate}>
-                {mutation.isPending ? LANG.common.updating : LANG.plans.updateDate}
+              <Button type="submit" disabled={mutation.isPending || unchanged}>
+                {mutation.isPending ? LANG.common.updating : LANG.plans.updatePlan}
               </Button>
             </DialogFooter>
           </form>
@@ -293,7 +366,7 @@ export default function AdminPackages() {
                     title={pkg.cyclesCompleted > 0 ? LANG.plans.cannotEditTooltip : LANG.plans.editDateTooltip}
                     onClick={() => setEditTarget(pkg)}
                   >
-                    <Calendar className="h-3.5 w-3.5 mr-1" /> Date
+                    <Calendar className="h-3.5 w-3.5 mr-1" /> {LANG.plans.editDate}
                   </Button>
                   <Button size="sm" variant="ghost" className="flex-1 h-8 text-[11px] px-2"
                     disabled={lockUpdatingId === pkg.packageId}
@@ -318,7 +391,7 @@ export default function AdminPackages() {
           </div>
         )}
         {editTarget && (
-          <EditDateModal pkg={editTarget} onClose={() => setEditTarget(null)} onSuccess={() => setEditTarget(null)} />
+          <EditPlanModal pkg={editTarget} onClose={() => setEditTarget(null)} onSuccess={() => setEditTarget(null)} />
         )}
         {cancelTarget && (
           <CancelPackageModal pkg={cancelTarget} onClose={() => setCancelTarget(null)} />

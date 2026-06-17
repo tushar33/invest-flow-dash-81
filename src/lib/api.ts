@@ -219,6 +219,7 @@ export interface Package {
   /** 10% plans: remaining principal after amortization ledger */
   currentPrincipal?: string;
   roiPercentage: string;
+  planType?: string;
   roiCycleAmount: string;
   /** Canonical plan length in months (= ROI cycle count). */
   durationMonths: number;
@@ -537,6 +538,7 @@ export interface AdminPackage {
   userId: string;
   principalAmount: number;
   roiPercentage: number;
+  planType?: string;
   assignedDate: string;
   nextRoiDate: string;
   nextCycleDate?: string;
@@ -629,6 +631,7 @@ export type CycleModeValue = "FIXED_DAYS" | "CALENDAR_MONTHLY";
 export interface SimulateInput {
   principalAmount: number;
   roiPercentage: number;
+  planType?: string;
   durationMonths?: number;
   startDate?: string;
   cycleMode?: CycleModeValue;
@@ -700,7 +703,13 @@ export const admin = {
     request<{ data: RoiLogCreditedPackage[] }>(`/admin/roi-logs/${logId}/packages`),
   processPayout: (id: string, data: { status: string; rejectionReason?: string }) =>
     request<PayoutRequest>(`/payouts/${id}/process`, { method: "PATCH", body: JSON.stringify(data) }),
-  assignPackage: (data: { userId: string; principalAmount: number; roiPercentage: number; redemptionLocked?: boolean }) =>
+  assignPackage: (data: {
+    userId: string;
+    principalAmount: number;
+    roiPercentage: number;
+    planType?: string;
+    redemptionLocked?: boolean;
+  }) =>
     request<Package>("/packages/assign", { method: "POST", body: JSON.stringify(data) }),
   updatePackage: (id: string, data: { status?: string; redemptionLocked?: boolean }) =>
     request<Package>(`/packages/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
@@ -721,6 +730,19 @@ export const admin = {
     }),
   updateAssignmentDate: (id: string, data: { assignedDate: string }) =>
     request<any>(`/admin/packages/${id}/assignment-date`, { method: "PATCH", body: JSON.stringify(data) }),
+  updatePackagePlan: (
+    id: string,
+    data: {
+      assignedDate?: string;
+      principalAmount?: number;
+      roiPercentage?: number;
+      planType?: string;
+    },
+  ) =>
+    request<AdminPackage>(`/admin/packages/${id}/plan`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }),
   cancelPackage: (id: string) =>
     request<any>(`/packages/${id}/cancel`, { method: "PATCH" }),
   settings: () => request<SystemSetting[]>("/admin/settings"),

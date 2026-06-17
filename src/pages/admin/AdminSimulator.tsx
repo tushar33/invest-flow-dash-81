@@ -53,21 +53,42 @@ import {
 } from "@/lib/cycle-schedule";
 import { formatCredits } from "@/lib/format";
 import { useToast } from "@/hooks/use-toast";
+import {
+  ADMIN_PLAN_OPTIONS,
+  findPlanOptionIndex,
+  planLabel,
+  type AdminPlanOption,
+} from "@/lib/plan-options";
 
-function todayIsoDate(): string {
-  return new Date().toISOString().slice(0, 10);
+function planKeyFromSearchParams(searchParams: URLSearchParams): string {
+  const roi = Number(searchParams.get("roi") ?? 10);
+  const planType = searchParams.get("planType");
+  return String(findPlanOptionIndex(roi, planType));
+}
+
+function applyPlanTypeToPayload(
+  payload: SimulateInput,
+  selectedPlan: AdminPlanOption,
+): void {
+  if ("planType" in selectedPlan && selectedPlan.planType) {
+    payload.planType = selectedPlan.planType;
+  } else if (selectedPlan.roiPercentage === 5) {
+    payload.planType = "FIVE_PERCENT";
+  } else if (selectedPlan.roiPercentage === 7) {
+    payload.planType = "SEVEN_PERCENT";
+  }
 }
 
 function buildPayload(
   principalAmount: string,
-  roiPercentage: string,
+  selectedPlan: AdminPlanOption,
   startDate: string,
   cycleMode: CycleMode,
   daysBetweenCycles: string,
   autoPayMode: SimulateInput["autoPayMode"],
 ): SimulateInput | null {
   const principal = Number(principalAmount);
-  const roi = Number(roiPercentage);
+  const roi = selectedPlan.roiPercentage;
   if (!Number.isFinite(principal) || principal <= 0) return null;
   if (!Number.isFinite(roi)) return null;
 
@@ -79,6 +100,8 @@ function buildPayload(
     autoPayMode,
   };
 
+  applyPlanTypeToPayload(payload, selectedPlan);
+
   if (cycleMode === "FIXED_DAYS") {
     const days = Number(daysBetweenCycles);
     if (!Number.isFinite(days) || days < 1) return null;
@@ -86,6 +109,10 @@ function buildPayload(
   }
 
   return payload;
+}
+
+function todayIsoDate(): string {
+  return new Date().toISOString().slice(0, 10);
 }
 
 export default function AdminSimulator() {
@@ -99,9 +126,8 @@ export default function AdminSimulator() {
   const [principalAmount, setPrincipalAmount] = useState(
     () => searchParams.get("principal") ?? "500000",
   );
-  const [roiPercentage, setRoiPercentage] = useState(
-    () => searchParams.get("roi") ?? "10",
-  );
+  const [planKey, setPlanKey] = useState(() => planKeyFromSearchParams(searchParams));
+  const selectedPlan = ADMIN_PLAN_OPTIONS[Number(planKey)] ?? ADMIN_PLAN_OPTIONS[0];
   const [startDate, setStartDate] = useState(todayIsoDate());
   const [cycleMode, setCycleMode] = useState<CycleMode>(DEFAULT_CYCLE_MODE);
   const [daysBetweenCycles, setDaysBetweenCycles] = useState(String(DEFAULT_DAYS_BETWEEN_CYCLES));
@@ -141,7 +167,7 @@ export default function AdminSimulator() {
   const handleRun = useCallback(() => {
     const payload = buildPayload(
       principalAmount,
-      roiPercentage,
+      selectedPlan,
       startDate,
       cycleMode,
       daysBetweenCycles,
@@ -158,7 +184,7 @@ export default function AdminSimulator() {
     runSimulation(payload);
   }, [
     principalAmount,
-    roiPercentage,
+    selectedPlan,
     startDate,
     cycleMode,
     daysBetweenCycles,
@@ -171,7 +197,7 @@ export default function AdminSimulator() {
     if (!fromAssign || autoRanRef.current || settings.length === 0) return;
     const payload = buildPayload(
       principalAmount,
-      roiPercentage,
+      selectedPlan,
       startDate,
       settingsMode,
       settingsDays,
@@ -187,7 +213,7 @@ export default function AdminSimulator() {
     settingsMode,
     settingsDays,
     principalAmount,
-    roiPercentage,
+    selectedPlan,
     startDate,
     autoPayMode,
     runSimulation,
@@ -239,15 +265,17 @@ export default function AdminSimulator() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="sim-roi">{LANG.simulator.rewardPercent}</Label>
-                <Select value={roiPercentage} onValueChange={setRoiPercentage}>
-                  <SelectTrigger id="sim-roi">
+                <Label htmlFor="sim-plan">{LANG.plans.planTypeLabel}</Label>
+                <Select value={planKey} onValueChange={setPlanKey}>
+                  <SelectTrigger id="sim-plan">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="5">5%</SelectItem>
-                    <SelectItem value="7">7%</SelectItem>
-                    <SelectItem value="10">10%</SelectItem>
+                    {ADMIN_PLAN_OPTIONS.map((opt, index) => (
+                      <SelectItem key={`${opt.label}-${index}`} value={String(index)}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -341,6 +369,9 @@ export default function AdminSimulator() {
           <div className="space-y-4">
             <div className="flex flex-wrap items-center gap-2">
               <CycleModeBadge mode={result.summary.cycleMode} />
+              <span className="text-xs font-medium px-2 py-0.5 rounded-md bg-accent/10 text-accent border border-accent/20">
+                {planLabel(result.inputs.roiPercentage, result.inputs.planType)}
+              </span>
               {result.validation.passed ? (
                 <span className="inline-flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400">
                   <CheckCircle2 className="h-3.5 w-3.5" />
