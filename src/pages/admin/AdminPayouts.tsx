@@ -62,6 +62,16 @@ export default function AdminPayouts() {
     }),
   });
 
+  const { data: usersList } = useQuery({
+    queryKey: ["admin-users-for-payouts"],
+    queryFn: () => adminApi.users({ limit: 1000 }),
+  });
+
+  const usernameByUserId = new Map<string, string>();
+  (usersList ?? []).forEach((u) => {
+    if (u.username) usernameByUserId.set(u.id, u.username);
+  });
+
   const processMutation = useMutation({
     mutationFn: ({ id, status, rejectionReason }: { id: string; status: string; rejectionReason?: string }) =>
       adminApi.processPayout(id, { status, rejectionReason }),
@@ -144,7 +154,10 @@ export default function AdminPayouts() {
                     <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{LANG.common.user}</p>
                     <p className="mt-1 text-sm font-medium truncate">
                       {p.user?.fullName ?? LANG.common.noData}
-                      {p.user?.username ? ` (${p.user.username})` : ""}
+                      {(() => {
+                        const uname = p.user?.username ?? (p.user?.id ? usernameByUserId.get(p.user.id) : undefined);
+                        return uname ? ` (${uname})` : "";
+                      })()}
                     </p>
                     {p.user?.email && (
                       <p className="text-xs text-muted-foreground truncate">{p.user.email}</p>
