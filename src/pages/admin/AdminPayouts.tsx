@@ -62,6 +62,16 @@ export default function AdminPayouts() {
     }),
   });
 
+  const { data: usersList } = useQuery({
+    queryKey: ["admin-users-for-payouts"],
+    queryFn: () => adminApi.users({ limit: 1000 }),
+  });
+
+  const usernameByUserId = new Map<string, string>();
+  (usersList ?? []).forEach((u) => {
+    if (u.username) usernameByUserId.set(u.id, u.username);
+  });
+
   const processMutation = useMutation({
     mutationFn: ({ id, status, rejectionReason }: { id: string; status: string; rejectionReason?: string }) =>
       adminApi.processPayout(id, { status, rejectionReason }),
