@@ -142,7 +142,10 @@ export default function AdminPayouts() {
                 <div className="mt-3 grid gap-3 sm:grid-cols-2 rounded-lg border border-border/70 bg-muted/30 p-3">
                   <div className="min-w-0">
                     <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{LANG.common.user}</p>
-                    <p className="mt-1 text-sm font-medium truncate">{p.user?.fullName ?? LANG.common.noData}</p>
+                    <p className="mt-1 text-sm font-medium truncate">
+                      {p.user?.fullName ?? LANG.common.noData}
+                      {p.user?.username ? ` (${p.user.username})` : ""}
+                    </p>
                     {p.user?.email && (
                       <p className="text-xs text-muted-foreground truncate">{p.user.email}</p>
                     )}
