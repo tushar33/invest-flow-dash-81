@@ -414,6 +414,7 @@ export interface PayoutRequest {
   user?: {
     id: string;
     fullName: string;
+    username?: string | null;
     email: string | null;
     phone: string | null;
     bankAccounts?: PayoutBankAccount[];
