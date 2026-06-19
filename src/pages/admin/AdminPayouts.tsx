@@ -154,7 +154,10 @@ export default function AdminPayouts() {
                     <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{LANG.common.user}</p>
                     <p className="mt-1 text-sm font-medium truncate">
                       {p.user?.fullName ?? LANG.common.noData}
-                      {p.user?.username ? ` (${p.user.username})` : ""}
+                      {(() => {
+                        const uname = p.user?.username ?? (p.user?.id ? usernameByUserId.get(p.user.id) : undefined);
+                        return uname ? ` (${uname})` : "";
+                      })()}
                     </p>
                     {p.user?.email && (
                       <p className="text-xs text-muted-foreground truncate">{p.user.email}</p>
