@@ -531,9 +531,11 @@ export const LANG = {
   },
 
   profile: {
-    autoRedemption: "Auto Redemption",
-    autoRedemptionMode: "Auto Redemption Mode",
-    autoRedemptionHint: "Auto Redemption mode is configured by the administrator.",
+    autoPay: "Auto Pay",
+    autoRedemption: "Auto Pay",
+    autoRedemptionMode: "Auto Pay Mode",
+    autoRedemptionHint:
+      "Your ROI is always credited to your wallet. For 50% or 100%, a payout request is created automatically each cycle, but only once your bank details are verified.",
     currentPasswordPlaceholder: "Enter current password",
     confirmPasswordPlaceholder: "Re-enter new password",
     passwordsMismatch: "Passwords do not match",
@@ -615,8 +617,8 @@ export const LANG = {
     planAssignFailed: "Failed to assign plan",
     planCancelled: "Plan cancelled successfully",
     planCancelBlocked: "Cannot cancel plan after rewards started",
-    autoRedemptionUpdated: "Auto Redemption mode updated",
-    autoRedemptionFailed: "Failed to update Auto Redemption",
+    autoRedemptionUpdated: "Auto Pay mode updated",
+    autoRedemptionFailed: "Failed to update Auto Pay",
     actionFailed: "Action failed",
     bankVerified: "Bank details verified",
     bankRejected: "Bank details rejected",

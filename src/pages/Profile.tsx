@@ -8,6 +8,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { LANG, userAccountStatusLabel } from "@/lib/language";
+import { AutoRedemptionModeCard } from "@/components/AutoRedemptionModeCard";
 
 function toDateInputValue(value?: string | null): string {
   if (!value) return "";
@@ -254,6 +255,8 @@ export default function Profile() {
             </div>
           )}
         </div>
+
+        <AutoRedemptionModeCard />
 
         <div className="bg-card rounded-2xl border border-border overflow-hidden shadow-card animate-slide-up-fade">
           <div className="flex items-center justify-between px-4 pt-3 pb-2">

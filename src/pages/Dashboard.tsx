@@ -12,6 +12,7 @@ import { isBankVerifiedForUser } from "@/lib/onboarding";
 import { formatCredits, formatCreditsSigned, formatTransactionLabel } from "@/lib/format";
 import { LANG, greeting } from "@/lib/language";
 import { NoCreditsToRedeem } from "@/components/NoCreditsToRedeem";
+import { AutoRedemptionModeButton } from "@/components/AutoRedemptionModeButton";
 import { filterUserVisibleTransactions } from "@/lib/wallet-transactions";
 
 export default function Dashboard() {
@@ -91,9 +92,12 @@ export default function Dashboard() {
     <UserLayout>
       <div className="space-y-4">
         <div className="sticky top-0 z-30 -mx-4 px-4 pb-4 bg-background/85 backdrop-blur-xl border-b border-border/60 space-y-4">
-          <div className="pt-3 animate-slide-up-fade">
-            <p className="text-sm text-muted-foreground">{greeting()}</p>
-            <h1 className="text-2xl font-bold tracking-tight mt-0.5">{user?.fullName ?? LANG.dashboard.fallbackName} <span className="inline-block">👋</span></h1>
+          <div className="pt-3 flex items-start justify-between gap-3 animate-slide-up-fade">
+            <div>
+              <p className="text-sm text-muted-foreground">{greeting()}</p>
+              <h1 className="text-2xl font-bold tracking-tight mt-0.5">{user?.fullName ?? LANG.dashboard.fallbackName} <span className="inline-block">👋</span></h1>
+            </div>
+            <AutoRedemptionModeButton className="mt-1 shrink-0" />
           </div>
 
           <GradientCard variant="hero" glow className="animate-slide-up-fade">
