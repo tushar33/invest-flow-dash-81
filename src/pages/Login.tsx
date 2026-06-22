@@ -93,7 +93,7 @@ export default function Login() {
             <Sparkles className="h-3.5 w-3.5 text-teal-300" />
             <span>Global Import &amp; Export</span>
           </div>
-          <h2 className="text-[2.6rem] leading-[1.05] font-semibold tracking-tight" style={{ fontFamily: "'Instrument Serif', 'DM Serif Display', serif" }}>
+          <h2 className="text-[2.6rem] leading-[1.05] font-semibold tracking-tight">
             Connecting markets across borders.
           </h2>
           <p className="text-base opacity-80 leading-relaxed">
@@ -143,10 +143,7 @@ export default function Login() {
             </div>
 
             <div className="mb-6">
-              <h1
-                className="text-[34px] leading-tight font-semibold tracking-tight text-foreground"
-                style={{ fontFamily: "'Instrument Serif', 'DM Serif Display', serif" }}
-              >
+              <h1 className="text-[34px] leading-tight font-semibold tracking-tight text-foreground">
                 Sign in
               </h1>
               <p className="text-sm text-foreground/70 mt-1.5">Enter your credentials to access your account.</p>
