@@ -338,7 +338,7 @@ export const LANG = {
     windowOpen: "Redemption Window Open",
     windowClosed: "Redemption Window Closed",
     windowHours: "Redemption requests accepted between",
-    windowTimeRange: "9:00 AM – 12:00 PM",
+    windowAnytime: "Redemption requests accepted anytime (time validation is disabled).",
     newRequest: "New Redemption Request",
     amountDeducted: "Amount will be deducted from your balance",
     addDetailsFirst: "Please add account details before requesting a redemption.",

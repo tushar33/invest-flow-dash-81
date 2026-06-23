@@ -449,6 +449,12 @@ export interface PayoutStatus {
   message: string;
 }
 
+export interface PayoutWindowConfig {
+  timeValidationEnabled: boolean;
+  windowStart: string;
+  windowEnd: string;
+}
+
 export const payouts = {
   create: (data: { requestType: string; amount: number; packageId?: string }) =>
     request<PayoutRequest>("/payouts", { method: "POST", body: JSON.stringify(data) }),
@@ -457,6 +463,7 @@ export const payouts = {
   },
   getById: (id: string) => request<PayoutRequest>(`/payouts/${id}`),
   status: () => request<PayoutStatus>("/user/payout-status"),
+  config: () => request<PayoutWindowConfig>("/payouts/config"),
 };
 
 // ── Profile ──

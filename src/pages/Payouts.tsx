@@ -6,7 +6,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { GradientCard } from "@/components/ui/gradient-card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { CreditCard, Plus, X, Clock, Info, ArrowDownToLine, Lock } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { payouts as payoutsApi, wallet as walletApi, bankDetailsQueryOptions, normalizeBankVerificationStatus } from "@/lib/api";
@@ -16,12 +16,12 @@ import { formatCredits } from "@/lib/format";
 import { useAuth } from "@/contexts/AuthContext";
 import { NoCreditsToRedeem } from "@/components/NoCreditsToRedeem";
 import { LANG, FILTER_OPTIONS, normalizePayoutStatus, payoutStatusBadge, payoutStatusLabel } from "@/lib/language";
-
-function isPayoutWindow(): boolean {
-  const now = new Date();
-  const hours = now.getHours();
-  return hours >= 9 && hours < 12;
-}
+import {
+  DEFAULT_WINDOW_END,
+  DEFAULT_WINDOW_START,
+  formatPayoutWindowTimeRange,
+  isWithinPayoutWindowWithTimes,
+} from "@/lib/payout-window";
 
 const filterDefaults = { status: "", from: "", to: "" };
 
@@ -37,11 +37,35 @@ const filterFields: FilterField[] = [
 export default function Payouts() {
   const [amount, setAmount] = useState("");
   const [showForm, setShowForm] = useState(false);
-  const withinWindow = isPayoutWindow();
   const { toast } = useToast();
   const { user } = useAuth();
   const qc = useQueryClient();
   const { filters, setFilters, resetFilters, hasActiveFilters } = useUrlFilters(filterDefaults);
+
+  const { data: payoutConfig } = useQuery({
+    queryKey: ["payout-config"],
+    queryFn: () => payoutsApi.config(),
+  });
+
+  const windowStart = payoutConfig?.windowStart ?? DEFAULT_WINDOW_START;
+  const windowEnd = payoutConfig?.windowEnd ?? DEFAULT_WINDOW_END;
+  const timeValidationEnabled = payoutConfig?.timeValidationEnabled ?? true;
+  const windowTimeRange = formatPayoutWindowTimeRange(windowStart, windowEnd);
+
+  const [withinWindow, setWithinWindow] = useState(() =>
+    !timeValidationEnabled || isWithinPayoutWindowWithTimes(windowStart, windowEnd),
+  );
+
+  useEffect(() => {
+    if (!timeValidationEnabled) {
+      setWithinWindow(true);
+      return;
+    }
+    const update = () => setWithinWindow(isWithinPayoutWindowWithTimes(windowStart, windowEnd));
+    update();
+    const t = setInterval(update, 60_000);
+    return () => clearInterval(t);
+  }, [timeValidationEnabled, windowStart, windowEnd]);
 
   const { data: payoutsList, isLoading } = useQuery({
     queryKey: ["payouts", filters],
@@ -141,7 +165,14 @@ export default function Payouts() {
               {withinWindow ? LANG.redemption.windowOpen : LANG.redemption.windowClosed}
             </p>
             <p className="text-[11px] text-muted-foreground mt-0.5">
-              {LANG.redemption.windowHours} <span className="font-semibold text-foreground">{LANG.redemption.windowTimeRange}</span>.
+              {timeValidationEnabled ? (
+                <>
+                  {LANG.redemption.windowHours}{" "}
+                  <span className="font-semibold text-foreground">{windowTimeRange}</span>.
+                </>
+              ) : (
+                LANG.redemption.windowAnytime
+              )}
             </p>
           </div>
         </div>
