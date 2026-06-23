@@ -2,7 +2,7 @@ import { AdminLayout } from "@/components/AdminLayout";
 import { AutoPayModeBadge } from "@/components/AutoPayModeBadge";
 import { FilterBar, type FilterField } from "@/components/FilterBar";
 import { useUrlFilters } from "@/hooks/useUrlFilters";
-import { Eye, Plus, BookOpen, Landmark, Check, X, ExternalLink, FileText, FlaskConical } from "lucide-react";
+import { Eye, Plus, BookOpen, Landmark, Check, X, ExternalLink, FileText, FlaskConical, Loader2 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { admin as adminApi, bankVerificationStatusLabel, normalizeBankVerificationStatus, resolveUploadUrl } from "@/lib/api";
 import { useState, useMemo } from "react";
@@ -14,17 +14,22 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import {
+  AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction,
+} from "@/components/ui/alert-dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { StatusBadge } from "@/components/StatusBadge";
 import { toast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 import { formatCredits, formatIndianNumber, amountInIndianWords, parseAmountInput } from "@/lib/format";
-import { LANG, FILTER_OPTIONS, autoPayModeLabel, roleLabel, accountTypeDisplay } from "@/lib/language";
+import { LANG, FILTER_OPTIONS, autoPayModeLabel, roleLabel, accountTypeDisplay, userAccountStatusLabel } from "@/lib/language";
 import { ADMIN_PLAN_OPTIONS } from "@/lib/plan-options";
 
 const AUTO_PAY_MODES = ["NONE", "HALF", "FULL"] as const;
 type AutoPayModeValue = (typeof AUTO_PAY_MODES)[number];
 
-const filterDefaults = { search: "", role: "", autoPayMode: "" };
+const filterDefaults = { search: "", role: "", autoPayMode: "", status: "" };
 
 const filterFields: FilterField[] = [
   { key: "search", label: LANG.common.search, type: "search", placeholder: "Name, email or TA ID..." },
@@ -35,6 +40,10 @@ const filterFields: FilterField[] = [
   {
     key: "autoPayMode", label: LANG.filter.autoRedemption, type: "select", placeholder: LANG.filter.allModes,
     options: [...FILTER_OPTIONS.autoPayMode],
+  },
+  {
+    key: "status", label: LANG.common.status, type: "select", placeholder: LANG.common.all,
+    options: [...FILTER_OPTIONS.userAccountStatus],
   },
 ];
 
@@ -269,6 +278,100 @@ function VerifyBankDetailsModal({
   );
 }
 
+function UserStatusToggle({
+  userId,
+  userName,
+  status,
+  disabled,
+}: {
+  userId: string;
+  userName: string;
+  status: "ACTIVE" | "INACTIVE";
+  disabled?: boolean;
+}) {
+  const queryClient = useQueryClient();
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const isActive = status === "ACTIVE";
+
+  const mutation = useMutation({
+    mutationFn: (nextStatus: "ACTIVE" | "INACTIVE") =>
+      adminApi.updateUserStatus(userId, { status: nextStatus }),
+    onSuccess: () => {
+      toast({ title: LANG.toast.userStatusUpdated });
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-packages"] });
+      setConfirmOpen(false);
+    },
+    onError: (err: Error) => {
+      toast({ title: LANG.toast.userStatusFailed, description: err.message, variant: "destructive" });
+    },
+  });
+
+  const handleClick = () => {
+    if (disabled || mutation.isPending) return;
+    if (isActive) {
+      setConfirmOpen(true);
+    } else {
+      mutation.mutate("ACTIVE");
+    }
+  };
+
+  return (
+    <>
+      <Button
+        type="button"
+        size="sm"
+        variant="outline"
+        className={cn(
+          "h-7 min-w-[76px] px-2.5 text-xs font-semibold border",
+          isActive
+            ? "bg-success/10 text-success border-success/30 hover:bg-success/20 hover:text-success"
+            : "bg-muted/60 text-muted-foreground border-border hover:bg-muted hover:text-foreground",
+          disabled && "opacity-60 cursor-not-allowed",
+        )}
+        disabled={disabled || mutation.isPending}
+        onClick={handleClick}
+        title={disabled ? LANG.admin.cannotChangeOwnStatus : LANG.admin.toggleUserStatus(userName)}
+      >
+        {mutation.isPending ? (
+          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+        ) : (
+          userAccountStatusLabel(status)
+        )}
+      </Button>
+
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{LANG.admin.changeStatusTitle}</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2">
+                <p>{LANG.admin.changeStatusFor(userName)}</p>
+                <p className="rounded-lg border border-warning/30 bg-warning/10 p-3 text-sm text-foreground">
+                  {LANG.admin.inactiveConfirm}
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={mutation.isPending}>{LANG.common.cancel}</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={mutation.isPending}
+              onClick={(e) => {
+                e.preventDefault();
+                mutation.mutate("INACTIVE");
+              }}
+            >
+              {mutation.isPending ? LANG.common.updating : LANG.admin.confirmInactive}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+}
+
 function AssignPlanForm({
   pkgAmount,
   onAmountChange,
@@ -401,6 +504,7 @@ export default function AdminUsers() {
       search: filters.search || undefined,
       role: filters.role || undefined,
       autoPayMode: filters.autoPayMode || undefined,
+      status: filters.status ? filters.status.toLowerCase() : undefined,
     }),
   });
 
@@ -505,6 +609,7 @@ export default function AdminUsers() {
     }
     if (filters.role && u.role !== filters.role) return false;
     if (filters.autoPayMode && (u.autoPayMode ?? "NONE") !== filters.autoPayMode) return false;
+    if (filters.status && (u.status ?? "ACTIVE") !== filters.status) return false;
     return true;
   });
 
@@ -533,14 +638,25 @@ export default function AdminUsers() {
           <>
             {/* Mobile cards */}
             <div className="space-y-3 md:hidden">
-              {filtered.map((u) => (
+              {filtered.map((u) => {
+                const userStatus = (u.status ?? "ACTIVE") as "ACTIVE" | "INACTIVE";
+                const isInactive = userStatus === "INACTIVE";
+                return (
                 <div key={u.id} className="bg-card rounded-xl border border-border p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-semibold text-sm">{formatAdminUserLabel(u)}</p>
-                      <p className="text-xs text-muted-foreground">{u.email || LANG.common.noData}</p>
+                  <div className="flex items-start gap-3">
+                    <UserStatusToggle
+                      userId={u.id}
+                      userName={u.name}
+                      status={userStatus}
+                      disabled={currentUser?.id === u.id}
+                    />
+                    <div className="flex-1 min-w-0 flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="font-semibold text-sm truncate">{formatAdminUserLabel(u)}</p>
+                        <p className="text-xs text-muted-foreground truncate">{u.email || LANG.common.noData}</p>
+                      </div>
+                      <span className="text-[10px] font-bold bg-accent/15 text-accent px-2 py-0.5 rounded-full shrink-0">{roleLabel(u.role)}</span>
                     </div>
-                    <span className="text-[10px] font-bold bg-accent/15 text-accent px-2 py-0.5 rounded-full">{roleLabel(u.role)}</span>
                   </div>
                   <div className="flex items-center justify-between mt-3 pt-3 border-t border-border">
                     <span className="text-xs text-muted-foreground">{LANG.common.availableBalance}</span>
@@ -576,7 +692,13 @@ export default function AdminUsers() {
                     )}
                   </div>
                   <div className="flex flex-col gap-2 mt-3 pt-3 border-t border-border">
-                    <Button size="sm" variant="outline" className="w-full justify-start text-xs" onClick={() => openAssignModal(u.id, u.name, u.autoPayMode)}>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="w-full justify-start text-xs"
+                      disabled={isInactive}
+                      onClick={() => openAssignModal(u.id, u.name, u.autoPayMode)}
+                    >
                       <Plus className="h-3.5 w-3.5 mr-1" /> {LANG.admin.assignPlanAction}
                     </Button>
                     <Button size="sm" variant="outline" className="w-full justify-start text-xs" onClick={() => navigate(`/admin/packages?userId=${u.id}`)}>
@@ -590,7 +712,8 @@ export default function AdminUsers() {
                     </Button>
                   </div>
                 </div>
-              ))}
+              );
+              })}
               {filtered.length === 0 && (
                 <p className="text-center text-muted-foreground py-12">{LANG.admin.noUsers}</p>
               )}
@@ -601,6 +724,7 @@ export default function AdminUsers() {
               <table className="w-full min-w-[1100px]">
                 <thead>
                   <tr className="border-b border-border">
+                    <th className="text-left text-xs font-medium text-muted-foreground p-4 w-[100px]">{LANG.common.status}</th>
                     <th className="text-left text-xs font-medium text-muted-foreground p-4">{LANG.common.name}</th>
                     <th className="text-left text-xs font-medium text-muted-foreground p-4">{LANG.filter.autoRedemption}</th>
                     <th className="text-left text-xs font-medium text-muted-foreground p-4">{LANG.nav.plans}</th>
@@ -610,12 +734,28 @@ export default function AdminUsers() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {filtered.map((u) => (
+                  {filtered.map((u) => {
+                    const userStatus = (u.status ?? "ACTIVE") as "ACTIVE" | "INACTIVE";
+                    const isInactive = userStatus === "INACTIVE";
+                    return (
                     <tr key={u.id} className="hover:bg-muted/50 transition-colors">
+                      <td className="p-4">
+                        <UserStatusToggle
+                          userId={u.id}
+                          userName={u.name}
+                          status={userStatus}
+                          disabled={currentUser?.id === u.id}
+                        />
+                      </td>
                       <td className="p-4 whitespace-nowrap">
                         <div className="flex flex-col">
                           <span className="text-sm font-medium">{formatAdminUserLabel(u)}</span>
                           <span className="text-xs text-muted-foreground">{u.email || LANG.common.noData}</span>
+                          {u.statusUpdatedAt && (
+                            <span className="text-[10px] text-muted-foreground mt-0.5">
+                              {LANG.admin.statusUpdated}: {new Date(u.statusUpdatedAt).toLocaleDateString("en-GB")}
+                            </span>
+                          )}
                         </div>
                       </td>
                       <td className="p-4">
@@ -643,7 +783,14 @@ export default function AdminUsers() {
                       <td className="p-4 text-sm font-semibold whitespace-nowrap">{formatCredits(u.totalRewardsCredited ?? 0)}</td>
                       <td className="p-4 text-right sticky right-0 bg-card group-hover:bg-muted/50">
                         <div className="flex items-center gap-1 justify-end">
-                          <Button size="sm" variant="outline" className="h-8 w-8 p-0" title={LANG.admin.assignPlanAction} onClick={() => openAssignModal(u.id, u.name, u.autoPayMode)}>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-8 w-8 p-0"
+                            title={LANG.admin.assignPlanAction}
+                            disabled={isInactive}
+                            onClick={() => openAssignModal(u.id, u.name, u.autoPayMode)}
+                          >
                             <Plus className="h-3.5 w-3.5" />
                           </Button>
                           <Button size="sm" variant="outline" className="h-8 w-8 p-0" title={LANG.admin.viewPlans} onClick={() => navigate(`/admin/packages?userId=${u.id}`)}>
@@ -658,9 +805,10 @@ export default function AdminUsers() {
                         </div>
                       </td>
                     </tr>
-                  ))}
+                  );
+                  })}
                   {filtered.length === 0 && (
-                    <tr><td colSpan={6} className="text-center text-muted-foreground py-12">{LANG.admin.noUsers}</td></tr>
+                    <tr><td colSpan={7} className="text-center text-muted-foreground py-12">{LANG.admin.noUsers}</td></tr>
                   )}
                 </tbody>
               </table>

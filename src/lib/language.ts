@@ -159,6 +159,7 @@ export const LANG = {
     inactive: "Inactive",
     completed: "Completed",
     closed: "Closed",
+    stopped: "Stopped",
     success: "Success",
     failed: "Failed",
     processing: "Processing",
@@ -591,6 +592,22 @@ export const LANG = {
     viewPlans: "View Plans",
     assignPlanAction: "Assign Plan",
     autoRedemptionMode: "Auto Redemption Mode",
+    changeStatus: "Change Status",
+    changeStatusTitle: "Change user status",
+    changeStatusFor: (name: string) => `Update account status for ${name}`,
+    toggleUserStatus: (name: string) => `Click to toggle account status for ${name}`,
+    cannotChangeOwnStatus: "You cannot change your own account status",
+    statusUpdated: "Status updated",
+    inactiveConfirm:
+      "Changing user status to INACTIVE will stop future reward processing and prevent user access. All active plans will be stopped automatically.",
+    confirmInactive: "Confirm INACTIVE",
+    stopPlan: "Stop Plan",
+    stopPlanTitle: "Stop plan",
+    stopPlanFor: (name: string) => `Stop rewards and redemptions for ${name}'s plan`,
+    stopReason: "Stop reason",
+    stopReasonOther: "Details",
+    stopReasonOtherPlaceholder: "Enter stop reason",
+    stoppedAt: "Stopped",
   },
 
   settings: {
@@ -619,6 +636,10 @@ export const LANG = {
     planCancelBlocked: "Cannot cancel plan after rewards started",
     autoRedemptionUpdated: "Auto Pay mode updated",
     autoRedemptionFailed: "Failed to update Auto Pay",
+    userStatusUpdated: "User status updated",
+    userStatusFailed: "Failed to update user status",
+    planStopped: "Plan stopped successfully",
+    planStopFailed: "Failed to stop plan",
     actionFailed: "Action failed",
     bankVerified: "Bank details verified",
     bankRejected: "Bank details rejected",
@@ -794,8 +815,13 @@ export const FILTER_OPTIONS = {
   ],
   planStatusWithClosed: [
     { label: LANG.status.active, value: "ACTIVE" },
+    { label: LANG.status.stopped, value: "STOPPED" },
     { label: LANG.status.completed, value: "MATURED" },
     { label: LANG.status.closed, value: "CLOSED" },
+  ],
+  userAccountStatus: [
+    { label: LANG.status.active, value: "ACTIVE" },
+    { label: LANG.status.inactive, value: "INACTIVE" },
   ],
   rewardPercent: [
     { label: "5%", value: "5" },
@@ -896,7 +922,20 @@ export function planStatusLabel(status: string): string {
   if (status === "ACTIVE") return LANG.status.active;
   if (status === "MATURED") return LANG.status.completed;
   if (status === "CLOSED") return LANG.status.closed;
+  if (status === "STOPPED") return LANG.status.stopped;
   return status;
+}
+
+export function userAccountStatusLabel(status?: string): string {
+  if (!status) return LANG.common.noData;
+  const upper = status.toUpperCase();
+  if (upper === "ACTIVE") return LANG.status.active;
+  if (upper === "INACTIVE") return LANG.status.inactive;
+  return status;
+}
+
+export function userAccountStatusBadge(status: string): "active" | "inactive" {
+  return status === "INACTIVE" ? "inactive" : "active";
 }
 
 export function autoPayModeLabel(mode: string): string {
@@ -940,11 +979,4 @@ export function runTypeLabel(runType: string): string {
   if (runType === "MANUAL") return LANG.common.manual;
   if (runType === "CRON") return LANG.status.cron;
   return runType;
-}
-
-export function userAccountStatusLabel(status?: string): string {
-  if (!status) return LANG.common.noData;
-  if (status.toUpperCase() === "ACTIVE") return LANG.status.active;
-  if (status.toUpperCase() === "INACTIVE") return LANG.status.inactive;
-  return status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
 }

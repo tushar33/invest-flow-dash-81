@@ -3,13 +3,13 @@ import { AdminLayout } from "@/components/AdminLayout";
 import { StatusBadge } from "@/components/StatusBadge";
 import { FilterBar, type FilterField } from "@/components/FilterBar";
 import { useUrlFilters } from "@/hooks/useUrlFilters";
-import { Package, BookOpen, Calendar, XCircle, Lock, Unlock } from "lucide-react";
+import { Package, BookOpen, Calendar, XCircle, Lock, Unlock, Octagon } from "lucide-react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { admin as adminApi, type AdminPackage } from "@/lib/api";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog, DialogContent, DialogHeader, DialogFooter,
+  Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
 import {
   AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle,
@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { formatCredits } from "@/lib/format";
 import { LANG, FILTER_OPTIONS, planStatusLabel } from "@/lib/language";
@@ -29,6 +30,85 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+
+const STOP_REASON_OPTIONS = [
+  "User Requested Closure",
+  "Administrative Action",
+  "Account Inactive",
+  "Other",
+] as const;
+
+/* ── Stop Plan Modal ─────────────────────────────────────────── */
+interface StopPlanModalProps { pkg: AdminPackage; onClose: () => void; onSuccess: () => void; }
+
+function StopPlanModal({ pkg, onClose, onSuccess }: StopPlanModalProps) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [reasonPreset, setReasonPreset] = useState<string>(STOP_REASON_OPTIONS[0]);
+  const [otherReason, setOtherReason] = useState("");
+  const stopReason = reasonPreset === "Other" ? otherReason.trim() : reasonPreset;
+
+  const mutation = useMutation({
+    mutationFn: () => adminApi.stopPackage(pkg.packageId, { stopReason }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-packages"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+      toast({ title: LANG.toast.planStopped });
+      onSuccess();
+      onClose();
+    },
+    onError: (err: Error) => {
+      toast({ title: LANG.toast.planStopFailed, description: err.message, variant: "destructive" });
+    },
+  });
+
+  return (
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>{LANG.admin.stopPlanTitle}</DialogTitle>
+          <DialogDescription>{LANG.admin.stopPlanFor(pkg.userName)}</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4 py-2">
+          <div className="space-y-2">
+            <Label>{LANG.admin.stopReason}</Label>
+            <Select value={reasonPreset} onValueChange={setReasonPreset}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {STOP_REASON_OPTIONS.map((opt) => (
+                  <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          {reasonPreset === "Other" && (
+            <div className="space-y-2">
+              <Label htmlFor="stop-other">{LANG.admin.stopReasonOther}</Label>
+              <Textarea
+                id="stop-other"
+                required
+                rows={3}
+                value={otherReason}
+                onChange={(e) => setOtherReason(e.target.value)}
+                placeholder={LANG.admin.stopReasonOtherPlaceholder}
+              />
+            </div>
+          )}
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>{LANG.common.cancel}</Button>
+          <Button
+            variant="destructive"
+            disabled={!stopReason || mutation.isPending}
+            onClick={() => mutation.mutate()}
+          >
+            {mutation.isPending ? LANG.common.processing : LANG.admin.stopPlan}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 /* ── Edit Plan Modal (pre-ROI) ─────────────────────────────────────────── */
 interface EditPlanModalProps { pkg: AdminPackage; onClose: () => void; onSuccess: () => void; }
@@ -211,6 +291,7 @@ export default function AdminPackages() {
   const queryClient = useQueryClient();
   const { filters, setFilters, resetFilters, hasActiveFilters } = useUrlFilters(filterDefaults);
   const [editTarget, setEditTarget] = useState<AdminPackage | null>(null);
+  const [stopTarget, setStopTarget] = useState<AdminPackage | null>(null);
   const [cancelTarget, setCancelTarget] = useState<AdminPackage | null>(null);
   const [lockUpdatingId, setLockUpdatingId] = useState<string | null>(null);
 
@@ -259,8 +340,8 @@ export default function AdminPackages() {
     return true;
   });
 
-  const statusMap: Record<string, "active" | "completed" | "inactive"> = {
-    ACTIVE: "active", MATURED: "completed", CLOSED: "inactive",
+  const statusMap: Record<string, "active" | "completed" | "inactive" | "rejected"> = {
+    ACTIVE: "active", MATURED: "completed", CLOSED: "inactive", STOPPED: "rejected",
   };
 
   return (
@@ -324,6 +405,14 @@ export default function AdminPackages() {
                   <StatusBadge status={statusMap[pkg.status] || "inactive"}>{planStatusLabel(pkg.status)}</StatusBadge>
                 </div>
 
+                {pkg.stoppedAt && (
+                  <p className="mt-2 text-[10px] text-muted-foreground leading-snug">
+                    {LANG.admin.stoppedAt}: {pkg.stopReason ?? planStatusLabel("STOPPED")}
+                    {" · "}
+                    {new Date(pkg.stoppedAt).toLocaleDateString("en-GB")}
+                  </p>
+                )}
+
                 {/* Inline stats */}
                 <div className="flex items-center gap-1.5 mt-3 flex-wrap">
                   <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-accent/10 text-accent border border-accent/20">
@@ -357,7 +446,7 @@ export default function AdminPackages() {
                 </div>
 
                 {/* Actions */}
-                <div className="mt-3 pt-3 border-t border-border/60 grid grid-cols-4 gap-1">
+                <div className="mt-3 pt-3 border-t border-border/60 grid grid-cols-5 gap-1">
                   <Button size="sm" variant="ghost" className="h-8 text-[11px] px-1 min-w-0" onClick={() => navigate(`/wallet/ledger?userId=${pkg.userId}`)}>
                     <BookOpen className="h-3.5 w-3.5 mr-1 shrink-0" /> <span className="truncate">Ledger</span>
                   </Button>
@@ -367,6 +456,13 @@ export default function AdminPackages() {
                     onClick={() => setEditTarget(pkg)}
                   >
                     <Calendar className="h-3.5 w-3.5 mr-1 shrink-0" /> <span className="truncate">{LANG.plans.editDate}</span>
+                  </Button>
+                  <Button size="sm" variant="ghost" className="h-8 text-[11px] px-1 min-w-0"
+                    disabled={pkg.status !== "ACTIVE"}
+                    title={LANG.admin.stopPlan}
+                    onClick={() => setStopTarget(pkg)}
+                  >
+                    <Octagon className="h-3.5 w-3.5 mr-1 shrink-0" /> <span className="truncate">Stop</span>
                   </Button>
                   <Button size="sm" variant="ghost" className="h-8 text-[11px] px-1 min-w-0"
                     disabled={lockUpdatingId === pkg.packageId}
@@ -392,6 +488,9 @@ export default function AdminPackages() {
         )}
         {editTarget && (
           <EditPlanModal pkg={editTarget} onClose={() => setEditTarget(null)} onSuccess={() => setEditTarget(null)} />
+        )}
+        {stopTarget && (
+          <StopPlanModal pkg={stopTarget} onClose={() => setStopTarget(null)} onSuccess={() => setStopTarget(null)} />
         )}
         {cancelTarget && (
           <CancelPackageModal pkg={cancelTarget} onClose={() => setCancelTarget(null)} />

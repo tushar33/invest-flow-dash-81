@@ -520,6 +520,9 @@ export interface AdminUser {
   username?: string | null;
   email: string | null;
   role: string;
+  status?: "ACTIVE" | "INACTIVE";
+  statusUpdatedAt?: string | null;
+  statusUpdatedBy?: string | null;
   totalPackages: number;
   currentBalance: number;
   totalRewardsCredited: number;
@@ -530,6 +533,7 @@ export interface AdminUserFilters {
   search?: string;
   role?: string;
   autoPayMode?: string;
+  status?: string;
   page?: number;
   limit?: number;
 }
@@ -555,6 +559,9 @@ export interface AdminPackage {
   redemptionLocked?: boolean;
   redemptionLockedAt?: string | null;
   redemptionLockedBy?: string | null;
+  stoppedAt?: string | null;
+  stoppedBy?: string | null;
+  stopReason?: string | null;
 }
 
 export interface AdminPackageFilters {
@@ -721,6 +728,10 @@ export const admin = {
     request<WalletData>(`/admin/users/${userId}/wallet${buildQs(filters as any)}`),
   configureAutopay: (userId: string, data: { autoPayMode: string }) =>
     request<AuthUser>(`/admin/users/${userId}/autopay`, { method: "PATCH", body: JSON.stringify(data) }),
+  updateUserStatus: (userId: string, data: { status: "ACTIVE" | "INACTIVE" }) =>
+    request<AdminUser>(`/admin/users/${userId}/status`, { method: "PATCH", body: JSON.stringify(data) }),
+  stopPackage: (packageId: string, data: { stopReason: string }) =>
+    request<AdminPackage>(`/admin/packages/${packageId}/stop`, { method: "POST", body: JSON.stringify(data) }),
   userBankDetails: (userId: string) =>
     request<BankDetails | null>(`/admin/users/${userId}/bank-details`),
   verifyUserBankDetails: (
