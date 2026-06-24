@@ -26,8 +26,7 @@ export function PlanCycleDetails({ pkg, daysBetweenCycles, compact = false }: Pl
 
   if (compact) {
     return (
-      <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-        <CycleModeBadge mode={pkg.cycleMode} />
+      <div className="flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
         <span>
           {LANG.plans.nextCycleDate}:{" "}
           <span className="font-medium text-foreground">
@@ -35,10 +34,13 @@ export function PlanCycleDetails({ pkg, daysBetweenCycles, compact = false }: Pl
           </span>
         </span>
         {pkg.lastCycleDate && (
-          <span>
-            {LANG.plans.lastCycleDate}:{" "}
-            <span className="font-medium text-foreground">{formatCycleDate(pkg.lastCycleDate)}</span>
-          </span>
+          <>
+            <span>·</span>
+            <span>
+              {LANG.plans.lastCycleDate}:{" "}
+              <span className="font-medium text-foreground">{formatCycleDate(pkg.lastCycleDate)}</span>
+            </span>
+          </>
         )}
       </div>
     );

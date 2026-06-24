@@ -3,11 +3,18 @@ import { AdminLayout } from "@/components/AdminLayout";
 import { StatusBadge } from "@/components/StatusBadge";
 import { FilterBar, type FilterField } from "@/components/FilterBar";
 import { useUrlFilters } from "@/hooks/useUrlFilters";
-import { Package, BookOpen, Calendar, XCircle, Lock, Unlock, Octagon } from "lucide-react";
+import { Package, BookOpen, Calendar, XCircle, Lock, Unlock, Octagon, MoreHorizontal, ChevronDown } from "lucide-react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { admin as adminApi, type AdminPackage } from "@/lib/api";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 import {
   Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
@@ -390,95 +397,95 @@ export default function AdminPackages() {
               const planCycles = pkg.totalCycles ?? pkg.durationMonths ?? 1;
               const progress = Math.min(100, (pkg.cyclesCompleted / planCycles) * 100);
               return (
-              <div key={pkg.packageId} className="group bg-card rounded-xl border border-border/70 p-3.5 hover:border-accent/40 hover:shadow-md transition-all animate-fade-in flex flex-col">
-                {/* Header */}
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="h-9 w-9 rounded-lg bg-accent/10 flex items-center justify-center shrink-0">
-                      <Package className="h-4.5 w-4.5 text-accent" />
+              <div key={pkg.packageId} className="group bg-card rounded-xl border border-border/70 p-3.5 hover:border-accent/40 hover:shadow-md transition-all duration-300 animate-fade-in flex flex-col justify-between gap-3">
+                <div className="space-y-3">
+                  {/* Header */}
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="h-9 w-9 rounded-lg bg-accent/10 flex items-center justify-center shrink-0">
+                        <Package className="h-4.5 w-4.5 text-accent" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-medium text-xs text-muted-foreground truncate">{pkg.userName}</p>
+                        <p className="text-base font-bold tabular-nums leading-tight">{formatCredits(Number(pkg.principalAmount))}</p>
+                      </div>
                     </div>
-                    <div className="min-w-0">
-                      <p className="font-medium text-xs text-muted-foreground truncate">{pkg.userName}</p>
-                      <p className="text-base font-bold tabular-nums leading-tight">{formatCredits(Number(pkg.principalAmount))}</p>
-                    </div>
+                    <StatusBadge status={statusMap[pkg.status] || "inactive"}>{planStatusLabel(pkg.status)}</StatusBadge>
                   </div>
-                  <StatusBadge status={statusMap[pkg.status] || "inactive"}>{planStatusLabel(pkg.status)}</StatusBadge>
-                </div>
 
-                {pkg.stoppedAt && (
-                  <p className="mt-2 text-[10px] text-muted-foreground leading-snug">
-                    {LANG.admin.stoppedAt}: {pkg.stopReason ?? planStatusLabel("STOPPED")}
-                    {" · "}
-                    {new Date(pkg.stoppedAt).toLocaleDateString("en-GB")}
-                  </p>
-                )}
-
-                {/* Inline stats */}
-                <div className="flex items-center gap-1.5 mt-3 flex-wrap">
-                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-accent/10 text-accent border border-accent/20">
-                    {pkg.roiPercentage}% Reward
-                  </span>
-                  <span className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-muted text-muted-foreground tabular-nums">
-                    {pkg.cyclesCompleted}/{planCycles} cycles
-                  </span>
-                  <span className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-muted text-muted-foreground">
-                    {new Date(pkg.assignedDate).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "2-digit" })}
-                  </span>
-                  {pkg.redemptionLocked ? (
-                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-destructive/10 text-destructive border border-destructive/20 inline-flex items-center gap-1">
-                      <Lock className="h-2.5 w-2.5" /> {LANG.plans.redemptionStatus}: {LANG.plans.redemptionLocked}
-                    </span>
-                  ) : (
-                    <span className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-success/10 text-success border border-success/20">
-                      {LANG.plans.redemptionStatus}: {LANG.plans.redemptionAllowed}
-                    </span>
+                  {pkg.stoppedAt && (
+                    <p className="mt-2 text-[10px] text-muted-foreground leading-snug">
+                      {LANG.admin.stoppedAt}: {pkg.stopReason ?? planStatusLabel("STOPPED")}
+                      {" · "}
+                      {new Date(pkg.stoppedAt).toLocaleDateString("en-GB")}
+                    </p>
                   )}
-                </div>
 
-                {/* Progress */}
-                <div className="mt-2.5 h-1 bg-muted rounded-full overflow-hidden">
-                  <div className="h-full bg-gradient-to-r from-accent to-accent/70 rounded-full transition-all" style={{ width: `${progress}%` }} />
-                </div>
+                  {/* Inline stats */}
+                  <div className="flex items-center gap-1.5 mt-3 flex-wrap">
+                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-accent/10 text-accent border border-accent/20">
+                      {pkg.roiPercentage}% Reward
+                    </span>
+                    <span className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-muted text-muted-foreground tabular-nums">
+                      {pkg.cyclesCompleted}/{planCycles} cycles
+                    </span>
+                    <span className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-muted text-muted-foreground">
+                      {new Date(pkg.assignedDate).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "2-digit" })}
+                    </span>
+                    {pkg.redemptionLocked ? (
+                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-destructive/10 text-destructive border border-destructive/20 inline-flex items-center gap-1">
+                        <Lock className="h-2.5 w-2.5" /> {LANG.plans.redemptionStatus}: {LANG.plans.redemptionLocked}
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-success/10 text-success border border-success/20">
+                        {LANG.plans.redemptionStatus}: {LANG.plans.redemptionAllowed}
+                      </span>
+                    )}
+                  </div>
 
-                {/* Cycle details */}
-                <div className="mt-2.5">
-                  <PlanCycleDetails pkg={pkg} daysBetweenCycles={daysBetweenCycles} compact />
+                  {/* Progress */}
+                  <div className="mt-2.5 h-1 bg-muted rounded-full overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-accent to-accent/70 rounded-full transition-all" style={{ width: `${progress}%` }} />
+                  </div>
+
+                  {/* Cycle details */}
+                  <div className="mt-2.5">
+                    <PlanCycleDetails pkg={pkg} daysBetweenCycles={daysBetweenCycles} compact />
+                  </div>
                 </div>
 
                 {/* Actions */}
-                <div className="mt-3 pt-3 border-t border-border/60 grid grid-cols-5 gap-1">
-                  <Button size="sm" variant="ghost" className="h-8 text-[11px] px-1 min-w-0" onClick={() => navigate(`/wallet/ledger?userId=${pkg.userId}`)}>
-                    <BookOpen className="h-3.5 w-3.5 mr-1 shrink-0" /> <span className="truncate">Ledger</span>
+                <div className="mt-2 pt-3 border-t border-border/60 flex items-center justify-between gap-1">
+                  <Button size="icon" variant="ghost" className="h-8.5 w-8.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted shrink-0" onClick={() => navigate(`/wallet/ledger?userId=${pkg.userId}`)} title="Ledger">
+                    <BookOpen className="h-4.5 w-4.5" />
                   </Button>
-                  <Button size="sm" variant="ghost" className="h-8 text-[11px] px-1 min-w-0"
+                  <Button size="icon" variant="ghost" className="h-8.5 w-8.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted shrink-0"
                     disabled={pkg.cyclesCompleted > 0}
                     title={pkg.cyclesCompleted > 0 ? LANG.plans.cannotEditTooltip : LANG.plans.editDateTooltip}
                     onClick={() => setEditTarget(pkg)}
                   >
-                    <Calendar className="h-3.5 w-3.5 mr-1 shrink-0" /> <span className="truncate">{LANG.plans.editDate}</span>
+                    <Calendar className="h-4.5 w-4.5" />
                   </Button>
-                  <Button size="sm" variant="ghost" className="h-8 text-[11px] px-1 min-w-0"
+                  <Button size="icon" variant="ghost" className="h-8.5 w-8.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted shrink-0"
                     disabled={pkg.status !== "ACTIVE"}
                     title={LANG.admin.stopPlan}
                     onClick={() => setStopTarget(pkg)}
                   >
-                    <Octagon className="h-3.5 w-3.5 mr-1 shrink-0" /> <span className="truncate">Stop</span>
+                    <Octagon className="h-4.5 w-4.5" />
                   </Button>
-                  <Button size="sm" variant="ghost" className="h-8 text-[11px] px-1 min-w-0"
+                  <Button size="icon" variant="ghost" className="h-8.5 w-8.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted shrink-0"
                     disabled={lockUpdatingId === pkg.packageId}
                     title={pkg.redemptionLocked ? LANG.plans.unlockRedemption : LANG.plans.lockRedemption}
                     onClick={() => lockMutation.mutate({ id: pkg.packageId, redemptionLocked: !pkg.redemptionLocked })}
                   >
-                    {pkg.redemptionLocked
-                      ? <><Unlock className="h-3.5 w-3.5 mr-1 shrink-0" /> <span className="truncate">Unlock</span></>
-                      : <><Lock className="h-3.5 w-3.5 mr-1 shrink-0" /> <span className="truncate">Lock</span></>}
+                    {pkg.redemptionLocked ? <Unlock className="h-4.5 w-4.5" /> : <Lock className="h-4.5 w-4.5" />}
                   </Button>
-                  <Button size="sm" variant="ghost" className="h-8 text-[11px] px-1 min-w-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                  <Button size="icon" variant="ghost" className="h-8.5 w-8.5 rounded-lg text-destructive hover:text-destructive hover:bg-destructive/10 shrink-0"
                     disabled={pkg.status !== "ACTIVE"}
                     title={pkg.status !== "ACTIVE" ? LANG.plans.onlyActiveCancelTooltip : LANG.plans.cancelPlanTooltip}
                     onClick={() => setCancelTarget(pkg)}
                   >
-                    <XCircle className="h-3.5 w-3.5 mr-1 shrink-0" /> <span className="truncate">Cancel</span>
+                    <XCircle className="h-4.5 w-4.5" />
                   </Button>
                 </div>
               </div>
