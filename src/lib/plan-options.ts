@@ -4,12 +4,12 @@ export const ADMIN_PLAN_OPTIONS = [
   {
     roiPercentage: 10,
     planType: "TEN_PERCENT_NORMAL",
-    label: "10% Normal",
+    label: "10% (12 Months)",
   },
   {
     roiPercentage: 10,
     planType: "TEN_PERCENT_FIXED_PAYOUT",
-    label: "10% Fixed Payout",
+    label: "10% (15 Months)",
   },
 ] as const;
 
