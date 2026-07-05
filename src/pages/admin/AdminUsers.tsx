@@ -3,9 +3,9 @@ import { AutoPayModeBadge } from "@/components/AutoPayModeBadge";
 import { FilterBar, type FilterField } from "@/components/FilterBar";
 import { useUrlFilters } from "@/hooks/useUrlFilters";
 import { Eye, Plus, BookOpen, Landmark, Check, X, ExternalLink, FileText, FlaskConical, Loader2 } from "lucide-react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from "@tanstack/react-query";
 import { admin as adminApi, bankVerificationStatusLabel, normalizeBankVerificationStatus, resolveUploadUrl } from "@/lib/api";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -498,15 +498,48 @@ export default function AdminUsers() {
   const { user: currentUser } = useAuth();
   const { filters, setFilters, resetFilters, hasActiveFilters } = useUrlFilters(filterDefaults);
 
-  const { data: users, isLoading } = useQuery({
+  const PAGE_SIZE = 20;
+  const {
+    data: usersPages,
+    isLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
     queryKey: ["admin-users", filters],
-    queryFn: () => adminApi.users({
+    queryFn: ({ pageParam = 1 }) => adminApi.usersPaginated({
       search: filters.search || undefined,
       role: filters.role || undefined,
       autoPayMode: filters.autoPayMode || undefined,
       status: filters.status ? filters.status.toLowerCase() : undefined,
+      page: pageParam as number,
+      limit: PAGE_SIZE,
     }),
+    initialPageParam: 1,
+    getNextPageParam: (last) => {
+      const loaded = last.page * last.limit;
+      return loaded < last.total ? last.page + 1 : undefined;
+    },
   });
+  const users = useMemo(
+    () => (usersPages?.pages ?? []).flatMap((p) => p.data),
+    [usersPages],
+  );
+
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const el = loadMoreRef.current;
+    if (!el || !hasNextPage) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting && !isFetchingNextPage) fetchNextPage();
+      },
+      { rootMargin: "300px" },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
 
   const [autopayUpdatingUserId, setAutopayUpdatingUserId] = useState<string | null>(null);
   const [assignOpen, setAssignOpen] = useState(false);
@@ -814,6 +847,22 @@ export default function AdminUsers() {
               </table>
 
             </div>
+
+            {(hasNextPage || isFetchingNextPage) && (
+              <div ref={loadMoreRef} className="flex justify-center py-6">
+                {isFetchingNextPage ? (
+                  <div className="h-6 w-6 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => fetchNextPage()}
+                    className="h-9 px-4 rounded-lg bg-muted text-sm font-medium hover:bg-muted/80 transition-colors"
+                  >
+                    Load more
+                  </button>
+                )}
+              </div>
+            )}
 
           </>
         )}

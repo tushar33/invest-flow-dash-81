@@ -705,6 +705,8 @@ export const admin = {
   financialSummary: () => request<AdminFinancialSummary>("/admin/financial-summary"),
   users: (filters?: AdminUserFilters) =>
     request<PaginatedResponse<AdminUser[]>>(`/admin/users${buildQs(filters as any)}`).then((res) => res.data),
+  usersPaginated: (filters?: AdminUserFilters) =>
+    request<PaginatedResponse<AdminUser[]>>(`/admin/users${buildQs(filters as any)}`),
   packages: async (filters?: AdminPackageFilters) => {
     const res = await request<AdminPackage[] | PaginatedResponse<AdminPackage[]>>(`/admin/packages${buildQs(filters as any)}`);
     return Array.isArray(res) ? res : res.data;
