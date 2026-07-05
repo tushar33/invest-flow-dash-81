@@ -44,6 +44,8 @@ export default function WalletLedger() {
 
   const [userSearch, setUserSearch] = useState("");
   const [selectedUserId, setSelectedUserId] = useState(userIdFromUrl);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const { toast } = useToast();
 
   const resolvedUserId = userIdFromUrl || selectedUserId;
 
