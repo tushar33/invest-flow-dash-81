@@ -498,15 +498,48 @@ export default function AdminUsers() {
   const { user: currentUser } = useAuth();
   const { filters, setFilters, resetFilters, hasActiveFilters } = useUrlFilters(filterDefaults);
 
-  const { data: users, isLoading } = useQuery({
+  const PAGE_SIZE = 20;
+  const {
+    data: usersPages,
+    isLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
     queryKey: ["admin-users", filters],
-    queryFn: () => adminApi.users({
+    queryFn: ({ pageParam = 1 }) => adminApi.usersPaginated({
       search: filters.search || undefined,
       role: filters.role || undefined,
       autoPayMode: filters.autoPayMode || undefined,
       status: filters.status ? filters.status.toLowerCase() : undefined,
+      page: pageParam as number,
+      limit: PAGE_SIZE,
     }),
+    initialPageParam: 1,
+    getNextPageParam: (last) => {
+      const loaded = last.page * last.limit;
+      return loaded < last.total ? last.page + 1 : undefined;
+    },
   });
+  const users = useMemo(
+    () => (usersPages?.pages ?? []).flatMap((p) => p.data),
+    [usersPages],
+  );
+
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const el = loadMoreRef.current;
+    if (!el || !hasNextPage) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting && !isFetchingNextPage) fetchNextPage();
+      },
+      { rootMargin: "300px" },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
 
   const [autopayUpdatingUserId, setAutopayUpdatingUserId] = useState<string | null>(null);
   const [assignOpen, setAssignOpen] = useState(false);
