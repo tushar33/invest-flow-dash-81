@@ -858,7 +858,7 @@ export default function AdminUsers() {
                     onClick={() => fetchNextPage()}
                     className="h-9 px-4 rounded-lg bg-muted text-sm font-medium hover:bg-muted/80 transition-colors"
                   >
-                    {LANG.common.loadMore ?? "Load more"}
+                    Load more
                   </button>
                 )}
               </div>
