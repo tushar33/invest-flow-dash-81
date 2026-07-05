@@ -36,7 +36,19 @@ function DatePickerField({
   onChange: (v: string) => void;
   placeholder: string;
 }) {
-  const date = value ? new Date(value) : undefined;
+  const date = (() => {
+    if (!value) return undefined;
+    const m = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (m) return new Date(+m[1], +m[2] - 1, +m[3]);
+    const d = new Date(value);
+    return isNaN(d.getTime()) ? undefined : d;
+  })();
+  const toLocalYMD = (d: Date) => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  };
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -55,7 +67,7 @@ function DatePickerField({
         <Calendar
           mode="single"
           selected={date}
-          onSelect={(d) => onChange(d ? d.toISOString().slice(0, 10) : "")}
+          onSelect={(d) => onChange(d ? toLocalYMD(d) : "")}
           className={cn("p-3 pointer-events-auto")}
         />
       </PopoverContent>
