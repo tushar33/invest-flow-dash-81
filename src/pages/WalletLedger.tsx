@@ -149,6 +149,31 @@ export default function WalletLedger() {
 
   const Layout = isAdmin ? AdminLayout : UserLayout;
 
+  const handleDownloadPdf = async () => {
+    if (!walletData || filteredTransactions.length === 0) {
+      toast({ title: "Nothing to download", description: "No transactions in the current view.", variant: "destructive" });
+      return;
+    }
+    setIsDownloading(true);
+    try {
+      const memberName = user?.fullName || "Member";
+      const username = user?.username || user?.email || user?.id || "";
+      await generateLedgerPdf({
+        memberName,
+        userIdDisplay: username ? `${memberName} (${username})` : memberName,
+        transactions: filteredTransactions as any,
+        closingBalance: walletData.availableBalance ?? 0,
+        dateFrom: fromFilter || undefined,
+        dateTo: toFilter || undefined,
+      });
+    } catch (err) {
+      console.error("PDF generation failed", err);
+      toast({ title: "Download failed", description: "Could not generate the PDF. Please try again.", variant: "destructive" });
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
   return (
     <Layout>
       <div className="space-y-6">
@@ -159,6 +184,20 @@ export default function WalletLedger() {
             selectedPlanLabel
               ? `${LANG.wallet.plan}: ${selectedPlanLabel}`
               : LANG.wallet.ledgerSubtitle
+          }
+          actions={
+            <Button
+              onClick={handleDownloadPdf}
+              disabled={isDownloading || isLoading || filteredTransactions.length === 0}
+              className="bg-gradient-accent text-accent-foreground shadow-glow"
+              size="sm"
+            >
+              {isDownloading ? (
+                <><Loader2 className="h-4 w-4 animate-spin" /> Generating…</>
+              ) : (
+                <><Download className="h-4 w-4" /> <span className="hidden sm:inline">Download PDF</span><span className="sm:hidden">PDF</span></>
+              )}
+            </Button>
           }
         />
 
