@@ -848,6 +848,22 @@ export default function AdminUsers() {
 
             </div>
 
+            {(hasNextPage || isFetchingNextPage) && (
+              <div ref={loadMoreRef} className="flex justify-center py-6">
+                {isFetchingNextPage ? (
+                  <div className="h-6 w-6 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => fetchNextPage()}
+                    className="h-9 px-4 rounded-lg bg-muted text-sm font-medium hover:bg-muted/80 transition-colors"
+                  >
+                    {LANG.common.loadMore ?? "Load more"}
+                  </button>
+                )}
+              </div>
+            )}
+
           </>
         )}
       </div>
