@@ -130,6 +130,15 @@ export default function WalletLedger() {
     enabled: isAdmin ? !!resolvedUserId : true,
   });
 
+  const { data: viewedUser } = useQuery({
+    queryKey: ["admin-user-lookup", resolvedUserId],
+    queryFn: async () => {
+      const list = await admin.users({ search: resolvedUserId, limit: 20 });
+      return list.find((u) => u.id === resolvedUserId) ?? null;
+    },
+    enabled: isAdmin && !!resolvedUserId,
+  });
+
   const visibleTransactions = isAdmin
     ? walletData?.transactions ?? []
     : filterUserVisibleTransactions(walletData?.transactions ?? []);
