@@ -130,6 +130,15 @@ export default function WalletLedger() {
     enabled: isAdmin ? !!resolvedUserId : true,
   });
 
+  const { data: viewedUser } = useQuery({
+    queryKey: ["admin-user-lookup", resolvedUserId],
+    queryFn: async () => {
+      const list = await admin.users({ search: resolvedUserId, limit: 20 });
+      return list.find((u) => u.id === resolvedUserId) ?? null;
+    },
+    enabled: isAdmin && !!resolvedUserId,
+  });
+
   const visibleTransactions = isAdmin
     ? walletData?.transactions ?? []
     : filterUserVisibleTransactions(walletData?.transactions ?? []);
@@ -156,8 +165,14 @@ export default function WalletLedger() {
     }
     setIsDownloading(true);
     try {
-      const memberName = user?.fullName || "Member";
-      const username = user?.username || user?.email || user?.id || "";
+      const memberName =
+        (isAdmin && resolvedUserId ? viewedUser?.name : user?.fullName) ||
+        user?.fullName ||
+        "Member";
+      const username =
+        (isAdmin && resolvedUserId
+          ? viewedUser?.username || viewedUser?.email || resolvedUserId
+          : user?.username || user?.email || user?.id) || "";
       await generateLedgerPdf({
         memberName,
         userIdDisplay: username ? `${memberName} (${username})` : memberName,
@@ -181,9 +196,11 @@ export default function WalletLedger() {
           icon={<Wallet className="h-5 w-5" />}
           title={LANG.wallet.activityLedgerTitle}
           subtitle={
-            selectedPlanLabel
-              ? `${LANG.wallet.plan}: ${selectedPlanLabel}`
-              : LANG.wallet.ledgerSubtitle
+            isAdmin && resolvedUserId
+              ? `Viewing: ${viewedUser?.name ?? "…"}${viewedUser?.username ? ` (${viewedUser.username})` : viewedUser?.email ? ` (${viewedUser.email})` : ""}${selectedPlanLabel ? ` · ${LANG.wallet.plan}: ${selectedPlanLabel}` : ""}`
+              : selectedPlanLabel
+                ? `${LANG.wallet.plan}: ${selectedPlanLabel}`
+                : LANG.wallet.ledgerSubtitle
           }
           actions={
             <Button
