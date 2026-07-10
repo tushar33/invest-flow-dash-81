@@ -133,10 +133,16 @@ export default function WalletLedger() {
   const { data: viewedUser } = useQuery({
     queryKey: ["admin-user-lookup", resolvedUserId],
     queryFn: async () => {
-      const list = await admin.users({ search: resolvedUserId, limit: 20 });
+      // Try search first (may not match on UUID depending on backend)
+      const bySearch = await admin.users({ search: resolvedUserId, limit: 50 });
+      const hit = bySearch.find((u) => u.id === resolvedUserId);
+      if (hit) return hit;
+      // Fallback: fetch a larger page and look up by id
+      const list = await admin.users({ limit: 1000 });
       return list.find((u) => u.id === resolvedUserId) ?? null;
     },
     enabled: isAdmin && !!resolvedUserId,
+    staleTime: 5 * 60 * 1000,
   });
 
   const visibleTransactions = isAdmin
