@@ -173,6 +173,9 @@ export default function WalletLedger() {
         (isAdmin && resolvedUserId
           ? viewedUser?.username || viewedUser?.email || resolvedUserId
           : user?.username || user?.email || user?.id) || "";
+      await generateLedgerPdf({
+        memberName,
+        userIdDisplay: username ? `${memberName} (${username})` : memberName,
         transactions: filteredTransactions as any,
         closingBalance: walletData.availableBalance ?? 0,
         dateFrom: fromFilter || undefined,
