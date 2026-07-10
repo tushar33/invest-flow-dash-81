@@ -165,11 +165,14 @@ export default function WalletLedger() {
     }
     setIsDownloading(true);
     try {
-      const memberName = user?.fullName || "Member";
-      const username = user?.username || user?.email || user?.id || "";
-      await generateLedgerPdf({
-        memberName,
-        userIdDisplay: username ? `${memberName} (${username})` : memberName,
+      const memberName =
+        (isAdmin && resolvedUserId ? viewedUser?.name : user?.fullName) ||
+        user?.fullName ||
+        "Member";
+      const username =
+        (isAdmin && resolvedUserId
+          ? viewedUser?.username || viewedUser?.email || resolvedUserId
+          : user?.username || user?.email || user?.id) || "";
         transactions: filteredTransactions as any,
         closingBalance: walletData.availableBalance ?? 0,
         dateFrom: fromFilter || undefined,
