@@ -196,9 +196,11 @@ export default function WalletLedger() {
           icon={<Wallet className="h-5 w-5" />}
           title={LANG.wallet.activityLedgerTitle}
           subtitle={
-            selectedPlanLabel
-              ? `${LANG.wallet.plan}: ${selectedPlanLabel}`
-              : LANG.wallet.ledgerSubtitle
+            isAdmin && resolvedUserId
+              ? `Viewing: ${viewedUser?.name ?? "…"}${viewedUser?.username ? ` (${viewedUser.username})` : viewedUser?.email ? ` (${viewedUser.email})` : ""}${selectedPlanLabel ? ` · ${LANG.wallet.plan}: ${selectedPlanLabel}` : ""}`
+              : selectedPlanLabel
+                ? `${LANG.wallet.plan}: ${selectedPlanLabel}`
+                : LANG.wallet.ledgerSubtitle
           }
           actions={
             <Button
