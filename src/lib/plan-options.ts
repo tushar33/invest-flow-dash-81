@@ -16,6 +16,11 @@ export const ADMIN_PLAN_OPTIONS = [
     planType: "ELEVEN_PERCENT",
     label: "11% (12 Months)",
   },
+  {
+    roiPercentage: 15,
+    planType: "FIFTEEN_PERCENT",
+    label: "15% (12 Months)",
+  },
 ] as const;
 
 export type AdminPlanOption = (typeof ADMIN_PLAN_OPTIONS)[number];
@@ -39,6 +44,7 @@ export function findPlanOptionIndex(
   if (roiPercentage === 10 && planType === "TEN_PERCENT_FIXED_PAYOUT") return 3;
   if (roiPercentage === 10) return 2;
   if (roiPercentage === 11) return 4;
+  if (roiPercentage === 15) return 5;
   return 0;
 }
 
@@ -46,6 +52,7 @@ export function planTypeFromRoi(roiPercentage: number): string | undefined {
   if (roiPercentage === 5) return "FIVE_PERCENT";
   if (roiPercentage === 7) return "SEVEN_PERCENT";
   if (roiPercentage === 11) return "ELEVEN_PERCENT";
+  if (roiPercentage === 15) return "FIFTEEN_PERCENT";
   return undefined;
 }
 

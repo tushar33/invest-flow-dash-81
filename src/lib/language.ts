@@ -828,6 +828,7 @@ export const FILTER_OPTIONS = {
     { label: "7%", value: "7" },
     { label: "10%", value: "10" },
     { label: "11%", value: "11" },
+    { label: "15%", value: "15" },
   ],
   runType: [
     { label: LANG.common.manual, value: "MANUAL" },
