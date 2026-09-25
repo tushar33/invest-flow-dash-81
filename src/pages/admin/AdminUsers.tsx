@@ -24,7 +24,7 @@ import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { formatCredits, formatIndianNumber, amountInIndianWords, parseAmountInput } from "@/lib/format";
 import { LANG, FILTER_OPTIONS, autoPayModeLabel, roleLabel, accountTypeDisplay, userAccountStatusLabel } from "@/lib/language";
-import { ADMIN_PLAN_OPTIONS } from "@/lib/plan-options";
+import { ADMIN_PLAN_OPTIONS, DEFAULT_ASSIGN_PLAN_KEY } from "@/lib/plan-options";
 
 const AUTO_PAY_MODES = ["NONE", "HALF", "FULL"] as const;
 type AutoPayModeValue = (typeof AUTO_PAY_MODES)[number];
@@ -550,7 +550,7 @@ export default function AdminUsers() {
   const [redemptionLocked, setRedemptionLocked] = useState(false);
   const [selectedUserAutoPay, setSelectedUserAutoPay] = useState<AutoPayModeValue>("NONE");
 
-  const [planKey, setPlanKey] = useState("0");
+  const [planKey, setPlanKey] = useState(DEFAULT_ASSIGN_PLAN_KEY);
 
   const selectedAssignPlan = ADMIN_PLAN_OPTIONS[Number(planKey)] ?? ADMIN_PLAN_OPTIONS[0];
 
@@ -563,9 +563,7 @@ export default function AdminUsers() {
       userName: selectedUserName,
       from: "assign",
     });
-    if ("planType" in selectedAssignPlan && selectedAssignPlan.planType) {
-      params.set("planType", selectedAssignPlan.planType);
-    }
+    params.set("planType", selectedAssignPlan.planType);
     setAssignOpen(false);
     navigate(`/admin/simulator?${params.toString()}`);
   };
@@ -576,13 +574,7 @@ export default function AdminUsers() {
         userId: selectedUserId,
         principalAmount: Number(pkgAmount),
         roiPercentage: selectedAssignPlan.roiPercentage,
-        ...("planType" in selectedAssignPlan && selectedAssignPlan.planType
-          ? { planType: selectedAssignPlan.planType }
-          : selectedAssignPlan.roiPercentage === 5
-            ? { planType: "FIVE_PERCENT" }
-            : selectedAssignPlan.roiPercentage === 7
-              ? { planType: "SEVEN_PERCENT" }
-              : {}),
+        planType: selectedAssignPlan.planType,
         redemptionLocked,
       }),
     onSuccess: () => {
@@ -591,7 +583,7 @@ export default function AdminUsers() {
       queryClient.invalidateQueries({ queryKey: ["admin-packages"] });
       setAssignOpen(false);
       setPkgAmount("");
-      setPlanKey("0");
+      setPlanKey(DEFAULT_ASSIGN_PLAN_KEY);
       setRedemptionLocked(false);
     },
     onError: (err: Error) => {
@@ -623,7 +615,7 @@ export default function AdminUsers() {
     setSelectedUserName(userName);
     setSelectedUserAutoPay((autoPayMode as AutoPayModeValue) ?? "NONE");
     setPkgAmount("");
-    setPlanKey("0");
+    setPlanKey(DEFAULT_ASSIGN_PLAN_KEY);
     setRedemptionLocked(false);
     setAssignOpen(true);
   };
