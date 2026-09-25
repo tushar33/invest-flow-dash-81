@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useMemo, useState, type FormEvent } from "react";
 import { AdminLayout } from "@/components/AdminLayout";
 import { StatusBadge } from "@/components/StatusBadge";
 import { FilterBar, type FilterField } from "@/components/FilterBar";
@@ -31,9 +31,16 @@ import { LANG, FILTER_OPTIONS, planStatusLabel } from "@/lib/language";
 import { PlanCycleDetails } from "@/components/PlanCycleDetails";
 import { DEFAULT_DAYS_BETWEEN_CYCLES } from "@/lib/cycle-schedule";
 import {
-  ADMIN_PLAN_OPTIONS,
-  findPlanOptionIndex,
+  DEFAULT_PLAN_TYPE,
+  findPlanOption,
+  getPlanCatalog,
+  matchesPlanFilter,
+  planFilterOptions,
+  planLabel,
+  roiPercentageForFilter,
+  type AdminPlanOption,
 } from "@/lib/plan-options";
+import { usePlanCatalog } from "@/hooks/usePlanCatalog";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -121,13 +128,17 @@ function StopPlanModal({ pkg, onClose, onSuccess }: StopPlanModalProps) {
 interface EditPlanModalProps { pkg: AdminPackage; onClose: () => void; onSuccess: () => void; }
 
 function EditPlanModal({ pkg, onClose, onSuccess }: EditPlanModalProps) {
-  const initialPlanKey = String(findPlanOptionIndex(pkg.roiPercentage, pkg.planType));
+  const planCatalog = usePlanCatalog();
+  const plans = planCatalog.data ?? getPlanCatalog();
+  const initialPlanType = findPlanOption(pkg.roiPercentage, pkg.planType)?.planType
+    ?? pkg.planType
+    ?? DEFAULT_PLAN_TYPE;
   const currentDate = pkg.assignedDate.slice(0, 10);
   const [principal, setPrincipal] = useState(String(pkg.principalAmount));
-  const [planKey, setPlanKey] = useState(initialPlanKey);
+  const [planType, setPlanType] = useState(initialPlanType);
   const [date, setDate] = useState(currentDate);
   const [error, setError] = useState("");
-  const selectedPlan = ADMIN_PLAN_OPTIONS[Number(planKey)] ?? ADMIN_PLAN_OPTIONS[0];
+  const selectedPlan: AdminPlanOption | undefined = plans.find((opt) => opt.planType === planType);
   const queryClient = useQueryClient();
   const mutation = useMutation({
     mutationFn: () => {
@@ -144,15 +155,9 @@ function EditPlanModal({ pkg, onClose, onSuccess }: EditPlanModalProps) {
       if (date !== currentDate) {
         body.assignedDate = new Date(date).toISOString();
       }
-      if (planKey !== initialPlanKey) {
+      if (selectedPlan && planType !== initialPlanType) {
         body.roiPercentage = selectedPlan.roiPercentage;
-        if ("planType" in selectedPlan && selectedPlan.planType) {
-          body.planType = selectedPlan.planType;
-        } else if (selectedPlan.roiPercentage === 5) {
-          body.planType = "FIVE_PERCENT";
-        } else if (selectedPlan.roiPercentage === 7) {
-          body.planType = "SEVEN_PERCENT";
-        }
+        body.planType = selectedPlan.planType;
       }
       return adminApi.updatePackagePlan(pkg.packageId, body);
     },
@@ -162,7 +167,7 @@ function EditPlanModal({ pkg, onClose, onSuccess }: EditPlanModalProps) {
 
   const unchanged =
     Number(principal) === pkg.principalAmount &&
-    planKey === initialPlanKey &&
+    planType === initialPlanType &&
     date === currentDate;
 
   function handleSubmit(e: FormEvent) {
@@ -200,11 +205,14 @@ function EditPlanModal({ pkg, onClose, onSuccess }: EditPlanModalProps) {
             </div>
             <div className="space-y-2">
               <Label>{LANG.plans.planTypeLabel}</Label>
-              <Select value={planKey} onValueChange={setPlanKey}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+              {planCatalog.isError && (
+                <p className="text-sm text-destructive">{planCatalog.error.message}</p>
+              )}
+              <Select value={planType} onValueChange={setPlanType} disabled={plans.length === 0}>
+                <SelectTrigger><SelectValue placeholder={LANG.plans.selectRewardPercent} /></SelectTrigger>
                 <SelectContent>
-                  {ADMIN_PLAN_OPTIONS.map((opt, index) => (
-                    <SelectItem key={`${opt.label}-${index}`} value={String(index)}>
+                  {plans.map((opt) => (
+                    <SelectItem key={opt.planType} value={opt.planType}>
                       {opt.label}
                     </SelectItem>
                   ))}
@@ -278,21 +286,21 @@ function CancelPackageModal({ pkg, onClose }: CancelModalProps) {
 /* ── Filters ─────────────────────────────────────────────────────────── */
 const filterDefaults = { userId: "", status: "", roiPercentage: "", from: "", to: "" };
 
-const filterFields: FilterField[] = [
-  { key: "userId", label: LANG.filter.userSearch, type: "search", placeholder: LANG.filter.userSearchPlaceholder },
-  {
-    key: "status", label: LANG.common.status, type: "select", placeholder: LANG.common.all,
-    options: [...FILTER_OPTIONS.planStatusWithClosed],
-  },
-  {
-    key: "roiPercentage", label: LANG.filter.rewardPercent, type: "select", placeholder: LANG.common.all,
-    options: [...FILTER_OPTIONS.rewardPercent],
-  },
-  { key: "from", label: LANG.filter.fromDate, type: "date", placeholder: LANG.filter.startDate },
-  { key: "to", label: LANG.filter.toDate, type: "date", placeholder: LANG.filter.endDate },
-];
-
 export default function AdminPackages() {
+  const planCatalog = usePlanCatalog();
+  const filterFields: FilterField[] = useMemo(() => [
+    { key: "userId", label: LANG.filter.userSearch, type: "search", placeholder: LANG.filter.userSearchPlaceholder },
+    {
+      key: "status", label: LANG.common.status, type: "select", placeholder: LANG.common.all,
+      options: [...FILTER_OPTIONS.planStatusWithClosed],
+    },
+    {
+      key: "roiPercentage", label: LANG.plans.planTypeLabel, type: "select", placeholder: LANG.common.all,
+      options: planFilterOptions(),
+    },
+    { key: "from", label: LANG.filter.fromDate, type: "date", placeholder: LANG.filter.startDate },
+    { key: "to", label: LANG.filter.toDate, type: "date", placeholder: LANG.filter.endDate },
+  ], [planCatalog.data]);
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -321,7 +329,7 @@ export default function AdminPackages() {
     queryFn: () => adminApi.packages({
       userId: filters.userId || undefined,
       status: filters.status || undefined,
-      roiPercentage: filters.roiPercentage || undefined,
+      roiPercentage: roiPercentageForFilter(filters.roiPercentage),
       from: filters.from || undefined,
       to: filters.to || undefined,
     }),
@@ -341,7 +349,7 @@ export default function AdminPackages() {
   const filtered = (pkgs ?? []).filter(p => {
     if (filters.userId && p.userId !== filters.userId && !p.userName.toLowerCase().includes(filters.userId.toLowerCase())) return false;
     if (filters.status && p.status !== filters.status) return false;
-    if (filters.roiPercentage && String(p.roiPercentage) !== filters.roiPercentage) return false;
+    if (filters.roiPercentage && !matchesPlanFilter(p.roiPercentage, p.planType, filters.roiPercentage)) return false;
     if (filters.from && p.assignedDate < filters.from) return false;
     if (filters.to && p.assignedDate > filters.to) return false;
     return true;
@@ -424,7 +432,7 @@ export default function AdminPackages() {
                   {/* Inline stats */}
                   <div className="flex items-center gap-1.5 mt-3 flex-wrap">
                     <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-accent/10 text-accent border border-accent/20">
-                      {pkg.roiPercentage}% Reward
+                      {planLabel(pkg.roiPercentage, pkg.planType)} Reward
                     </span>
                     <span className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-muted text-muted-foreground tabular-nums">
                       {pkg.cyclesCompleted}/{planCycles} cycles

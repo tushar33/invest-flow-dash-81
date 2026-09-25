@@ -11,34 +11,37 @@ import { packages as packagesApi } from "@/lib/api";
 import { formatCredits } from "@/lib/format";
 import { LANG, FILTER_OPTIONS, planStatusLabel } from "@/lib/language";
 import { PlanCycleDetails } from "@/components/PlanCycleDetails";
+import { matchesPlanFilter, planFilterOptions, planLabel, roiPercentageForFilter } from "@/lib/plan-options";
+import { usePlanCatalog } from "@/hooks/usePlanCatalog";
+import { useMemo } from "react";
 
 const filterDefaults = { status: "", roiPercentage: "" };
 
-const filterFields: FilterField[] = [
-  {
-    key: "status", label: LANG.common.status, type: "select", placeholder: LANG.common.all,
-    options: [...FILTER_OPTIONS.planStatus],
-  },
-  {
-    key: "roiPercentage", label: LANG.filter.rewardPercent, type: "select", placeholder: LANG.common.all,
-    options: [...FILTER_OPTIONS.rewardPercent],
-  },
-];
-
 export default function Packages() {
+  const planCatalog = usePlanCatalog();
+  const filterFields: FilterField[] = useMemo(() => [
+    {
+      key: "status", label: LANG.common.status, type: "select", placeholder: LANG.common.all,
+      options: [...FILTER_OPTIONS.planStatus],
+    },
+    {
+      key: "roiPercentage", label: LANG.plans.planTypeLabel, type: "select", placeholder: LANG.common.all,
+      options: planFilterOptions(),
+    },
+  ], [planCatalog.data]);
   const { filters, setFilters, resetFilters, hasActiveFilters } = useUrlFilters(filterDefaults);
 
   const { data: pkgs, isLoading } = useQuery({
     queryKey: ["packages", filters],
     queryFn: () => packagesApi.list({
       status: filters.status || undefined,
-      roiPercentage: filters.roiPercentage || undefined,
+      roiPercentage: roiPercentageForFilter(filters.roiPercentage),
     }),
   });
 
   const filtered = (pkgs ?? []).filter(p => {
     if (filters.status && p.status !== filters.status) return false;
-    if (filters.roiPercentage && p.roiPercentage !== filters.roiPercentage) return false;
+    if (filters.roiPercentage && !matchesPlanFilter(Number(p.roiPercentage), p.planType, filters.roiPercentage)) return false;
     return true;
   });
 
@@ -66,6 +69,10 @@ export default function Packages() {
             </div>
           </div>
         </GradientCard>
+
+        {planCatalog.isError && (
+          <p className="text-sm text-destructive">{planCatalog.error.message}</p>
+        )}
 
         <FilterBar
           fields={filterFields}
@@ -118,7 +125,10 @@ export default function Packages() {
                   <div className="mt-3 flex items-center gap-2 flex-wrap">
                     <div className="flex items-center gap-1.5 text-[11px] bg-gradient-to-r from-accent/15 to-accent/5 text-accent font-semibold rounded-lg px-2.5 py-1.5 border border-accent/20 w-fit">
                       <Gift className="h-3 w-3" />
-                      {LANG.reward.rewardCycleLabel(Number(pkg.roiPercentage), formatCredits(Number(pkg.roiCycleAmount)))}
+                      {LANG.reward.rewardCycleLabel(
+                        planLabel(Number(pkg.roiPercentage), pkg.planType),
+                        formatCredits(Number(pkg.roiCycleAmount)),
+                      )}
                     </div>
                     {pkg.redemptionLocked && (
                       <div className="flex items-center gap-1.5 text-[11px] bg-warning/10 text-warning font-semibold rounded-lg px-2.5 py-1.5 border border-warning/20 w-fit">

@@ -9,6 +9,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { admin as adminApi, type RoiLogCreditedPackage, type RoiProcessingLog } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { LANG, FILTER_OPTIONS, runStatusLabel, runTypeLabel } from "@/lib/language";
+import { planLabel } from "@/lib/plan-options";
 import { cn } from "@/lib/utils";
 
 const filterDefaults = { runType: "", status: "", from: "", to: "" };
@@ -130,7 +131,7 @@ function RunLogCard({ log }: { log: RoiProcessingLog }) {
                           )}
                         </p>
                         <p className="text-muted-foreground truncate">
-                          {formatInr(pkg.principalAmount)} · {pkg.roiPercentage}% reward
+                          {formatInr(pkg.principalAmount)} · {planLabel(Number(pkg.roiPercentage))} reward
                           {pkg.cycleNumber != null ? ` · ${LANG.reward.runLogCycleLabel(pkg.cycleNumber)}` : ""}
                         </p>
                       </div>

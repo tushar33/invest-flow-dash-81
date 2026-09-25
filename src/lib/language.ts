@@ -2,6 +2,7 @@
  * Centralized user-facing copy for the entire frontend.
  */
 
+
 export const LANG = {
   brand: {
     name: "Trinity Arrows",
@@ -390,7 +391,7 @@ export const LANG = {
     engineDescription: "Configure how reward cycles are scheduled for newly assigned plans.",
     cycleDays: "Days Between Reward Cycles",
     perCycle: "/cycle",
-    rewardCycleLabel: (percent: number, amount: string) => `${percent}% Reward · ${amount}/cycle`,
+    rewardCycleLabel: (planName: string, amount: string) => `${planName} Reward · ${amount}/cycle`,
   },
 
   cycle: {
@@ -496,8 +497,8 @@ export const LANG = {
     amountInWords: "Amount In Words",
     selectedPlan: "Selected Plan",
     planSummary: "Plan Summary",
-    rewardPlanName: (pct: number) => `${pct}% Reward Plan`,
-    selectPlanToPreview: "Select a reward percentage to preview the plan",
+    rewardPlanName: (planName: string) => `${planName} Reward Plan`,
+    selectPlanToPreview: "Select a plan type to preview",
     redemptionPermission: "Redemption Permission",
     redemptionAllowed: "Allowed",
     redemptionLocked: "Locked",
@@ -822,13 +823,6 @@ export const FILTER_OPTIONS = {
   userAccountStatus: [
     { label: LANG.status.active, value: "ACTIVE" },
     { label: LANG.status.inactive, value: "INACTIVE" },
-  ],
-  rewardPercent: [
-    { label: "5%", value: "5" },
-    { label: "7%", value: "7" },
-    { label: "10%", value: "10" },
-    { label: "11%", value: "11" },
-    { label: "15%", value: "15" },
   ],
   runType: [
     { label: LANG.common.manual, value: "MANUAL" },

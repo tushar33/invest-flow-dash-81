@@ -1,12 +1,14 @@
 import { ReactNode } from "react";
 import { BottomNav } from "./BottomNav";
 import { DesktopSidebar } from "./DesktopSidebar";
+import { usePlanCatalog } from "@/hooks/usePlanCatalog";
 
 interface UserLayoutProps {
   children: ReactNode;
 }
 
 export function UserLayout({ children }: UserLayoutProps) {
+  usePlanCatalog();
   return (
     <div className="min-h-screen flex w-full">
       <DesktopSidebar role="user" />

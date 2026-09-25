@@ -253,7 +253,16 @@ export interface PackageFilters {
   limit?: number;
 }
 
+export interface PlanCatalogEntry {
+  planType: string;
+  roiPercentage: number;
+  durationMonths: number;
+  label: string;
+  principalUnchanged: boolean;
+}
+
 export const packages = {
+  listPlans: () => request<PlanCatalogEntry[]>("/packages/plans"),
   list: (filters?: PackageFilters) =>
     request<PaginatedResponse<Package[]>>(`/packages${buildQs(filters as any)}`).then((res) => res.data),
   getById: (id: string) => request<Package>(`/packages/${id}`),

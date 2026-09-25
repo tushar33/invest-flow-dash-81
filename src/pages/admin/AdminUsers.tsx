@@ -24,7 +24,8 @@ import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { formatCredits, formatIndianNumber, amountInIndianWords, parseAmountInput } from "@/lib/format";
 import { LANG, FILTER_OPTIONS, autoPayModeLabel, roleLabel, accountTypeDisplay, userAccountStatusLabel } from "@/lib/language";
-import { ADMIN_PLAN_OPTIONS, DEFAULT_ASSIGN_PLAN_KEY } from "@/lib/plan-options";
+import { DEFAULT_PLAN_TYPE, getPlanCatalog, type AdminPlanOption } from "@/lib/plan-options";
+import { usePlanCatalog } from "@/hooks/usePlanCatalog";
 
 const AUTO_PAY_MODES = ["NONE", "HALF", "FULL"] as const;
 type AutoPayModeValue = (typeof AUTO_PAY_MODES)[number];
@@ -375,14 +376,18 @@ function UserStatusToggle({
 function AssignPlanForm({
   pkgAmount,
   onAmountChange,
-  planKey,
+  planType,
+  plans,
+  plansError,
   onPlanChange,
   redemptionLocked,
   onRedemptionLockedChange,
 }: {
   pkgAmount: string;
   onAmountChange: (value: string) => void;
-  planKey: string;
+  planType: string;
+  plans: AdminPlanOption[];
+  plansError?: string;
   onPlanChange: (value: string) => void;
   redemptionLocked: boolean;
   onRedemptionLockedChange: (value: boolean) => void;
@@ -390,8 +395,8 @@ function AssignPlanForm({
   const parsedAmount = useMemo(() => parseAmountInput(pkgAmount), [pkgAmount]);
   const formattedAmount = parsedAmount != null ? formatIndianNumber(parsedAmount) : "";
   const wordsAmount = parsedAmount != null ? amountInIndianWords(parsedAmount) : "";
-  const selectedPlan = ADMIN_PLAN_OPTIONS[Number(planKey)] ?? ADMIN_PLAN_OPTIONS[0];
-  const selectedPlanName = selectedPlan.label;
+  const selectedPlan = plans.find((opt) => opt.planType === planType);
+  const selectedPlanName = selectedPlan?.label ?? "";
   const showSummary = parsedAmount != null && parsedAmount > 0;
 
   return (
@@ -420,11 +425,12 @@ function AssignPlanForm({
 
       <div className="space-y-2">
         <Label>{LANG.plans.planTypeLabel}</Label>
-        <Select value={planKey} onValueChange={onPlanChange}>
+        {plansError && <p className="text-sm text-destructive">{plansError}</p>}
+        <Select value={planType} onValueChange={onPlanChange} disabled={plans.length === 0}>
           <SelectTrigger><SelectValue placeholder={LANG.plans.selectRewardPercent} /></SelectTrigger>
           <SelectContent>
-            {ADMIN_PLAN_OPTIONS.map((opt, index) => (
-              <SelectItem key={`${opt.label}-${index}`} value={String(index)}>
+            {plans.map((opt) => (
+              <SelectItem key={opt.planType} value={opt.planType}>
                 {opt.label}
               </SelectItem>
             ))}
@@ -481,7 +487,7 @@ function AssignPlanForm({
               {LANG.plans.selectedPlan}
             </p>
             <p className="text-sm font-semibold">
-              {selectedPlanName ?? (
+              {selectedPlanName || (
                 <span className="text-muted-foreground font-normal">{LANG.plans.selectPlanToPreview}</span>
               )}
             </p>
@@ -550,12 +556,14 @@ export default function AdminUsers() {
   const [redemptionLocked, setRedemptionLocked] = useState(false);
   const [selectedUserAutoPay, setSelectedUserAutoPay] = useState<AutoPayModeValue>("NONE");
 
-  const [planKey, setPlanKey] = useState(DEFAULT_ASSIGN_PLAN_KEY);
+  const planCatalog = usePlanCatalog();
+  const plans = planCatalog.data ?? getPlanCatalog();
+  const [planType, setPlanType] = useState(DEFAULT_PLAN_TYPE);
 
-  const selectedAssignPlan = ADMIN_PLAN_OPTIONS[Number(planKey)] ?? ADMIN_PLAN_OPTIONS[0];
+  const selectedAssignPlan = plans.find((opt) => opt.planType === planType);
 
   const handlePreviewSchedule = () => {
-    if (!pkgAmount || !planKey) return;
+    if (!pkgAmount || !selectedAssignPlan) return;
     const params = new URLSearchParams({
       principal: pkgAmount,
       roi: String(selectedAssignPlan.roiPercentage),
@@ -573,8 +581,8 @@ export default function AdminUsers() {
       adminApi.assignPackage({
         userId: selectedUserId,
         principalAmount: Number(pkgAmount),
-        roiPercentage: selectedAssignPlan.roiPercentage,
-        planType: selectedAssignPlan.planType,
+        roiPercentage: selectedAssignPlan!.roiPercentage,
+        planType: selectedAssignPlan!.planType,
         redemptionLocked,
       }),
     onSuccess: () => {
@@ -583,7 +591,7 @@ export default function AdminUsers() {
       queryClient.invalidateQueries({ queryKey: ["admin-packages"] });
       setAssignOpen(false);
       setPkgAmount("");
-      setPlanKey(DEFAULT_ASSIGN_PLAN_KEY);
+      setPlanType(DEFAULT_PLAN_TYPE);
       setRedemptionLocked(false);
     },
     onError: (err: Error) => {
@@ -615,7 +623,7 @@ export default function AdminUsers() {
     setSelectedUserName(userName);
     setSelectedUserAutoPay((autoPayMode as AutoPayModeValue) ?? "NONE");
     setPkgAmount("");
-    setPlanKey(DEFAULT_ASSIGN_PLAN_KEY);
+    setPlanType(DEFAULT_PLAN_TYPE);
     setRedemptionLocked(false);
     setAssignOpen(true);
   };
@@ -870,8 +878,10 @@ export default function AdminUsers() {
           <AssignPlanForm
             pkgAmount={pkgAmount}
             onAmountChange={setPkgAmount}
-            planKey={planKey}
-            onPlanChange={setPlanKey}
+            planType={planType}
+            plans={plans}
+            plansError={planCatalog.isError ? planCatalog.error.message : undefined}
+            onPlanChange={setPlanType}
             redemptionLocked={redemptionLocked}
             onRedemptionLockedChange={setRedemptionLocked}
           />
@@ -880,7 +890,7 @@ export default function AdminUsers() {
               type="button"
               variant="secondary"
               onClick={handlePreviewSchedule}
-              disabled={!pkgAmount || !planKey}
+              disabled={!pkgAmount || !selectedAssignPlan}
               className="w-full sm:w-auto"
             >
               <FlaskConical className="h-4 w-4" />
@@ -890,7 +900,7 @@ export default function AdminUsers() {
               <Button variant="outline" onClick={() => setAssignOpen(false)}>{LANG.common.cancel}</Button>
               <Button
                 onClick={() => assignMutation.mutate()}
-                disabled={!pkgAmount || !planKey || assignMutation.isPending}
+                disabled={!pkgAmount || !selectedAssignPlan || assignMutation.isPending}
               >
                 {assignMutation.isPending ? LANG.common.assigning : LANG.plans.assignPlan}
               </Button>

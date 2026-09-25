@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { LANG } from "@/lib/language";
+import { usePlanCatalog } from "@/hooks/usePlanCatalog";
 
 const adminMobileNav = [
   { to: "/admin", icon: LayoutDashboard, label: LANG.nav.home },
@@ -18,6 +19,7 @@ const adminMobileNav = [
 ];
 
 export function AdminLayout({ children }: { children: ReactNode }) {
+  usePlanCatalog();
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();

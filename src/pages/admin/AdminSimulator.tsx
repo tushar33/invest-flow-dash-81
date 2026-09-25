@@ -54,39 +54,28 @@ import {
 import { formatCredits } from "@/lib/format";
 import { useToast } from "@/hooks/use-toast";
 import {
-  ADMIN_PLAN_OPTIONS,
-  findPlanOptionIndex,
+  DEFAULT_PLAN_TYPE,
   planLabel,
   type AdminPlanOption,
 } from "@/lib/plan-options";
-
-function planKeyFromSearchParams(searchParams: URLSearchParams): string {
-  const roi = Number(searchParams.get("roi") ?? 10);
-  const planType = searchParams.get("planType");
-  return String(findPlanOptionIndex(roi, planType));
-}
+import { usePlanCatalog } from "@/hooks/usePlanCatalog";
 
 function applyPlanTypeToPayload(
   payload: SimulateInput,
   selectedPlan: AdminPlanOption,
 ): void {
-  if ("planType" in selectedPlan && selectedPlan.planType) {
-    payload.planType = selectedPlan.planType;
-  } else if (selectedPlan.roiPercentage === 5) {
-    payload.planType = "FIVE_PERCENT";
-  } else if (selectedPlan.roiPercentage === 7) {
-    payload.planType = "SEVEN_PERCENT";
-  }
+  payload.planType = selectedPlan.planType;
 }
 
 function buildPayload(
   principalAmount: string,
-  selectedPlan: AdminPlanOption,
+  selectedPlan: AdminPlanOption | undefined,
   startDate: string,
   cycleMode: CycleMode,
   daysBetweenCycles: string,
   autoPayMode: SimulateInput["autoPayMode"],
 ): SimulateInput | null {
+  if (!selectedPlan) return null;
   const principal = Number(principalAmount);
   const roi = selectedPlan.roiPercentage;
   if (!Number.isFinite(principal) || principal <= 0) return null;
@@ -126,8 +115,12 @@ export default function AdminSimulator() {
   const [principalAmount, setPrincipalAmount] = useState(
     () => searchParams.get("principal") ?? "500000",
   );
-  const [planKey, setPlanKey] = useState(() => planKeyFromSearchParams(searchParams));
-  const selectedPlan = ADMIN_PLAN_OPTIONS[Number(planKey)] ?? ADMIN_PLAN_OPTIONS[0];
+  const planCatalog = usePlanCatalog();
+  const plans = planCatalog.data ?? [];
+  const [planType, setPlanType] = useState(
+    () => searchParams.get("planType") || DEFAULT_PLAN_TYPE,
+  );
+  const selectedPlan = plans.find((opt) => opt.planType === planType);
   const [startDate, setStartDate] = useState(todayIsoDate());
   const [cycleMode, setCycleMode] = useState<CycleMode>(DEFAULT_CYCLE_MODE);
   const [daysBetweenCycles, setDaysBetweenCycles] = useState(String(DEFAULT_DAYS_BETWEEN_CYCLES));
@@ -266,13 +259,16 @@ export default function AdminSimulator() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="sim-plan">{LANG.plans.planTypeLabel}</Label>
-                <Select value={planKey} onValueChange={setPlanKey}>
+                {planCatalog.isError && (
+                  <p className="text-sm text-destructive">{planCatalog.error.message}</p>
+                )}
+                <Select value={planType} onValueChange={setPlanType} disabled={plans.length === 0}>
                   <SelectTrigger id="sim-plan">
-                    <SelectValue />
+                    <SelectValue placeholder={LANG.plans.selectRewardPercent} />
                   </SelectTrigger>
                   <SelectContent>
-                    {ADMIN_PLAN_OPTIONS.map((opt, index) => (
-                      <SelectItem key={`${opt.label}-${index}`} value={String(index)}>
+                    {plans.map((opt) => (
+                      <SelectItem key={opt.planType} value={opt.planType}>
                         {opt.label}
                       </SelectItem>
                     ))}
