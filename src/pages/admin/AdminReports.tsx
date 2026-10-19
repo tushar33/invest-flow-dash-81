@@ -8,6 +8,7 @@ import { admin as adminApi } from "@/lib/api";
 import { LANG } from "@/lib/language";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { usePlanCatalog } from "@/hooks/usePlanCatalog";
 
 type RangePreset = "this" | "last" | "last6";
 
@@ -46,8 +47,11 @@ export default function AdminReports() {
   const from = searchParams.get("from") || defaults.from;
   const to = searchParams.get("to") || defaults.to;
   const reportId = searchParams.get("report") || "packages-assigned";
+  const plan = searchParams.get("plan") || "";
   const [downloading, setDownloading] = useState(false);
+  const plans = usePlanCatalog();
   const rangeReady = DATE_PATTERN.test(from) && DATE_PATTERN.test(to) && from <= to;
+  const range = { from, to, planType: plan || undefined };
 
   const catalogQuery = useQuery({
     queryKey: ["admin-reports"],
@@ -55,15 +59,16 @@ export default function AdminReports() {
   });
 
   const reportQuery = useQuery({
-    queryKey: ["admin-report", reportId, from, to],
-    queryFn: () => adminApi.report(reportId, { from, to }),
+    queryKey: ["admin-report", reportId, from, to, plan],
+    queryFn: () => adminApi.report(reportId, range),
     enabled: rangeReady,
   });
 
   const setParams = (updates: Record<string, string>) => {
     const next = new URLSearchParams(searchParams);
     for (const [key, value] of Object.entries(updates)) {
-      next.set(key, value);
+      if (key === "plan" && !value) next.delete(key);
+      else next.set(key, value);
     }
     setSearchParams(next, { replace: true });
   };
@@ -76,7 +81,7 @@ export default function AdminReports() {
   const handleDownload = async () => {
     setDownloading(true);
     try {
-      await adminApi.downloadReportPdf(reportId, { from, to });
+      await adminApi.downloadReportPdf(reportId, range);
     } catch (err) {
       toast({
         title: LANG.admin.reportDownloadFailed,
@@ -127,6 +132,23 @@ export default function AdminReports() {
                 {preset.label}
               </button>
             ))}
+            <label className="space-y-1">
+              <span className="block text-[11px] font-medium text-muted-foreground">
+                {LANG.admin.planFilter}
+              </span>
+              <select
+                value={plan}
+                onChange={(event) => setParams({ plan: event.target.value })}
+                className="h-9 rounded-lg border border-input bg-background px-3 text-sm"
+              >
+                <option value="">{LANG.admin.allPlans}</option>
+                {(plans.data ?? []).map((option) => (
+                  <option key={option.planType} value={option.planType}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
             <label className="space-y-1">
               <span className="block text-[11px] font-medium text-muted-foreground">
                 {LANG.filter.fromDate}
@@ -199,6 +221,32 @@ export default function AdminReports() {
                   <p className="mt-1 text-lg font-semibold">{item.value}</p>
                 </div>
               ))}
+            </div>
+
+            <div>
+              <h2 className="text-sm font-semibold mb-2">{LANG.admin.byPlan}</h2>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {report.groups?.map((group) => {
+                  const selected = !!group.planType && report.planType === group.planType;
+                  return (
+                    <button
+                      key={group.planType ?? group.label}
+                      type="button"
+                      disabled={!group.planType}
+                      onClick={() => setParams({ plan: selected ? "" : group.planType ?? "" })}
+                      className={cn(
+                        "rounded-xl border bg-card p-4 text-left transition-colors",
+                        selected ? "border-accent bg-accent/10" : "border-border hover:border-accent/40",
+                        !group.planType && "cursor-default",
+                      )}
+                    >
+                      <p className="text-[11px] uppercase tracking-wide text-muted-foreground">{group.label}</p>
+                      <p className="mt-1 text-lg font-semibold">{group.count}</p>
+                      <p className="text-xs text-muted-foreground">{group.amount}</p>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             {report.rows.length === 0 ? (

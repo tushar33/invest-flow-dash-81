@@ -761,6 +761,13 @@ export interface AdminReportColumn {
   align?: "left" | "right";
 }
 
+export interface AdminReportPlanGroup {
+  planType: string | null;
+  label: string;
+  count: string;
+  amount: string;
+}
+
 export interface AdminReport {
   id: string;
   title: string;
@@ -768,22 +775,29 @@ export interface AdminReport {
   from: string;
   to: string;
   periodLabel: string;
+  planType: string | null;
+  planLabel: string | null;
+  groups: AdminReportPlanGroup[];
   summary: { label: string; value: string }[];
   columns: AdminReportColumn[];
   rows: Record<string, string>[];
 }
 
+function reportQuery(range: { from: string; to: string; planType?: string }): string {
+  const params = new URLSearchParams({ from: range.from, to: range.to });
+  if (range.planType) params.set("planType", range.planType);
+  return params.toString();
+}
+
 export const admin = {
   summary: () => request<AdminSummary>("/admin/summary"),
   reports: () => request<AdminReportMeta[]>("/admin/reports"),
-  report: (reportId: string, range: { from: string; to: string }) =>
-    request<AdminReport>(
-      `/admin/reports/${reportId}?from=${encodeURIComponent(range.from)}&to=${encodeURIComponent(range.to)}`,
-    ),
-  downloadReportPdf: (reportId: string, range: { from: string; to: string }) =>
+  report: (reportId: string, range: { from: string; to: string; planType?: string }) =>
+    request<AdminReport>(`/admin/reports/${reportId}?${reportQuery(range)}`),
+  downloadReportPdf: (reportId: string, range: { from: string; to: string; planType?: string }) =>
     downloadAuthed(
-      `/admin/reports/${reportId}/pdf?from=${encodeURIComponent(range.from)}&to=${encodeURIComponent(range.to)}`,
-      `${reportId}-${range.from}-to-${range.to}.pdf`,
+      `/admin/reports/${reportId}/pdf?${reportQuery(range)}`,
+      `${reportId}-${range.from}-to-${range.to}${range.planType ? `-${range.planType}` : ""}.pdf`,
     ),
   financialSummary: () => request<AdminFinancialSummary>("/admin/financial-summary"),
   users: (filters?: AdminUserFilters) =>
