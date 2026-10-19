@@ -186,6 +186,7 @@ export const LANG = {
   auth: {
     loginFailed: "Login failed",
     registrationFailed: "Registration failed",
+    phoneInvalid: "Enter a 10-digit mobile number, without +91.",
     missingContact: "Missing contact",
     missingContactDescription: "Provide an email or phone number",
     loginHeroTitle: "A premium credit experience built for clarity.",

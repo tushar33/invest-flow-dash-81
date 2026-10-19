@@ -11,6 +11,18 @@ import { LANG } from "@/lib/language";
 const inputClassName =
   "mt-1.5 w-full h-12 px-4 rounded-xl bg-secondary/60 border border-transparent text-sm placeholder:text-muted-foreground/70 focus:outline-none focus:ring-4 focus:ring-accent/20 focus:border-accent focus:bg-card transition-all";
 
+/**
+ * Keep digits only. A pasted or typed +91 (12 digits) or leading 0 (11 digits)
+ * is stripped once the number is complete, so the field is not cut off mid-paste.
+ */
+function normalizePhoneInput(raw: string): string {
+  const digits = raw.replace(/\D/g, "");
+  if (digits.length === 12 && digits.startsWith("91")) return digits.slice(2);
+  if (digits.length === 11 && digits.startsWith("0")) return digits.slice(1);
+  if ((digits.startsWith("91") || digits.startsWith("0")) && digits.length < 12) return digits;
+  return digits.slice(0, 10);
+}
+
 export default function Register() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -25,16 +37,17 @@ export default function Register() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!/^\d{10}$/.test(phone.trim())) {
-      toast.error(LANG.auth.registrationFailed, LANG.auth.phonePlaceholder);
+    const normalizedPhone = normalizePhoneInput(phone);
+    if (!/^\d{10}$/.test(normalizedPhone)) {
+      toast.error(LANG.auth.phoneInvalid);
       return;
     }
     setSubmitting(true);
     try {
       const registeredUser = await register({
-        fullName,
-        email,
-        phone: phone.trim(),
+        fullName: fullName.trim(),
+        email: email.trim(),
+        phone: normalizedPhone,
         city: city.trim(),
         password,
       });
@@ -112,11 +125,11 @@ export default function Register() {
                     id="phone"
                     type="tel"
                     value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
+                    onChange={(e) => setPhone(normalizePhoneInput(e.target.value))}
                     required
                     autoComplete="tel"
                     placeholder={LANG.auth.phonePlaceholder}
-                    maxLength={10}
+                    inputMode="numeric"
                     pattern="[0-9]{10}"
                     className={inputClassName}
                   />
