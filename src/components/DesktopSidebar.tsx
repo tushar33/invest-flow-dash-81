@@ -5,7 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { packages as packagesApi } from "@/lib/api";
 import {
   LayoutDashboard, Package, Wallet, CreditCard, User,
-  Users, Settings, FileText, TrendingUp, Shield, LogOut, FlaskConical
+  Users, Settings, FileText, TrendingUp, Shield, LogOut, FlaskConical, BarChart3
 } from "lucide-react";
 import trinityLogo from "@/assets/trinity-arrows-logo.png";
 import { LANG } from "@/lib/language";
@@ -25,6 +25,7 @@ const adminNav = [
   { to: "/admin", icon: LayoutDashboard, label: LANG.nav.dashboard },
   { to: "/admin/users", icon: Users, label: LANG.nav.users },
   { to: "/admin/packages", icon: Package, label: LANG.nav.plans },
+  { to: "/admin/reports", icon: BarChart3, label: LANG.nav.reports },
   { to: "/admin/payouts", icon: CreditCard, label: LANG.nav.redemptions },
   { to: "/admin/roi-logs", icon: TrendingUp, label: LANG.nav.rewardLogs },
   { to: "/admin/simulator", icon: FlaskConical, label: LANG.nav.simulator },

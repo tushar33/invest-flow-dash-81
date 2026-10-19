@@ -91,6 +91,15 @@ export default function Home() {
                     {LANG.common.exploreProducts}
                   </Button>
                 </Link>
+                <Link to="/download">
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="rounded-full px-8 h-14 text-base font-semibold border-white/40 bg-white/10 backdrop-blur-md text-white hover:bg-white hover:text-emerald-900 transition-all"
+                  >
+                    {LANG.common.downloadApp}
+                  </Button>
+                </Link>
               </div>
             </Reveal>
           </div>

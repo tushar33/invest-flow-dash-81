@@ -1,7 +1,7 @@
 import { ReactNode, useState } from "react";
 import { DesktopSidebar } from "./DesktopSidebar";
 import { NavLink as RouterNavLink, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Users, Package, CreditCard, TrendingUp, Settings, User, LogOut, FlaskConical } from "lucide-react";
+import { LayoutDashboard, Users, Package, Settings, User, LogOut, FlaskConical, BarChart3 } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
@@ -14,6 +14,7 @@ const adminMobileNav = [
   { to: "/admin", icon: LayoutDashboard, label: LANG.nav.home },
   { to: "/admin/users", icon: Users, label: LANG.nav.users },
   { to: "/admin/packages", icon: Package, label: LANG.nav.packages },
+  { to: "/admin/reports", icon: BarChart3, label: LANG.nav.reports },
   { to: "/admin/simulator", icon: FlaskConical, label: LANG.nav.simulator },
   { to: "/admin/settings", icon: Settings, label: LANG.nav.settings },
 ];
@@ -39,8 +40,8 @@ export function AdminLayout({ children }: { children: ReactNode }) {
           {children}
         </div>
       </main>
-      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border md:hidden">
-        <div className="flex items-center justify-around h-16 px-2">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border md:hidden overflow-x-auto">
+        <div className="flex items-center h-16 px-1 min-w-max">
           {adminMobileNav.map((item) => {
             const isActive = item.to === "/admin"
               ? location.pathname === "/admin"

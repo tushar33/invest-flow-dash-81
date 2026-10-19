@@ -16,6 +16,9 @@ import About from "./pages/public/About";
 import Products from "./pages/public/Products";
 import Services from "./pages/public/Services";
 import Contact from "./pages/public/Contact";
+import Download from "./pages/public/Download";
+import Privacy from "./pages/public/Privacy";
+import Terms from "./pages/public/Terms";
 import Dashboard from "./pages/Dashboard";
 import Packages from "./pages/Packages";
 import WalletPage from "./pages/WalletPage";
@@ -32,6 +35,7 @@ const AdminPayouts = lazy(() => import("./pages/admin/AdminPayouts"));
 const AdminROILogs = lazy(() => import("./pages/admin/AdminROILogs"));
 const AdminSimulator = lazy(() => import("./pages/admin/AdminSimulator"));
 const AdminSettings = lazy(() => import("./pages/admin/AdminSettings"));
+const AdminReports = lazy(() => import("./pages/admin/AdminReports"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -65,6 +69,9 @@ const App = () => (
                 <Route path="/products" element={<Products />} />
                 <Route path="/services" element={<Services />} />
                 <Route path="/contact" element={<Contact />} />
+                <Route path="/download" element={<Download />} />
+                <Route path="/privacy" element={<Privacy />} />
+                <Route path="/terms" element={<Terms />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -79,6 +86,7 @@ const App = () => (
                 <Route path="/admin" element={<ProtectedRoute adminOnly><AdminDashboard /></ProtectedRoute>} />
                 <Route path="/admin/users" element={<ProtectedRoute adminOnly><AdminUsers /></ProtectedRoute>} />
                 <Route path="/admin/packages" element={<ProtectedRoute adminOnly><AdminPackages /></ProtectedRoute>} />
+                <Route path="/admin/reports" element={<ProtectedRoute adminOnly><AdminReports /></ProtectedRoute>} />
                 <Route path="/admin/payouts" element={<ProtectedRoute adminOnly><AdminPayouts /></ProtectedRoute>} />
                 <Route path="/admin/roi-logs" element={<ProtectedRoute adminOnly><AdminROILogs /></ProtectedRoute>} />
                 <Route path="/admin/simulator" element={<ProtectedRoute adminOnly><AdminSimulator /></ProtectedRoute>} />

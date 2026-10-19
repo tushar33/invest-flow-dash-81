@@ -120,6 +120,35 @@ async function uploadRequest<T>(path: string, formData: FormData, method = "POST
   return parseJsonBody<T>(res);
 }
 
+async function downloadAuthed(path: string, filename: string): Promise<void> {
+  const token = getToken();
+  const headers: Record<string, string> = {};
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  const res = await fetch(`${API_BASE}${path}`, { headers });
+
+  if (res.status === 401 && !isAuthEndpoint(path)) {
+    handleSessionExpired();
+    throw new Error(LANG.auth.sessionExpired);
+  }
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({ message: res.statusText }));
+    const msg = Array.isArray(body.message) ? body.message.join(", ") : body.message;
+    throw new Error(msg || LANG.auth.requestFailed(res.status));
+  }
+
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
+}
+
 // ── Auth ──
 export interface AuthUser {
   id: string;
@@ -184,6 +213,17 @@ export const auth = {
       body: JSON.stringify(data),
     }),
   me: () => request<AuthUser>("/auth/me"),
+};
+
+export const appDownload = {
+  request: (data: { name: string; email: string; phone: string }) =>
+    request<{ message: string; androidUrl: string | null; iosUrl: string | null }>(
+      "/app/download",
+      {
+        method: "POST",
+        body: JSON.stringify(data),
+      },
+    ),
 };
 
 export const contact = {
@@ -709,8 +749,42 @@ export interface SimulationResult {
   };
 }
 
+export interface AdminReportMeta {
+  id: string;
+  title: string;
+  description: string;
+}
+
+export interface AdminReportColumn {
+  key: string;
+  label: string;
+  align?: "left" | "right";
+}
+
+export interface AdminReport {
+  id: string;
+  title: string;
+  description: string;
+  from: string;
+  to: string;
+  periodLabel: string;
+  summary: { label: string; value: string }[];
+  columns: AdminReportColumn[];
+  rows: Record<string, string>[];
+}
+
 export const admin = {
   summary: () => request<AdminSummary>("/admin/summary"),
+  reports: () => request<AdminReportMeta[]>("/admin/reports"),
+  report: (reportId: string, range: { from: string; to: string }) =>
+    request<AdminReport>(
+      `/admin/reports/${reportId}?from=${encodeURIComponent(range.from)}&to=${encodeURIComponent(range.to)}`,
+    ),
+  downloadReportPdf: (reportId: string, range: { from: string; to: string }) =>
+    downloadAuthed(
+      `/admin/reports/${reportId}/pdf?from=${encodeURIComponent(range.from)}&to=${encodeURIComponent(range.to)}`,
+      `${reportId}-${range.from}-to-${range.to}.pdf`,
+    ),
   financialSummary: () => request<AdminFinancialSummary>("/admin/financial-summary"),
   users: (filters?: AdminUserFilters) =>
     request<PaginatedResponse<AdminUser[]>>(`/admin/users${buildQs(filters as any)}`).then((res) => res.data),
