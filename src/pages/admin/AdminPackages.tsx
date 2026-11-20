@@ -63,33 +63,31 @@ function SetContributorControl({ pkg }: { pkg: AdminPackage }) {
   });
 
   return (
-    <div className="w-full space-y-1.5 rounded-lg border border-dashed border-accent/40 bg-accent/5 p-2">
-      <Label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-        {LANG.plans.businessAddedBy}
-      </Label>
-      <div className="flex items-center gap-2">
-        <Select value={value || undefined} onValueChange={setValue}>
-          <SelectTrigger className="h-9 flex-1 text-sm" aria-label={LANG.plans.businessAddedBy}>
-            <SelectValue placeholder={LANG.plans.selectContributor} />
-          </SelectTrigger>
-          <SelectContent className="z-[80]">
-            {BUSINESS_CONTRIBUTORS.map((contributor) => (
-              <SelectItem key={contributor.id} value={contributor.id}>
-                {contributor.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Button
-          type="button"
-          size="sm"
-          className="h-9 shrink-0"
-          disabled={!value || mutation.isPending}
-          onClick={() => mutation.mutate(value)}
+    <div className="flex items-center gap-1.5">
+      <Select value={value || undefined} onValueChange={setValue}>
+        <SelectTrigger
+          className="h-8 min-w-0 flex-1 rounded-md border-border/70 bg-background px-2.5 text-xs shadow-none focus:ring-1 focus:ring-accent"
+          aria-label={LANG.plans.businessAddedBy}
         >
-          {mutation.isPending ? LANG.common.updating : LANG.plans.saveContributor}
-        </Button>
-      </div>
+          <SelectValue placeholder={LANG.plans.businessAddedBy} />
+        </SelectTrigger>
+        <SelectContent className="z-[80]">
+          {BUSINESS_CONTRIBUTORS.map((contributor) => (
+            <SelectItem key={contributor.id} value={contributor.id}>
+              {contributor.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <Button
+        type="button"
+        size="sm"
+        className="h-8 shrink-0 rounded-md bg-accent px-3 text-xs text-accent-foreground hover:bg-accent/90"
+        disabled={!value || mutation.isPending}
+        onClick={() => mutation.mutate(value)}
+      >
+        {mutation.isPending ? LANG.common.updating : LANG.plans.saveContributor}
+      </Button>
     </div>
   );
 }
@@ -499,7 +497,7 @@ export default function AdminPackages() {
                       {new Date(pkg.assignedDate).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "2-digit" })}
                     </span>
                     {pkg.businessAddedBy ? (
-                      <span className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-muted text-muted-foreground">
+                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-accent/10 text-accent border border-accent/20">
                         {LANG.plans.businessAddedBy}: {pkg.businessAddedByLabel || LANG.admin.legacyContributor}
                       </span>
                     ) : null}
