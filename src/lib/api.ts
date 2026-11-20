@@ -615,6 +615,11 @@ export interface AdminPackage {
   redemptionLocked?: boolean;
   redemptionLockedAt?: string | null;
   redemptionLockedBy?: string | null;
+  businessAddedBy?: string | null;
+  businessAddedByLabel?: string;
+  assignedBy?: string | null;
+  assignedByName?: string;
+  assignedAt?: string;
   stoppedAt?: string | null;
   stoppedBy?: string | null;
   stopReason?: string | null;
@@ -768,6 +773,15 @@ export interface AdminReportPlanGroup {
   amount: string;
 }
 
+export interface AdminReportContributorGroup {
+  contributor: string;
+  label: string;
+  packageCount: string;
+  uniqueMembers: string;
+  businessAmount: string;
+  stoppedAmount: string;
+}
+
 export interface AdminReport {
   id: string;
   title: string;
@@ -777,27 +791,48 @@ export interface AdminReport {
   periodLabel: string;
   planType: string | null;
   planLabel: string | null;
+  contributor?: string | null;
+  contributorLabel?: string | null;
+  contributorGroups?: AdminReportContributorGroup[];
   groups: AdminReportPlanGroup[];
   summary: { label: string; value: string }[];
   columns: AdminReportColumn[];
   rows: Record<string, string>[];
 }
 
-function reportQuery(range: { from: string; to: string; planType?: string }): string {
-  const params = new URLSearchParams({ from: range.from, to: range.to });
+type ReportRange = {
+  from?: string;
+  to?: string;
+  month?: string;
+  planType?: string;
+  contributor?: string;
+  scope?: string;
+};
+
+function reportQuery(range: ReportRange): string {
+  const params = new URLSearchParams();
+  if (range.scope === "all") {
+    params.set("scope", "all");
+  } else if (range.month) {
+    params.set("month", range.month);
+  } else if (range.from && range.to) {
+    params.set("from", range.from);
+    params.set("to", range.to);
+  }
   if (range.planType) params.set("planType", range.planType);
+  if (range.contributor) params.set("contributor", range.contributor);
   return params.toString();
 }
 
 export const admin = {
   summary: () => request<AdminSummary>("/admin/summary"),
   reports: () => request<AdminReportMeta[]>("/admin/reports"),
-  report: (reportId: string, range: { from: string; to: string; planType?: string }) =>
+  report: (reportId: string, range: ReportRange) =>
     request<AdminReport>(`/admin/reports/${reportId}?${reportQuery(range)}`),
-  downloadReportPdf: (reportId: string, range: { from: string; to: string; planType?: string }) =>
+  downloadReportPdf: (reportId: string, range: ReportRange) =>
     downloadAuthed(
       `/admin/reports/${reportId}/pdf?${reportQuery(range)}`,
-      `${reportId}-${range.from}-to-${range.to}${range.planType ? `-${range.planType}` : ""}.pdf`,
+      `${reportId}-${range.scope === "all" ? "all" : range.month ?? `${range.from}-to-${range.to}`}${range.planType ? `-${range.planType}` : ""}${range.contributor ? `-${range.contributor}` : ""}.pdf`,
     ),
   financialSummary: () => request<AdminFinancialSummary>("/admin/financial-summary"),
   users: (filters?: AdminUserFilters) =>
@@ -823,6 +858,7 @@ export const admin = {
     userId: string;
     principalAmount: number;
     roiPercentage: number;
+    businessAddedBy: string;
     planType?: string;
     redemptionLocked?: boolean;
   }) =>
@@ -838,6 +874,11 @@ export const admin = {
     request<AdminUser>(`/admin/users/${userId}/status`, { method: "PATCH", body: JSON.stringify(data) }),
   stopPackage: (packageId: string, data: { stopReason: string }) =>
     request<AdminPackage>(`/admin/packages/${packageId}/stop`, { method: "POST", body: JSON.stringify(data) }),
+  setBusinessContributor: (packageId: string, data: { businessAddedBy: string }) =>
+    request<{ packageId: string; businessAddedBy: string; businessAddedByLabel: string }>(
+      `/admin/packages/${packageId}/business-contributor`,
+      { method: "PATCH", body: JSON.stringify(data) },
+    ),
   userBankDetails: (userId: string) =>
     request<BankDetails | null>(`/admin/users/${userId}/bank-details`),
   verifyUserBankDetails: (

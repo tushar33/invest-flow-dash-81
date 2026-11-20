@@ -24,6 +24,7 @@ import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { formatCredits, formatIndianNumber, amountInIndianWords, parseAmountInput } from "@/lib/format";
 import { LANG, FILTER_OPTIONS, autoPayModeLabel, roleLabel, accountTypeDisplay, userAccountStatusLabel } from "@/lib/language";
+import { BUSINESS_CONTRIBUTORS } from "@/lib/business-contributors";
 import { DEFAULT_PLAN_TYPE, getPlanCatalog, type AdminPlanOption } from "@/lib/plan-options";
 import { usePlanCatalog } from "@/hooks/usePlanCatalog";
 
@@ -380,6 +381,8 @@ function AssignPlanForm({
   plans,
   plansError,
   onPlanChange,
+  businessAddedBy,
+  onBusinessAddedByChange,
   redemptionLocked,
   onRedemptionLockedChange,
 }: {
@@ -389,6 +392,8 @@ function AssignPlanForm({
   plans: AdminPlanOption[];
   plansError?: string;
   onPlanChange: (value: string) => void;
+  businessAddedBy: string;
+  onBusinessAddedByChange: (value: string) => void;
   redemptionLocked: boolean;
   onRedemptionLockedChange: (value: boolean) => void;
 }) {
@@ -421,6 +426,24 @@ function AssignPlanForm({
             <p className="text-sm font-semibold text-accent">{wordsAmount}</p>
           </div>
         )}
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="assign-contributor">{LANG.plans.businessAddedBy}</Label>
+        <select
+          id="assign-contributor"
+          required
+          value={businessAddedBy}
+          onChange={(event) => onBusinessAddedByChange(event.target.value)}
+          className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+        >
+          <option value="">{LANG.plans.selectContributor}</option>
+          {BUSINESS_CONTRIBUTORS.map((contributor) => (
+            <option key={contributor.id} value={contributor.id}>
+              {contributor.label}
+            </option>
+          ))}
+        </select>
       </div>
 
       <div className="space-y-2">
@@ -553,6 +576,7 @@ export default function AdminUsers() {
   const [selectedUserId, setSelectedUserId] = useState("");
   const [selectedUserName, setSelectedUserName] = useState("");
   const [pkgAmount, setPkgAmount] = useState("");
+  const [businessAddedBy, setBusinessAddedBy] = useState("");
   const [redemptionLocked, setRedemptionLocked] = useState(false);
   const [selectedUserAutoPay, setSelectedUserAutoPay] = useState<AutoPayModeValue>("NONE");
 
@@ -583,6 +607,7 @@ export default function AdminUsers() {
         principalAmount: Number(pkgAmount),
         roiPercentage: selectedAssignPlan!.roiPercentage,
         planType: selectedAssignPlan!.planType,
+        businessAddedBy,
         redemptionLocked,
       }),
     onSuccess: () => {
@@ -592,6 +617,7 @@ export default function AdminUsers() {
       setAssignOpen(false);
       setPkgAmount("");
       setPlanType(DEFAULT_PLAN_TYPE);
+      setBusinessAddedBy("");
       setRedemptionLocked(false);
     },
     onError: (err: Error) => {
@@ -624,6 +650,7 @@ export default function AdminUsers() {
     setSelectedUserAutoPay((autoPayMode as AutoPayModeValue) ?? "NONE");
     setPkgAmount("");
     setPlanType(DEFAULT_PLAN_TYPE);
+    setBusinessAddedBy("");
     setRedemptionLocked(false);
     setAssignOpen(true);
   };
@@ -882,6 +909,8 @@ export default function AdminUsers() {
             plans={plans}
             plansError={planCatalog.isError ? planCatalog.error.message : undefined}
             onPlanChange={setPlanType}
+            businessAddedBy={businessAddedBy}
+            onBusinessAddedByChange={setBusinessAddedBy}
             redemptionLocked={redemptionLocked}
             onRedemptionLockedChange={setRedemptionLocked}
           />
@@ -900,7 +929,7 @@ export default function AdminUsers() {
               <Button variant="outline" onClick={() => setAssignOpen(false)}>{LANG.common.cancel}</Button>
               <Button
                 onClick={() => assignMutation.mutate()}
-                disabled={!pkgAmount || !selectedAssignPlan || assignMutation.isPending}
+                disabled={!pkgAmount || !selectedAssignPlan || !businessAddedBy || assignMutation.isPending}
               >
                 {assignMutation.isPending ? LANG.common.assigning : LANG.plans.assignPlan}
               </Button>

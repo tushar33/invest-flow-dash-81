@@ -41,9 +41,51 @@ import {
   type AdminPlanOption,
 } from "@/lib/plan-options";
 import { usePlanCatalog } from "@/hooks/usePlanCatalog";
+import { BUSINESS_CONTRIBUTORS, LEGACY_CONTRIBUTOR, LEGACY_CONTRIBUTOR_LABEL } from "@/lib/business-contributors";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+
+function SetContributorControl({ pkg }: { pkg: AdminPackage }) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [value, setValue] = useState("");
+  const mutation = useMutation({
+    mutationFn: () => adminApi.setBusinessContributor(pkg.packageId, { businessAddedBy: value }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-packages"] });
+      toast({ title: LANG.plans.contributorSaved });
+    },
+    onError: (err: Error) => {
+      toast({ title: LANG.plans.contributorSaveFailed, description: err.message, variant: "destructive" });
+    },
+  });
+
+  return (
+    <div className="flex items-center gap-2">
+      <select
+        aria-label={LANG.plans.businessAddedBy}
+        value={value}
+        onChange={(event) => setValue(event.target.value)}
+        className="h-8 min-w-0 flex-1 rounded-md border border-input bg-background px-2 text-xs"
+      >
+        <option value="">{LANG.plans.selectContributor}</option>
+        {BUSINESS_CONTRIBUTORS.map((contributor) => (
+          <option key={contributor.id} value={contributor.id}>{contributor.label}</option>
+        ))}
+      </select>
+      <Button
+        type="button"
+        size="sm"
+        className="h-8 shrink-0"
+        disabled={!value || mutation.isPending}
+        onClick={() => mutation.mutate()}
+      >
+        {mutation.isPending ? LANG.common.updating : LANG.plans.saveContributor}
+      </Button>
+    </div>
+  );
+}
 
 const STOP_REASON_OPTIONS = [
   "User Requested Closure",
@@ -284,7 +326,7 @@ function CancelPackageModal({ pkg, onClose }: CancelModalProps) {
 }
 
 /* ── Filters ─────────────────────────────────────────────────────────── */
-const filterDefaults = { userId: "", status: "", roiPercentage: "", from: "", to: "" };
+const filterDefaults = { userId: "", status: "", roiPercentage: "", contributor: "", from: "", to: "" };
 
 export default function AdminPackages() {
   const planCatalog = usePlanCatalog();
@@ -297,6 +339,13 @@ export default function AdminPackages() {
     {
       key: "roiPercentage", label: LANG.plans.planTypeLabel, type: "select", placeholder: LANG.common.all,
       options: planFilterOptions(),
+    },
+    {
+      key: "contributor", label: LANG.plans.businessAddedBy, type: "select", placeholder: LANG.common.all,
+      options: [
+        ...BUSINESS_CONTRIBUTORS.map((contributor) => ({ value: contributor.id, label: contributor.label })),
+        { value: LEGACY_CONTRIBUTOR, label: LEGACY_CONTRIBUTOR_LABEL },
+      ],
     },
     { key: "from", label: LANG.filter.fromDate, type: "date", placeholder: LANG.filter.startDate },
     { key: "to", label: LANG.filter.toDate, type: "date", placeholder: LANG.filter.endDate },
@@ -350,6 +399,8 @@ export default function AdminPackages() {
     if (filters.userId && p.userId !== filters.userId && !p.userName.toLowerCase().includes(filters.userId.toLowerCase())) return false;
     if (filters.status && p.status !== filters.status) return false;
     if (filters.roiPercentage && !matchesPlanFilter(p.roiPercentage, p.planType, filters.roiPercentage)) return false;
+    if (filters.contributor === LEGACY_CONTRIBUTOR && p.businessAddedBy) return false;
+    if (filters.contributor && filters.contributor !== LEGACY_CONTRIBUTOR && p.businessAddedBy !== filters.contributor) return false;
     if (filters.from && p.assignedDate < filters.from) return false;
     if (filters.to && p.assignedDate > filters.to) return false;
     return true;
@@ -440,6 +491,17 @@ export default function AdminPackages() {
                     <span className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-muted text-muted-foreground">
                       {new Date(pkg.assignedDate).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "2-digit" })}
                     </span>
+                    {pkg.businessAddedBy ? (
+                      <span className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-muted text-muted-foreground">
+                        {LANG.plans.businessAddedBy}: {pkg.businessAddedByLabel || LANG.admin.legacyContributor}
+                      </span>
+                    ) : null}
+                    <span className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-muted text-muted-foreground">
+                      {LANG.admin.assignedBy}: {pkg.assignedByName || LANG.admin.legacyContributor}
+                      {pkg.assignedAt
+                        ? ` · ${new Date(pkg.assignedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "2-digit" })}`
+                        : ""}
+                    </span>
                     {pkg.redemptionLocked ? (
                       <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-destructive/10 text-destructive border border-destructive/20 inline-flex items-center gap-1">
                         <Lock className="h-2.5 w-2.5" /> {LANG.plans.redemptionStatus}: {LANG.plans.redemptionLocked}
@@ -450,6 +512,8 @@ export default function AdminPackages() {
                       </span>
                     )}
                   </div>
+
+                  {!pkg.businessAddedBy && <SetContributorControl pkg={pkg} />}
 
                   {/* Progress */}
                   <div className="mt-2.5 h-1 bg-muted rounded-full overflow-hidden">
