@@ -51,7 +51,8 @@ function SetContributorControl({ pkg }: { pkg: AdminPackage }) {
   const queryClient = useQueryClient();
   const [value, setValue] = useState("");
   const mutation = useMutation({
-    mutationFn: () => adminApi.setBusinessContributor(pkg.packageId, { businessAddedBy: value }),
+    mutationFn: (businessAddedBy: string) =>
+      adminApi.setBusinessContributor(pkg.packageId, { businessAddedBy }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-packages"] });
       toast({ title: LANG.plans.contributorSaved });
@@ -62,27 +63,33 @@ function SetContributorControl({ pkg }: { pkg: AdminPackage }) {
   });
 
   return (
-    <div className="flex items-center gap-2">
-      <select
-        aria-label={LANG.plans.businessAddedBy}
-        value={value}
-        onChange={(event) => setValue(event.target.value)}
-        className="h-8 min-w-0 flex-1 rounded-md border border-input bg-background px-2 text-xs"
-      >
-        <option value="">{LANG.plans.selectContributor}</option>
-        {BUSINESS_CONTRIBUTORS.map((contributor) => (
-          <option key={contributor.id} value={contributor.id}>{contributor.label}</option>
-        ))}
-      </select>
-      <Button
-        type="button"
-        size="sm"
-        className="h-8 shrink-0"
-        disabled={!value || mutation.isPending}
-        onClick={() => mutation.mutate()}
-      >
-        {mutation.isPending ? LANG.common.updating : LANG.plans.saveContributor}
-      </Button>
+    <div className="w-full space-y-1.5 rounded-lg border border-dashed border-accent/40 bg-accent/5 p-2">
+      <Label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+        {LANG.plans.businessAddedBy}
+      </Label>
+      <div className="flex items-center gap-2">
+        <Select value={value || undefined} onValueChange={setValue}>
+          <SelectTrigger className="h-9 flex-1 text-sm" aria-label={LANG.plans.businessAddedBy}>
+            <SelectValue placeholder={LANG.plans.selectContributor} />
+          </SelectTrigger>
+          <SelectContent className="z-[80]">
+            {BUSINESS_CONTRIBUTORS.map((contributor) => (
+              <SelectItem key={contributor.id} value={contributor.id}>
+                {contributor.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Button
+          type="button"
+          size="sm"
+          className="h-9 shrink-0"
+          disabled={!value || mutation.isPending}
+          onClick={() => mutation.mutate(value)}
+        >
+          {mutation.isPending ? LANG.common.updating : LANG.plans.saveContributor}
+        </Button>
+      </div>
     </div>
   );
 }
@@ -341,7 +348,7 @@ export default function AdminPackages() {
       options: planFilterOptions(),
     },
     {
-      key: "contributor", label: LANG.plans.businessAddedBy, type: "select", placeholder: LANG.common.all,
+      key: "contributor", label: LANG.admin.contributorFilter, type: "select", placeholder: LANG.admin.allContributors,
       options: [
         ...BUSINESS_CONTRIBUTORS.map((contributor) => ({ value: contributor.id, label: contributor.label })),
         { value: LEGACY_CONTRIBUTOR, label: LEGACY_CONTRIBUTOR_LABEL },

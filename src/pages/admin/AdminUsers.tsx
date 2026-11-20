@@ -430,20 +430,18 @@ function AssignPlanForm({
 
       <div className="space-y-2">
         <Label htmlFor="assign-contributor">{LANG.plans.businessAddedBy}</Label>
-        <select
-          id="assign-contributor"
-          required
-          value={businessAddedBy}
-          onChange={(event) => onBusinessAddedByChange(event.target.value)}
-          className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-        >
-          <option value="">{LANG.plans.selectContributor}</option>
-          {BUSINESS_CONTRIBUTORS.map((contributor) => (
-            <option key={contributor.id} value={contributor.id}>
-              {contributor.label}
-            </option>
-          ))}
-        </select>
+        <Select value={businessAddedBy || undefined} onValueChange={onBusinessAddedByChange}>
+          <SelectTrigger id="assign-contributor" className="w-full">
+            <SelectValue placeholder={LANG.plans.selectContributor} />
+          </SelectTrigger>
+          <SelectContent className="z-[80]">
+            {BUSINESS_CONTRIBUTORS.map((contributor) => (
+              <SelectItem key={contributor.id} value={contributor.id}>
+                {contributor.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="space-y-2">
